@@ -45,6 +45,9 @@ def _run_scan(mode, tier1_only):
     """Execute the scanner in a background thread."""
     global _state
     try:
+        import time as _time
+        t0 = _time.time()
+
         # Set config flags before scanning
         config.TOMORROW = (mode == "tomorrow")
         config.TIER1_ONLY = tier1_only
@@ -52,6 +55,7 @@ def _run_scan(mode, tier1_only):
         config.DEBUG = False
 
         opps = scan()
+        scan_duration = round(_time.time() - t0, 1)
 
         # Enrich each opportunity with a Polymarket URL
         for opp in opps:
