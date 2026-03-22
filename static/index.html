@@ -664,6 +664,61 @@
 
   .model-chip .val { color: var(--text); }
 
+  /* ── The Bet (prominent trade explanation) ──── */
+  .the-bet {
+    margin-top: 16px;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, rgba(79,195,247,0.06), rgba(0,230,118,0.04));
+    border: 1px solid rgba(79,195,247,0.2);
+    border-radius: 10px;
+  }
+
+  .the-bet-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 6px;
+  }
+
+  .the-bet-question {
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 10px;
+    line-height: 1.4;
+  }
+
+  .the-bet-action {
+    margin-bottom: 10px;
+  }
+
+  .bet-verdict {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .bet-verdict.yes { color: var(--green); }
+  .bet-verdict.no { color: #ff9800; }
+  .bet-verdict strong { color: #fff; }
+
+  .the-bet-payout {
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--text);
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .the-bet-payout strong {
+    color: #fff;
+  }
+  .the-bet-return {
+    color: var(--green);
+    font-weight: 600;
+    margin-left: 6px;
+  }
+
   /* ── CTA Button ─────────────────────────────── */
   .cta-row {
     display: flex;
