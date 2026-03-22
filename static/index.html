@@ -1116,7 +1116,7 @@
           </div>
           <div class="price-cell">
             <span class="price-cell-label">Empirical</span>
-            <span class="price-cell-value">${o.empirical_p.toFixed(1)}%</span>
+            <span class="price-cell-value">${o.empirical_p != null ? o.empirical_p.toFixed(1) + '%' : '—'}</span>
           </div>
         </div>
 
