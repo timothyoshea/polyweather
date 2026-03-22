@@ -16,14 +16,17 @@ import traceback
 from datetime import datetime
 
 from flask import Flask, jsonify, request, send_from_directory
-from flask_cors import CORS
 
 import config
 from scanner import scan
 from output import polymarket_url
 
 app = Flask(__name__, static_folder="static")
-CORS(app)
+
+@app.after_request
+def add_cors(response):
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
 
 # ── Scanner state (protected by lock) ────────────────────────────────────────
 
