@@ -722,48 +722,52 @@
   /* ── CTA Button ─────────────────────────────── */
   .cta-row {
     display: flex;
-    justify-content: flex-end;
     margin-top: 14px;
   }
 
   .cta-btn {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
     font-family: var(--sans);
-    font-size: 13px;
-    font-weight: 600;
-    padding: 8px 18px;
-    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 14px 24px;
+    border-radius: 10px;
     text-decoration: none;
     transition: all 0.2s;
     border: none;
     cursor: pointer;
+    letter-spacing: 0.3px;
   }
 
   .cta-btn.yes {
-    background: linear-gradient(135deg, rgba(0,230,118,0.15), rgba(0,230,118,0.05));
+    background: linear-gradient(135deg, rgba(0,230,118,0.2), rgba(0,230,118,0.08));
     color: var(--green);
-    border: 1px solid rgba(0,230,118,0.3);
+    border: 1px solid rgba(0,230,118,0.4);
   }
 
   .cta-btn.yes:hover {
-    background: rgba(0,230,118,0.2);
-    box-shadow: 0 2px 12px rgba(0,230,118,0.15);
+    background: rgba(0,230,118,0.3);
+    box-shadow: 0 4px 20px rgba(0,230,118,0.2);
+    transform: translateY(-1px);
   }
 
   .cta-btn.no {
-    background: linear-gradient(135deg, rgba(255,152,0,0.15), rgba(255,152,0,0.05));
+    background: linear-gradient(135deg, rgba(255,152,0,0.2), rgba(255,152,0,0.08));
     color: #ff9800;
-    border: 1px solid rgba(255,152,0,0.3);
+    border: 1px solid rgba(255,152,0,0.4);
   }
 
   .cta-btn.no:hover {
-    background: rgba(255,152,0,0.2);
-    box-shadow: 0 2px 12px rgba(255,152,0,0.15);
+    background: rgba(255,152,0,0.3);
+    box-shadow: 0 4px 20px rgba(255,152,0,0.2);
+    transform: translateY(-1px);
   }
 
-  .cta-arrow { font-size: 14px; }
+  .cta-arrow { font-size: 16px; }
 
   /* ── Responsive ─────────────────────────────── */
   @media (max-width: 640px) {
