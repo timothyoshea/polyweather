@@ -843,7 +843,7 @@
     showLoading();
 
     const tier1 = document.getElementById('chk-tier1').checked;
-    const url = `/api/scan?mode=${currentMode}&tier1_only=${tier1}&force=false`;
+    const url = `/api/scan?mode=${currentMode}&tier1_only=${tier1}&force=true`;
 
     try {
       let data = await fetchWithPoll(url);
