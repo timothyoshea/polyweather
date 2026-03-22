@@ -931,12 +931,44 @@
       const data = await resp.json();
       if (data.status === 'scanning') {
         polls++;
-        await sleep(3000);
+        // Update progress in the loading UI
+        updateProgress(data);
+        await sleep(2000);
         continue;
       }
       return data;
     }
     throw new Error('Scan timed out — try again.');
+  }
+
+  function updateProgress(data) {
+    const el = document.getElementById('scan-progress');
+    if (!el) return;
+    const done = data.progress_done || 0;
+    const total = data.progress_total || 30;
+    const city = data.progress_city || '';
+    const phase = data.progress_phase || 'starting';
+    const pct = total > 0 ? Math.round(done / total * 100) : 0;
+
+    let msg = '';
+    if (phase === 'starting') {
+      msg = 'Fetching Polymarket events…';
+    } else if (phase === 'fetching') {
+      msg = `Fetching forecasts: ${done}/${total} cities (${city})`;
+    } else if (phase === 'analyzing') {
+      msg = 'Analyzing trade opportunities…';
+    }
+
+    el.innerHTML = `
+      <div style="margin-top:16px; width: 300px; max-width: 80%;">
+        <div style="display:flex; justify-content:space-between; font-size:13px; color:var(--text2); margin-bottom:6px;">
+          <span>${msg}</span>
+          <span style="font-family:var(--mono)">${pct}%</span>
+        </div>
+        <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden;">
+          <div style="height:100%; width:${pct}%; background:var(--cyan); border-radius:3px; transition:width 0.3s;"></div>
+        </div>
+      </div>`;
   }
 
   function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
