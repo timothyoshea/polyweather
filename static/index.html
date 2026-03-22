@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PolyWeather — Weather Trading Scanner</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --card: #12121a;
+    --card-border: #1e1e2e;
+    --green: #00e676;
+    --red: #ff5252;
+    --amber: #ffc107;
+    --cyan: #4fc3f7;
+    --text: #e0e0e0;
+    --text2: #888;
+    --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* ── Header ─────────────────────────────────── */
+  .header {
+    background: linear-gradient(180deg, #101018 0%, var(--bg) 100%);
+    border-bottom: 1px solid var(--card-border);
+    padding: 16px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    white-space: nowrap;
+  }
+
+  .logo-icon {
+    font-size: 26px;
+    filter: drop-shadow(0 0 6px rgba(79, 195, 247, 0.5));
+  }
+
+  .logo span {
+    background: linear-gradient(135deg, var(--cyan), var(--green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .control-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .toggle-btn {
+    background: none;
+    border: 1px solid var(--card-border);
+    color: var(--text2);
+    padding: 5px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+
+  .toggle-btn.active {
+    background: rgba(79, 195, 247, 0.15);
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+
+  .toggle-btn:hover:not(.active) {
+    border-color: #444;
+    color: var(--text);
+  }
+
+  label.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text2);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  label.checkbox-label input {
+    accent-color: var(--cyan);
+    width: 14px;
+    height: 14px;
+  }
+
+  .scan-btn {
+    background: linear-gradient(135deg, var(--cyan), #039be5);
+    color: #000;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .scan-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(79, 195, 247, 0.3); }
+  .scan-btn:active { transform: translateY(0); }
+  .scan-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* ── Status Bar ─────────────────────────────── */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 10px 24px;
+    border-bottom: 1px solid var(--card-border);
+    font-size: 13px;
+  }
+
+  .status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #555;
+    transition: background 0.3s;
+  }
+
+  .status-dot.scanning {
+    background: var(--amber);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+
+  .status-dot.done { background: var(--green); }
+  .status-dot.error { background: var(--red); }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.4); }
+    50% { opacity: 0.6; box-shadow: 0 0 0 6px rgba(255, 193, 7, 0); }
+  }
+
+  .stats {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text2);
+  }
+
+  .stat-value {
+    font-family: var(--mono);
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* ── Filters Bar ────────────────────────────── */
+  .filters-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 24px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--card-border);
+  }
+
+  .filter-label {
+    font-size: 12px;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+
+  .filter-select {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    color: var(--text);
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-family: var(--sans);
+    font-size: 12px;
+    cursor: pointer;
+    outline: none;
+  }
+
+  .filter-select:focus { border-color: var(--cyan); }
+
+  /* ── Main Content ───────────────────────────── */
+  .main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 24px 60px;
+  }
+
+  /* ── Loading State ──────────────────────────── */
+  .loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    text-align: center;
+  }
+
+  .spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid var(--card-border);
+    border-top-color: var(--cyan);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 24px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-state h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+
+  .loading-state p {
+    color: var(--text2);
+    font-size: 14px;
+    max-width: 400px;
+  }
+
+  /* ── Empty State ────────────────────────────── */
+  .empty-state {
+    text-align: center;
+    padding: 80px 20px;
+  }
+
+  .empty-state .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+  .empty-state h3 { font-size: 18px; margin-bottom: 8px; }
+  .empty-state p { color: var(--text2); font-size: 14px; max-width: 420px; margin: 0 auto; }
+
+  /* ── Error State ────────────────────────────── */
+  .error-state {
+    text-align: center;
+    padding: 60px 20px;
+  }
+
+  .error-state h3 { color: var(--red); margin-bottom: 8px; }
+  .error-state p { color: var(--text2); font-size: 14px; margin-bottom: 20px; }
+
+  .retry-btn {
+    background: var(--card);
+    border: 1px solid var(--red);
+    color: var(--red);
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-family: var(--sans);
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+
+  .retry-btn:hover { background: rgba(255, 82, 82, 0.1); }
+
+  /* ── Trade Cards ────────────────────────────── */
+  .cards-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .trade-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.3s ease;
+    animation: cardIn 0.4s ease-out both;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .trade-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .trade-card:hover {
+    border-color: #2a2a3e;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+
+  .trade-card:hover::before { opacity: 1; }
+
+  .trade-card.sure-bet {
+    border-color: rgba(0, 230, 118, 0.3);
+    box-shadow: 0 0 20px rgba(0, 230, 118, 0.06);
+  }
+
+  .trade-card.sure-bet::before {
+    background: linear-gradient(90deg, transparent, var(--green), transparent);
+    opacity: 1;
+  }
+
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .card-badges {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: var(--mono);
+  }
+
+  .badge-sure {
+    background: rgba(0, 230, 118, 0.15);
+    color: var(--green);
+    border: 1px solid rgba(0, 230, 118, 0.3);
+    text-shadow: 0 0 8px rgba(0, 230, 118, 0.4);
+  }
+
+  .badge-strong {
+    background: rgba(79, 195, 247, 0.12);
+    color: var(--cyan);
+    border: 1px solid rgba(79, 195, 247, 0.25);
+  }
+
+  .badge-edge {
+    background: rgba(224, 224, 224, 0.08);
+    color: var(--text2);
+    border: 1px solid rgba(224, 224, 224, 0.15);
+  }
+
+  .badge-yes {
+    background: rgba(0, 230, 118, 0.1);
+    color: var(--green);
+    border: 1px solid rgba(0, 230, 118, 0.2);
+  }
+
+  .badge-no {
+    background: rgba(255, 152, 0, 0.1);
+    color: #ff9800;
+    border: 1px solid rgba(255, 152, 0, 0.2);
+  }
+
+  .badge-risk-low {
+    background: rgba(0, 230, 118, 0.08);
+    color: var(--green);
+    border: 1px solid rgba(0, 230, 118, 0.15);
+  }
+
+  .badge-risk-medium {
+    background: rgba(255, 193, 7, 0.08);
+    color: var(--amber);
+    border: 1px solid rgba(255, 193, 7, 0.15);
+  }
+
+  .badge-risk-high {
+    background: rgba(255, 82, 82, 0.08);
+    color: var(--red);
+    border: 1px solid rgba(255, 82, 82, 0.15);
+  }
+
+  .confidence-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .confidence-label {
+    font-size: 12px;
+    color: var(--text2);
+  }
+
+  .confidence-bar-bg {
+    width: 80px;
+    height: 6px;
+    background: #1e1e2e;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .confidence-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s ease;
+  }
+
+  .confidence-value {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    min-width: 28px;
+    text-align: right;
+  }
+
+  /* ── Card meta row ──────────────────────────── */
+  .card-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+  }
+
+  .card-meta .city {
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .card-meta .sep { color: #333; }
+
+  .card-meta .detail { color: var(--text2); font-size: 13px; }
+
+  .card-date {
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 14px;
+  }
+
+  /* ── Forecast row ───────────────────────────── */
+  .forecast-row {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .forecast-item {
+    font-size: 13px;
+    color: var(--text2);
+  }
+
+  .forecast-item strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  /* ── Price Box ──────────────────────────────── */
+  .price-box {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+  }
+
+  .price-box-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text2);
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+
+  .price-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+  }
+
+  .price-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .price-cell-label {
+    font-size: 11px;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .price-cell-value {
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .price-cell-value.green { color: var(--green); }
+  .price-cell-value.cyan { color: var(--cyan); }
+  .price-cell-value.amber { color: var(--amber); }
+
+  /* ── Visual bar comparing market vs model ──── */
+  .prob-compare {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    font-size: 12px;
+  }
+
+  .prob-compare-label { color: var(--text2); min-width: 50px; font-size: 11px; text-transform: uppercase; }
+
+  .prob-bar-track {
+    flex: 1;
+    height: 8px;
+    background: #1a1a24;
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .prob-bar-mkt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background: rgba(255, 82, 82, 0.5);
+    border-radius: 4px;
+    transition: width 0.6s ease;
+  }
+
+  .prob-bar-model {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background: var(--green);
+    border-radius: 4px;
+    opacity: 0.7;
+    transition: width 0.6s ease;
+  }
+
+  .prob-bar-pct {
+    font-family: var(--mono);
+    font-size: 11px;
+    min-width: 36px;
+    text-align: right;
+  }
+
+  /* ── Model consensus (collapsible) ──────────── */
+  .model-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: var(--text2);
+    font-family: var(--sans);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 0;
+    margin-bottom: 4px;
+    transition: color 0.2s;
+  }
+
+  .model-toggle:hover { color: var(--text); }
+
+  .model-toggle .arrow {
+    font-size: 10px;
+    transition: transform 0.2s;
+    display: inline-block;
+  }
+
+  .model-toggle .arrow.open { transform: rotate(90deg); }
+
+  .model-values {
+    display: none;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 0 4px;
+  }
+
+  .model-values.open { display: flex; }
+
+  .model-chip {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--card-border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--text2);
+  }
+
+  .model-chip .name {
+    color: var(--text2);
+    font-size: 11px;
+    margin-right: 4px;
+  }
+
+  .model-chip .val { color: var(--text); }
+
+  /* ── CTA Button ─────────────────────────────── */
+  .cta-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 14px;
+  }
+
+  .cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 18px;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+  }
+
+  .cta-btn.yes {
+    background: linear-gradient(135deg, rgba(0,230,118,0.15), rgba(0,230,118,0.05));
+    color: var(--green);
+    border: 1px solid rgba(0,230,118,0.3);
+  }
+
+  .cta-btn.yes:hover {
+    background: rgba(0,230,118,0.2);
+    box-shadow: 0 2px 12px rgba(0,230,118,0.15);
+  }
+
+  .cta-btn.no {
+    background: linear-gradient(135deg, rgba(255,152,0,0.15), rgba(255,152,0,0.05));
+    color: #ff9800;
+    border: 1px solid rgba(255,152,0,0.3);
+  }
+
+  .cta-btn.no:hover {
+    background: rgba(255,152,0,0.2);
+    box-shadow: 0 2px 12px rgba(255,152,0,0.15);
+  }
+
+  .cta-arrow { font-size: 14px; }
+
+  /* ── Responsive ─────────────────────────────── */
+  @media (max-width: 640px) {
+    .header { padding: 12px 16px; }
+    .status-bar, .filters-bar { padding: 10px 16px; }
+    .main { padding: 16px; }
+    .trade-card { padding: 16px; }
+    .price-grid { grid-template-columns: 1fr 1fr; }
+    .confidence-bar-bg { width: 50px; }
+    .logo { font-size: 18px; }
+  }
+
+  /* Delay stagger for card animations */
+  .trade-card:nth-child(1) { animation-delay: 0.02s; }
+  .trade-card:nth-child(2) { animation-delay: 0.06s; }
+  .trade-card:nth-child(3) { animation-delay: 0.10s; }
+  .trade-card:nth-child(4) { animation-delay: 0.14s; }
+  .trade-card:nth-child(5) { animation-delay: 0.18s; }
+  .trade-card:nth-child(6) { animation-delay: 0.22s; }
+  .trade-card:nth-child(7) { animation-delay: 0.26s; }
+  .trade-card:nth-child(8) { animation-delay: 0.30s; }
+  .trade-card:nth-child(9) { animation-delay: 0.34s; }
+  .trade-card:nth-child(10) { animation-delay: 0.38s; }
+</style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────── -->
+<header class="header">
+  <div class="header-top">
+    <div class="logo">
+      <span class="logo-icon">⛈</span>
+      <span>PolyWeather</span>
+    </div>
+    <div class="controls">
+      <div class="control-group">
+        <button class="toggle-btn active" id="btn-tomorrow" onclick="setMode('tomorrow')">Tomorrow</button>
+        <button class="toggle-btn" id="btn-all" onclick="setMode('all')">All Days</button>
+      </div>
+      <label class="checkbox-label">
+        <input type="checkbox" id="chk-tier1" onchange="applyFilters()"> Tier 1 Only
+      </label>
+      <button class="scan-btn" id="scan-btn" onclick="scan()">
+        Scan Now
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ── Status Bar ──────────────────────────────── -->
+<div class="status-bar">
+  <div class="status-indicator">
+    <div class="status-dot" id="status-dot"></div>
+    <span id="status-text" style="color: var(--text2); font-size: 13px;">Ready to scan</span>
+  </div>
+  <div class="stats" id="stats-bar" style="display:none;">
+    <div class="stat"><span class="stat-value" id="stat-total">0</span> trades</div>
+    <div class="stat"><span class="stat-value" id="stat-sure" style="color:var(--green)">0</span> sure bets</div>
+    <div class="stat"><span class="stat-value" id="stat-edge" style="color:var(--cyan)">0</span> edge bets</div>
+    <div class="stat">scanned in <span class="stat-value" id="stat-duration">0</span>s</div>
+  </div>
+</div>
+
+<!-- ── Filters Bar ─────────────────────────────── -->
+<div class="filters-bar">
+  <span class="filter-label">Sort</span>
+  <select class="filter-select" id="filter-sort" onchange="applyFilters()">
+    <option value="edge">Edge</option>
+    <option value="confidence">Confidence</option>
+    <option value="ev">EV / Dollar</option>
+    <option value="city">City</option>
+  </select>
+
+  <span class="filter-label" style="margin-left:12px;">City</span>
+  <select class="filter-select" id="filter-city" onchange="applyFilters()">
+    <option value="">All Cities</option>
+  </select>
+
+  <span class="filter-label" style="margin-left:12px;">Risk</span>
+  <select class="filter-select" id="filter-risk" onchange="applyFilters()">
+    <option value="">All</option>
+    <option value="LOW">Low</option>
+    <option value="MEDIUM">Medium</option>
+    <option value="HIGH">High</option>
+  </select>
+
+  <span class="filter-label" style="margin-left:12px;">Type</span>
+  <select class="filter-select" id="filter-type" onchange="applyFilters()">
+    <option value="">All</option>
+    <option value="sure">Sure Bets</option>
+    <option value="edge">Edge</option>
+  </select>
+
+  <span class="filter-label" style="margin-left:12px;">Side</span>
+  <select class="filter-select" id="filter-side" onchange="applyFilters()">
+    <option value="">All</option>
+    <option value="YES">YES</option>
+    <option value="NO">NO</option>
+  </select>
+</div>
+
+<!-- ── Main Content ────────────────────────────── -->
+<div class="main">
+  <div id="content">
+    <div class="empty-state">
+      <div class="icon">🌤</div>
+      <h3>Welcome to PolyWeather</h3>
+      <p>Click "Scan Now" to analyze weather markets for trading opportunities across 30 cities and 5 forecast models.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── State ────────────────────────────────────
+  let currentMode = 'tomorrow';
+  let allData = null;        // raw API response
+  let allOpps = [];          // unfiltered opportunities
+
+  // ── Mode Toggle ──────────────────────────────
+  function setMode(m) {
+    currentMode = m;
+    document.getElementById('btn-tomorrow').classList.toggle('active', m === 'tomorrow');
+    document.getElementById('btn-all').classList.toggle('active', m !== 'tomorrow');
+  }
+
+  // ── Scan ─────────────────────────────────────
+  async function scan() {
+    const btn = document.getElementById('scan-btn');
+    btn.disabled = true;
+    btn.textContent = 'Scanning…';
+    setStatus('scanning', 'Scanning markets…');
+    showLoading();
+
+    const tier1 = document.getElementById('chk-tier1').checked;
+    const url = `/api/scan?mode=${currentMode}&tier1_only=${tier1}&force=false`;
+
+    try {
+      let data = await fetchWithPoll(url);
+      allData = data;
+      allOpps = data.opportunities || [];
+      populateCityFilter();
+      updateStats();
+      applyFilters();
+      const ts = new Date(data.timestamp);
+      setStatus('done', `Last scanned: ${ts.toLocaleTimeString()}`);
+    } catch (err) {
+      showError(err.message || 'Scan failed');
+      setStatus('error', 'Scan failed');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Scan Now';
+    }
+  }
+
+  async function fetchWithPoll(url) {
+    const maxPolls = 120;
+    let polls = 0;
+    while (polls < maxPolls) {
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      if (data.status === 'scanning') {
+        polls++;
+        await sleep(3000);
+        continue;
+      }
+      return data;
+    }
+    throw new Error('Scan timed out — try again.');
+  }
+
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  // ── Status ───────────────────────────────────
+  function setStatus(state, text) {
+    const dot = document.getElementById('status-dot');
+    const label = document.getElementById('status-text');
+    dot.className = 'status-dot ' + state;
+    label.textContent = text;
+  }
+
+  // ── Stats ────────────────────────────────────
+  function updateStats() {
+    if (!allData) return;
+    document.getElementById('stats-bar').style.display = 'flex';
+    document.getElementById('stat-total').textContent = allData.total || 0;
+    document.getElementById('stat-sure').textContent = allData.sure_bets || 0;
+    document.getElementById('stat-edge').textContent = allData.edge_bets || 0;
+    document.getElementById('stat-duration').textContent = (allData.scan_duration_seconds || 0).toFixed(1);
+  }
+
+  // ── City Filter Options ──────────────────────
+  function populateCityFilter() {
+    const sel = document.getElementById('filter-city');
+    const cities = [...new Set(allOpps.map(o => o.city))].sort();
+    sel.innerHTML = '<option value="">All Cities</option>';
+    cities.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = c;
+      sel.appendChild(opt);
+    });
+  }
+
+  // ── Filter + Sort + Render ───────────────────
+  function applyFilters() {
+    let opps = [...allOpps];
+
+    const city = document.getElementById('filter-city').value;
+    const risk = document.getElementById('filter-risk').value;
+    const type = document.getElementById('filter-type').value;
+    const side = document.getElementById('filter-side').value;
+
+    if (city) opps = opps.filter(o => o.city === city);
+    if (risk) opps = opps.filter(o => o.risk === risk);
+    if (type) opps = opps.filter(o => o.bet_type === type);
+    if (side) opps = opps.filter(o => o.side === side);
+
+    const sort = document.getElementById('filter-sort').value;
+    const sorters = {
+      edge: (a, b) => b.edge - a.edge,
+      confidence: (a, b) => b.confidence - a.confidence,
+      ev: (a, b) => b.ev_per_dollar - a.ev_per_dollar,
+      city: (a, b) => a.city.localeCompare(b.city),
+    };
+    opps.sort(sorters[sort] || sorters.edge);
+
+    renderCards(opps);
+  }
+
+  // ── Render Cards ─────────────────────────────
+  function renderCards(opps) {
+    const el = document.getElementById('content');
+    if (!opps.length && allData) {
+      el.innerHTML = `
+        <div class="empty-state">
+          <div class="icon">📊</div>
+          <h3>No opportunities found</h3>
+          <p>Markets are efficiently priced right now, or filters are too restrictive. Adjust filters or try again later.</p>
+        </div>`;
+      return;
+    }
+    if (!opps.length) return;
+
+    el.innerHTML = '<div class="cards-grid">' + opps.map(renderCard).join('') + '</div>';
+  }
+
+  function renderCard(o) {
+    const isSure = o.bet_type === 'sure';
+    const isStrong = o.edge >= 10;
+    const cardClass = isSure ? 'trade-card sure-bet' : 'trade-card';
+
+    // Badges
+    let typeBadge = '';
+    if (isSure) typeBadge = '<span class="badge badge-sure">Sure Bet</span>';
+    else if (isStrong) typeBadge = '<span class="badge badge-strong">Strong Edge</span>';
+    else typeBadge = '<span class="badge badge-edge">Edge</span>';
+
+    const sideBadge = o.side === 'YES'
+      ? '<span class="badge badge-yes">Buy YES</span>'
+      : '<span class="badge badge-no">Buy NO</span>';
+
+    const riskClass = { LOW: 'badge-risk-low', MEDIUM: 'badge-risk-medium', HIGH: 'badge-risk-high' }[o.risk] || 'badge-risk-low';
+    const riskBadge = `<span class="badge ${riskClass}">${o.risk}</span>`;
+
+    // Confidence
+    const confColor = o.confidence >= 80 ? 'var(--green)' : o.confidence >= 50 ? 'var(--amber)' : 'var(--red)';
+    const confTextColor = o.confidence >= 80 ? 'var(--green)' : o.confidence >= 50 ? 'var(--amber)' : 'var(--red)';
+
+    // Date
+    const d = new Date(o.date + 'T00:00:00');
+    const dateStr = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+    // Tier
+    const tierLabel = `Tier ${o.city_tier}`;
+    const horizonLabel = o.horizon_days === 1 ? '1d out' : `${o.horizon_days}d out`;
+
+    // Models
+    const modelId = 'models-' + Math.random().toString(36).slice(2, 9);
+    let modelChips = '';
+    if (o.model_values) {
+      modelChips = Object.entries(o.model_values).map(([name, val]) => {
+        const short = name.replace(/_/g, ' ').replace(/seamless/gi, '').trim();
+        return `<div class="model-chip"><span class="name">${esc(short)}</span><span class="val">${val.toFixed(1)}°C</span></div>`;
+      }).join('');
+    }
+
+    // Prob bar max scale
+    const maxP = Math.max(o.my_p, o.mkt_p, 10);
+    const mktW = (o.mkt_p / maxP * 100).toFixed(1);
+    const modelW = (o.my_p / maxP * 100).toFixed(1);
+
+    return `
+    <div class="${cardClass}">
+      <div class="card-header">
+        <div class="card-badges">
+          ${typeBadge}
+          ${sideBadge}
+          ${riskBadge}
+        </div>
+        <div class="confidence-wrap">
+          <span class="confidence-label">Confidence</span>
+          <div class="confidence-bar-bg">
+            <div class="confidence-bar-fill" style="width:${o.confidence}%; background:${confColor}"></div>
+          </div>
+          <span class="confidence-value" style="color:${confTextColor}">${o.confidence}</span>
+        </div>
+      </div>
+
+      <div class="card-meta">
+        <span class="city">${esc(o.city)}</span>
+        <span class="sep">·</span>
+        <span class="detail">${tierLabel}</span>
+        <span class="sep">·</span>
+        <span class="detail">${horizonLabel}</span>
+      </div>
+      <div class="card-date">${dateStr}</div>
+
+      <div class="forecast-row">
+        <div class="forecast-item"><strong>Band:</strong> ${esc(o.band_c)} (${esc(o.band_f)})</div>
+        <div class="forecast-item"><strong>Forecast:</strong> ${o.forecast_c.toFixed(1)}°C / ${o.forecast_f.toFixed(1)}°F</div>
+      </div>
+
+      <div class="price-box">
+        <div class="price-box-title">Price vs Model</div>
+        <div class="price-grid">
+          <div class="price-cell">
+            <span class="price-cell-label">Market</span>
+            <span class="price-cell-value">${o.mkt_p.toFixed(1)}¢</span>
+          </div>
+          <div class="price-cell">
+            <span class="price-cell-label">Model</span>
+            <span class="price-cell-value cyan">${o.my_p.toFixed(1)}%</span>
+          </div>
+          <div class="price-cell">
+            <span class="price-cell-label">Edge</span>
+            <span class="price-cell-value green">+${o.edge.toFixed(1)}pp</span>
+          </div>
+          <div class="price-cell">
+            <span class="price-cell-label">EV / Dollar</span>
+            <span class="price-cell-value green">$${o.ev_per_dollar.toFixed(2)}</span>
+          </div>
+          <div class="price-cell">
+            <span class="price-cell-label">Half-Kelly</span>
+            <span class="price-cell-value amber">${o.hk.toFixed(1)}%</span>
+          </div>
+          <div class="price-cell">
+            <span class="price-cell-label">Empirical</span>
+            <span class="price-cell-value">${o.empirical_p.toFixed(1)}%</span>
+          </div>
+        </div>
+
+        <div class="prob-compare">
+          <span class="prob-compare-label">Market</span>
+          <div class="prob-bar-track">
+            <div class="prob-bar-mkt" style="width:${mktW}%"></div>
+          </div>
+          <span class="prob-bar-pct" style="color:var(--red)">${o.mkt_p.toFixed(1)}%</span>
+        </div>
+        <div class="prob-compare">
+          <span class="prob-compare-label">Model</span>
+          <div class="prob-bar-track">
+            <div class="prob-bar-model" style="width:${modelW}%"></div>
+          </div>
+          <span class="prob-bar-pct" style="color:var(--green)">${o.my_p.toFixed(1)}%</span>
+        </div>
+      </div>
+
+      ${modelChips ? `
+      <button class="model-toggle" onclick="toggleModels('${modelId}', this)">
+        <span class="arrow">▶</span> Model Consensus (${o.model_count} models, ${o.ensemble_count} ensemble)
+      </button>
+      <div class="model-values" id="${modelId}">
+        ${modelChips}
+      </div>
+      ` : ''}
+
+      <div class="cta-row">
+        <a class="cta-btn ${o.side === 'YES' ? 'yes' : 'no'}" href="${esc(o.url)}" target="_blank" rel="noopener">
+          Buy ${o.side} at ${o.mkt_p.toFixed(1)}¢ <span class="cta-arrow">→</span> Polymarket
+        </a>
+      </div>
+    </div>`;
+  }
+
+  function toggleModels(id, btn) {
+    const el = document.getElementById(id);
+    const arrow = btn.querySelector('.arrow');
+    el.classList.toggle('open');
+    arrow.classList.toggle('open');
+  }
+
+  // ── HTML escape ──────────────────────────────
+  function esc(s) {
+    if (!s) return '';
+    const div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+  }
+
+  // ── Loading State ────────────────────────────
+  function showLoading() {
+    document.getElementById('content').innerHTML = `
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <h3>Scanning Markets</h3>
+        <p>Analyzing 30 cities across 5 weather models + 122 ensemble members for mispriced contracts…</p>
+      </div>`;
+  }
+
+  // ── Error State ──────────────────────────────
+  function showError(msg) {
+    document.getElementById('content').innerHTML = `
+      <div class="error-state">
+        <h3>Scan Error</h3>
+        <p>${esc(msg)}</p>
+        <button class="retry-btn" onclick="scan()">Retry Scan</button>
+      </div>`;
+  }
+</script>
+</body>
+</html>
