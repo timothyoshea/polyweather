@@ -1086,9 +1086,24 @@
       </div>
       ` : ''}
 
+      <div class="the-bet">
+        <div class="the-bet-label">THE BET</div>
+        <div class="the-bet-question">${esc(o.question)}</div>
+        <div class="the-bet-action">
+          ${o.side === 'YES'
+            ? `<span class="bet-verdict yes">YES — forecast <strong>${o.forecast_c.toFixed(1)}°C</strong> is right in the <strong>${esc(o.band_c)}</strong> band</span>`
+            : `<span class="bet-verdict no">NO — forecast <strong>${o.forecast_c.toFixed(1)}°C</strong> is far from the <strong>${esc(o.band_c)}</strong> band</span>`
+          }
+        </div>
+        <div class="the-bet-payout">
+          Buy at <strong>${o.mkt_p.toFixed(1)}¢</strong> → pays <strong>$1.00</strong> if correct
+          <span class="the-bet-return">(${(100 / o.mkt_p).toFixed(0)}x return)</span>
+        </div>
+      </div>
+
       <div class="cta-row">
         <a class="cta-btn ${o.side === 'YES' ? 'yes' : 'no'}" href="${esc(o.url)}" target="_blank" rel="noopener">
-          Buy ${o.side} at ${o.mkt_p.toFixed(1)}¢ <span class="cta-arrow">→</span> Polymarket
+          Buy ${o.side} at ${o.mkt_p.toFixed(1)}¢ <span class="cta-arrow">→</span> Trade on Polymarket
         </a>
       </div>
     </div>`;
