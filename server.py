@@ -8,9 +8,10 @@ Usage:
 Endpoints:
     GET /              — serves static/index.html
     GET /api/scan      — returns scanner results (JSON)
-    GET /api/status    — returns scanner status
+    GET /api/status    — returns scanner status + progress
 """
 import sys
+import time as _time
 import threading
 import traceback
 from datetime import datetime
@@ -20,6 +21,7 @@ from flask import Flask, jsonify, request, send_from_directory
 import config
 from scanner import scan
 from output import polymarket_url
+from weather_api import set_progress_callback
 
 app = Flask(__name__, static_folder="static")
 
@@ -33,19 +35,32 @@ def add_cors(response):
 _lock = threading.Lock()
 _state = {
     "status": "idle",           # idle | scanning | error
-    "last_scan_time": None,     # ISO timestamp of last completed scan
-    "last_scan_mode": None,     # "tomorrow" or "all"
+    "last_scan_time": None,
+    "last_scan_mode": None,
     "last_scan_tier1": None,
-    "results": None,            # cached list of opportunity dicts
-    "error": None,              # error message if last scan failed
+    "results": None,
+    "error": None,
+    # Progress tracking
+    "progress_done": 0,
+    "progress_total": 0,
+    "progress_city": "",
+    "progress_phase": "",       # "fetching" | "analyzing"
 }
+
+
+def _on_progress(done, total, city, det_models, ens_members):
+    """Called by weather_api as each city completes."""
+    with _lock:
+        _state["progress_done"] = done
+        _state["progress_total"] = total
+        _state["progress_city"] = city
+        _state["progress_phase"] = "fetching"
 
 
 def _run_scan(mode, tier1_only):
     """Execute the scanner in a background thread."""
     global _state
     try:
-        import time as _time
         t0 = _time.time()
 
         # Set config flags before scanning
@@ -54,8 +69,18 @@ def _run_scan(mode, tier1_only):
         config.JSON_OUT = True   # suppress print output
         config.DEBUG = False
 
+        # Wire up progress callback
+        set_progress_callback(_on_progress)
+
+        with _lock:
+            _state["progress_phase"] = "fetching"
+            _state["progress_done"] = 0
+
         opps = scan()
         scan_duration = round(_time.time() - t0, 1)
+
+        with _lock:
+            _state["progress_phase"] = "done"
 
         # Enrich each opportunity with a Polymarket URL
         for opp in opps:
@@ -110,10 +135,20 @@ def api_scan():
         cached = _state["results"]
         cached_mode = _state["last_scan_mode"]
         cached_tier1 = _state["last_scan_tier1"]
+        progress_done = _state["progress_done"]
+        progress_total = _state["progress_total"]
+        progress_city = _state["progress_city"]
+        progress_phase = _state["progress_phase"]
 
-    # If currently scanning, tell the client to wait
+    # If currently scanning, return progress info
     if status == "scanning":
-        return jsonify({"status": "scanning", "message": "Scan in progress, please retry shortly."})
+        return jsonify({
+            "status": "scanning",
+            "progress_done": progress_done,
+            "progress_total": progress_total,
+            "progress_city": progress_city,
+            "progress_phase": progress_phase,
+        })
 
     # Return cached results if they match the requested params (and no force)
     if (
@@ -128,11 +163,15 @@ def api_scan():
     with _lock:
         _state["status"] = "scanning"
         _state["error"] = None
+        _state["progress_done"] = 0
+        _state["progress_total"] = 0
+        _state["progress_city"] = ""
+        _state["progress_phase"] = "starting"
 
     thread = threading.Thread(target=_run_scan, args=(mode, tier1_only), daemon=True)
     thread.start()
 
-    return jsonify({"status": "scanning", "message": "Scan started, please retry shortly."})
+    return jsonify({"status": "scanning", "progress_phase": "starting"})
 
 
 @app.route("/api/status")
@@ -144,6 +183,10 @@ def api_status():
             "last_scan_mode": _state["last_scan_mode"],
             "last_scan_tier1": _state["last_scan_tier1"],
             "error": _state["error"],
+            "progress_done": _state["progress_done"],
+            "progress_total": _state["progress_total"],
+            "progress_city": _state["progress_city"],
+            "progress_phase": _state["progress_phase"],
         })
 
 
