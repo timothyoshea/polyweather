@@ -37,8 +37,11 @@ HORIZON_MAE = {
 # Tier 2: Moderately predictable — standard confidence
 # Tier 3: Less predictable (mountain/continental/volatile) — add uncertainty buffer
 
-TIER1_CITIES = {"Tel Aviv", "Singapore", "Miami", "Madrid", "Milan", "Lucknow"}
-TIER3_CITIES = {"Wellington", "Seoul", "Ankara", "Moscow", "Chongqing", "Buenos Aires"}
+# Based on ensemble spread analysis from research:
+# Seoul, Miami, Tokyo, London have very low ensemble std (0.3-0.6C day-1)
+TIER1_CITIES = {"Tel Aviv", "Singapore", "Miami", "Madrid", "Milan", "Lucknow", "Seoul", "Tokyo"}
+# Chicago, Dallas degrade fast at day 3+; Wellington, Moscow are volatile
+TIER3_CITIES = {"Wellington", "Ankara", "Moscow", "Chongqing", "Buenos Aires", "Chicago"}
 
 TIER_MULTIPLIER = {1: 0.85, 2: 1.0, 3: 1.2}
 
