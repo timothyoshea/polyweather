@@ -1,24 +1,28 @@
 """
 Weather API module — fetches multi-model deterministic + multi-model ensemble forecasts
 from Open-Meteo. Uses 122 ensemble members across 3 models (ECMWF 51 + GFS 31 + ICON 40).
+
+Handles rate limits gracefully: falls back to deterministic-only if ensemble API is throttled.
+Uses concurrent requests to speed up fetching.
 """
 import time
 import requests
 import numpy as np
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from config import (
     FORECAST_DAYS, DETERMINISTIC_MODELS, CITY_GEO,
-    dprint, JSON_OUT,
+    dprint,
 )
 
 # Ensemble models to request and their internal API names + member counts
-# When you request "ecmwf_ifs025", the ensemble API returns keys with "ecmwf_ifs025_ensemble"
-# When you request "gfs_seamless", the API returns keys with "ncep_gefs_seamless"
-# When you request "icon_seamless", the API returns keys with "icon_seamless_eps"
 ENSEMBLE_MODELS = {
     "ecmwf_ifs025":  {"api_name": "ecmwf_ifs025_ensemble", "members": 50},
     "gfs_seamless":  {"api_name": "ncep_gefs_seamless",    "members": 30},
     "icon_seamless": {"api_name": "icon_seamless_eps",      "members": 39},
 }
+
+# Track if ensemble API is rate-limited so we don't keep hammering it
+_ensemble_rate_limited = False
 
 
 def fetch_deterministic_forecasts(lat, lng, timezone):
@@ -37,7 +41,11 @@ def fetch_deterministic_forecasts(lat, lng, timezone):
             "temperature_unit": "celsius",
         }, timeout=15)
         r.raise_for_status()
-        data = r.json().get("daily", {})
+        resp = r.json()
+        if resp.get("error"):
+            dprint(f"  [WARN] Deterministic API error: {resp.get('reason', 'unknown')}")
+            return {}
+        data = resp.get("daily", {})
     except Exception as e:
         dprint(f"  [WARN] Deterministic API error: {e}")
         return {}
@@ -62,14 +70,14 @@ def fetch_deterministic_forecasts(lat, lng, timezone):
 
 def fetch_ensemble_forecasts(lat, lng, timezone):
     """Fetch multi-model ensemble for temperature_2m_max.
-    Uses ECMWF (51 members) + GFS (31) + ICON (40) = 122 total members.
-
-    API key naming:
-      Control run:    temperature_2m_max_{api_name}
-      Perturbed:      temperature_2m_max_member{NN}_{api_name}
-
-    Returns: {date_str: [temp_values...], ...}  (all members from all models combined)
+    Returns: {date_str: [temp_values...], ...}
+    Returns empty dict if rate-limited (graceful fallback).
     """
+    global _ensemble_rate_limited
+
+    if _ensemble_rate_limited:
+        return {}
+
     models_str = ",".join(ENSEMBLE_MODELS.keys())
     try:
         r = requests.get("https://ensemble-api.open-meteo.com/v1/ensemble", params={
@@ -82,7 +90,19 @@ def fetch_ensemble_forecasts(lat, lng, timezone):
             "temperature_unit": "celsius",
         }, timeout=20)
         r.raise_for_status()
-        data = r.json().get("daily", {})
+        resp = r.json()
+
+        # Check for rate limit error
+        if resp.get("error"):
+            reason = resp.get("reason", "")
+            if "limit" in reason.lower():
+                dprint(f"  [WARN] Ensemble API rate limited — falling back to deterministic only")
+                _ensemble_rate_limited = True
+                return {}
+            dprint(f"  [WARN] Ensemble API error: {reason}")
+            return {}
+
+        data = resp.get("daily", {})
     except Exception as e:
         dprint(f"  [WARN] Ensemble API error: {e}")
         return {}
@@ -96,9 +116,7 @@ def fetch_ensemble_forecasts(lat, lng, timezone):
     for model_req, info in ENSEMBLE_MODELS.items():
         api_name = info["api_name"]
         max_members = info["members"]
-        # Control run
         member_keys.append(f"temperature_2m_max_{api_name}")
-        # Perturbed members
         for m in range(1, max_members + 1):
             member_keys.append(f"temperature_2m_max_member{m:02d}_{api_name}")
 
@@ -115,32 +133,56 @@ def fetch_ensemble_forecasts(lat, lng, timezone):
     return result
 
 
+def _fetch_city(city):
+    """Fetch both deterministic and ensemble for one city. Used by thread pool."""
+    geo = CITY_GEO.get(city)
+    if not geo:
+        return city, {}, {}
+    lat, lng, tz = geo
+
+    det = fetch_deterministic_forecasts(lat, lng, tz)
+    ens = fetch_ensemble_forecasts(lat, lng, tz)
+
+    return city, det, ens
+
+
+# Progress callback — set by server.py to report scan progress
+_progress_callback = None
+
+def set_progress_callback(cb):
+    global _progress_callback
+    _progress_callback = cb
+
+
 def fetch_all_city_forecasts(needed_cities):
     """Fetch deterministic + ensemble forecasts for all needed cities.
+    Uses thread pool for concurrent requests (5 at a time).
     Returns: (city_det_forecasts, city_ens_forecasts)
     """
+    global _ensemble_rate_limited
+    _ensemble_rate_limited = False  # reset for each scan
+
     city_det_forecasts = {}
     city_ens_forecasts = {}
+    sorted_cities = sorted(needed_cities)
+    total = len(sorted_cities)
+    done = 0
 
-    for city in sorted(needed_cities):
-        geo = CITY_GEO.get(city)
-        if not geo:
-            continue
-        lat, lng, tz = geo
+    with ThreadPoolExecutor(max_workers=5) as pool:
+        futures = {pool.submit(_fetch_city, city): city for city in sorted_cities}
 
-        det = fetch_deterministic_forecasts(lat, lng, tz)
-        city_det_forecasts[city] = det
-        time.sleep(0.15)
+        for future in as_completed(futures):
+            city, det, ens = future.result()
+            city_det_forecasts[city] = det
+            city_ens_forecasts[city] = ens
+            done += 1
 
-        ens = fetch_ensemble_forecasts(lat, lng, tz)
-        city_ens_forecasts[city] = ens
-        time.sleep(0.2)
-
-        if not JSON_OUT:
-            det_dates = len(det)
-            ens_dates = len(ens)
             det_models = len(next(iter(det.values()), {})) if det else 0
             ens_members = len(next(iter(ens.values()), [])) if ens else 0
-            print(f"  {city:15s} | {det_models} det models x {det_dates}d | {ens_members} ens members x {ens_dates}d")
+
+            if _progress_callback:
+                _progress_callback(done, total, city, det_models, ens_members)
+            else:
+                dprint(f"  {city:15s} | {det_models} det models | {ens_members} ens members | ({done}/{total})")
 
     return city_det_forecasts, city_ens_forecasts
