@@ -923,18 +923,24 @@
     }
   }
 
-  async function fetchWithPoll(url) {
-    const maxPolls = 120;
+  async function fetchWithPoll(triggerUrl, pollUrl) {
+    // First request triggers the scan with force=true
+    const firstResp = await fetch(triggerUrl);
+    if (!firstResp.ok) throw new Error(`HTTP ${firstResp.status}`);
+    const firstData = await firstResp.json();
+    if (firstData.status !== 'scanning') return firstData; // already had results
+
+    // Now poll with force=false so we don't re-trigger
+    const maxPolls = 60;
     let polls = 0;
     while (polls < maxPolls) {
-      const resp = await fetch(url);
+      await sleep(2000);
+      polls++;
+      const resp = await fetch(pollUrl);
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
       if (data.status === 'scanning') {
-        polls++;
-        // Update progress in the loading UI
         updateProgress(data);
-        await sleep(2000);
         continue;
       }
       return data;
