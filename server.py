@@ -76,6 +76,7 @@ def _run_scan(mode, tier1_only):
                 "total": len(opps),
                 "sure_bets": len(sure_bets),
                 "edge_bets": len(edge_bets),
+                "scan_duration_seconds": scan_duration,
                 "opportunities": opps,
             }
             _state["error"] = None
