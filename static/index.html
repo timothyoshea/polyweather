@@ -1193,6 +1193,18 @@
             <span class="price-cell-label">Empirical</span>
             <span class="price-cell-value">${o.empirical_p != null ? o.empirical_p.toFixed(1) + '%' : '—'}</span>
           </div>
+          <div class="price-cell">
+            <span class="price-cell-label">Max Safe Bet</span>
+            <span class="price-cell-value ${liqColor}">${maxBetStr}</span>
+          </div>
+          <div class="price-cell">
+            <span class="price-cell-label">Slippage</span>
+            <span class="price-cell-value ${slipColor}">${slipStr}</span>
+          </div>
+          <div class="price-cell">
+            <span class="price-cell-label">Liquidity</span>
+            <span class="badge ${liqBadgeClass}">${liqRating}</span>
+          </div>
         </div>
 
         <div class="prob-compare">
