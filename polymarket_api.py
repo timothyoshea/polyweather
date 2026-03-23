@@ -133,3 +133,55 @@ def get_market_price(market):
             pass
 
     return None, None, None
+
+
+def fetch_order_book(token_id):
+    """Fetch order book from Polymarket CLOB API.
+    Returns: {"bids": [(price, size), ...], "asks": [(price, size), ...]}
+    sorted by price (bids descending, asks ascending).
+    Returns None on failure.
+    """
+    if not token_id:
+        return None
+    try:
+        from config import CLOB_API_BASE, CLOB_TIMEOUT
+        r = requests.get(f"{CLOB_API_BASE}/book",
+                        params={"token_id": token_id},
+                        timeout=CLOB_TIMEOUT)
+        r.raise_for_status()
+        data = r.json()
+
+        bids = []
+        for b in data.get("bids", []):
+            try:
+                bids.append((float(b["price"]), float(b["size"])))
+            except (KeyError, ValueError):
+                continue
+
+        asks = []
+        for a in data.get("asks", []):
+            try:
+                asks.append((float(a["price"]), float(a["size"])))
+            except (KeyError, ValueError):
+                continue
+
+        # Sort: bids highest first, asks lowest first
+        bids.sort(key=lambda x: -x[0])
+        asks.sort(key=lambda x: x[0])
+
+        return {"bids": bids, "asks": asks}
+    except Exception as e:
+        dprint(f"  [WARN] CLOB book error: {e}")
+        return None
+
+
+def get_market_liquidity(market):
+    """Extract liquidity and volume from Gamma market data.
+    Returns: (liquidity_usd, volume_usd) or (0, 0) on failure.
+    """
+    try:
+        liq = float(market.get("liquidity", 0) or 0)
+        vol = float(market.get("volume", 0) or 0)
+        return liq, vol
+    except (ValueError, TypeError):
+        return 0.0, 0.0
