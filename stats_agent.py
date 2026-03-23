@@ -345,6 +345,47 @@ def estimate_slippage(order_book, bet_size_usd, side):
     }
 
 
+def compute_book_levels(order_book, prob):
+    """Return the order book ask levels with cumulative stats and implied probability.
+    Shows what's available at each price point — useful for seeing where the good bets are.
+    Returns list of dicts sorted by price (cheapest first).
+    """
+    if not order_book or not order_book.get("asks"):
+        return []
+
+    levels = order_book.get("asks", [])
+    result = []
+    cum_cost = 0.0
+    cum_shares = 0.0
+
+    for price, size in levels:
+        if price <= 0:
+            continue
+        level_cost = price * size
+        cum_cost += level_cost
+        cum_shares += size
+        # Implied probability = price (in a binary market, price IS the implied prob)
+        implied_prob = price * 100
+        # Our edge at this price level
+        edge = (prob - price) * 100
+        # If we win, each share pays $1
+        profit_if_win = size * (1.0 - price)
+
+        result.append({
+            "price_cents": round(price * 100, 1),
+            "shares": round(size, 1),
+            "cost_usd": round(level_cost, 2),
+            "cum_cost_usd": round(cum_cost, 2),
+            "cum_shares": round(cum_shares, 1),
+            "implied_prob": round(implied_prob, 1),
+            "our_prob": round(prob * 100, 1),
+            "edge_pp": round(edge, 1),
+            "profit_if_win": round(profit_if_win, 2),
+        })
+
+    return result[:15]  # cap at 15 levels to keep payload reasonable
+
+
 def compute_size_ladder(order_book, prob, best_price):
     """Compute slippage at multiple bet sizes to show the user their options.
     Returns a list of dicts: [{size, vwap, slippage_cents, effective_edge_pp, shares, payout}, ...]
