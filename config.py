@@ -172,6 +172,55 @@ CITY_NORMALIZE = {
     "san francisco": "San Francisco",
 }
 
+# ── ICAO Station Names ───────────────────────────────────────────────────────
+
+ICAO_STATION_NAME = {
+    "EGLC": "London City Airport",
+    "LFPG": "Charles de Gaulle Airport",
+    "LEMD": "Madrid-Barajas Airport",
+    "EPWA": "Warsaw Chopin Airport",
+    "LIMC": "Milan Malpensa Airport",
+    "EDDM": "Munich Airport",
+    "LTAC": "Ankara Esenboga Airport",
+    "EDDB": "Berlin Brandenburg Airport",
+    "LOWW": "Vienna International Airport",
+    "EHAM": "Amsterdam Schiphol Airport",
+    "ESSA": "Stockholm Arlanda Airport",
+    "LLBG": "Ben Gurion Airport",
+    "KLGA": "LaGuardia Airport",
+    "KORD": "Chicago O'Hare Airport",
+    "CYYZ": "Toronto Pearson Airport",
+    "KDAL": "Dallas Love Field",
+    "KATL": "Atlanta Hartsfield-Jackson",
+    "KMIA": "Miami International Airport",
+    "KSEA": "Seattle-Tacoma Airport",
+    "KBOS": "Boston Logan Airport",
+    "KAUS": "Austin-Bergstrom Airport",
+    "KDEN": "Denver International Airport",
+    "KHOU": "Houston Hobby Airport",
+    "KLAX": "Los Angeles LAX",
+    "KSFO": "San Francisco SFO",
+    "RJTT": "Tokyo Haneda Airport",
+    "RKSI": "Seoul Incheon Airport",
+    "ZSPD": "Shanghai Pudong Airport",
+    "ZBAA": "Beijing Capital Airport",
+    "VHHH": "Hong Kong International Airport",
+    "RCTP": "Taipei Taoyuan Airport",
+    "WSSS": "Singapore Changi Airport",
+    "ZUCK": "Chongqing Jiangbei Airport",
+    "ZUUU": "Chengdu Shuangliu Airport",
+    "ZHHH": "Wuhan Tianhe Airport",
+    "ZGSZ": "Shenzhen Bao'an Airport",
+    "VILK": "Lucknow Airport",
+    "NZWN": "Wellington Airport",
+    "YSSY": "Sydney Kingsford Smith",
+    "YMML": "Melbourne Tullamarine",
+    "SAEZ": "Buenos Aires Ezeiza Airport",
+    "SBGR": "Sao Paulo Guarulhos Airport",
+    "UUEE": "Moscow Sheremetyevo Airport",
+    "FACT": "Cape Town International Airport",
+}
+
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 def dprint(*args):
