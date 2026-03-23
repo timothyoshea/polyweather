@@ -1219,39 +1219,39 @@
         <div class="price-box-title">Price vs Model</div>
         <div class="price-grid">
           <div class="price-cell">
-            <span class="price-cell-label">Market</span>
+            <span class="price-cell-label">Market <span class="tip" title="Current price on Polymarket for this outcome. This is what you pay per share.">ⓘ</span></span>
             <span class="price-cell-value">${o.mkt_p.toFixed(1)}¢</span>
           </div>
           <div class="price-cell">
-            <span class="price-cell-label">Model</span>
+            <span class="price-cell-label">Model <span class="tip" title="Our probability estimate from multi-model weather forecasts (5 deterministic models + up to 122 ensemble members).">ⓘ</span></span>
             <span class="price-cell-value cyan">${o.my_p.toFixed(1)}%</span>
           </div>
           <div class="price-cell">
-            <span class="price-cell-label">Edge</span>
+            <span class="price-cell-label">Edge <span class="tip" title="Model probability minus market price. Higher = more mispriced in our favour. Measured in percentage points (pp).">ⓘ</span></span>
             <span class="price-cell-value green">+${o.edge.toFixed(1)}pp</span>
           </div>
           <div class="price-cell">
-            <span class="price-cell-label">EV / Dollar</span>
+            <span class="price-cell-label">EV / Dollar <span class="tip" title="Expected value per dollar wagered. A $1.00 EV means you expect to double your money on average.">ⓘ</span></span>
             <span class="price-cell-value green">$${o.ev_per_dollar.toFixed(2)}</span>
           </div>
           <div class="price-cell">
-            <span class="price-cell-label">Half-Kelly</span>
+            <span class="price-cell-label">Half-Kelly <span class="tip" title="Half-Kelly criterion: recommended % of bankroll to bet for optimal long-term growth with reduced variance.">ⓘ</span></span>
             <span class="price-cell-value amber">${o.hk.toFixed(1)}%</span>
           </div>
           <div class="price-cell">
-            <span class="price-cell-label">Empirical</span>
+            <span class="price-cell-label">Empirical <span class="tip" title="Probability calculated directly by counting ensemble members that fall in this band. Cross-check against the parametric model probability.">ⓘ</span></span>
             <span class="price-cell-value">${o.empirical_p != null ? o.empirical_p.toFixed(1) + '%' : '—'}</span>
           </div>
           <div class="price-cell">
-            <span class="price-cell-label">Recommended</span>
+            <span class="price-cell-label">Recommended <span class="tip" title="Liquidity-adjusted bet size. Accounts for order book depth and slippage — capped so your edge isn't eaten by market impact.">ⓘ</span></span>
             <span class="price-cell-value ${liqColor}">${maxBetStr}</span>
           </div>
           <div class="price-cell">
-            <span class="price-cell-label">Market Depth</span>
+            <span class="price-cell-label">Market Depth <span class="tip" title="Total USD available on the ask side of the order book. This is how much you could theoretically buy before exhausting all sellers.">ⓘ</span></span>
             <span class="price-cell-value">${liq.total_depth_usd ? '$' + liq.total_depth_usd.toFixed(0) : '—'}</span>
           </div>
           <div class="price-cell">
-            <span class="price-cell-label">Liquidity</span>
+            <span class="price-cell-label">Liquidity <span class="tip" title="Overall liquidity rating based on order book depth. HIGH = deep book (>$500), MEDIUM = moderate ($50-500), LOW = thin (<$50).">ⓘ</span></span>
             <span class="badge ${liqBadgeClass}">${liqRating}</span>
           </div>
         </div>
