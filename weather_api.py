@@ -138,7 +138,7 @@ def _fetch_city(city):
     geo = CITY_GEO.get(city)
     if not geo:
         return city, {}, {}
-    lat, lng, tz = geo
+    lat, lng, tz = geo[0], geo[1], geo[2]
 
     det = fetch_deterministic_forecasts(lat, lng, tz)
     ens = fetch_ensemble_forecasts(lat, lng, tz)
