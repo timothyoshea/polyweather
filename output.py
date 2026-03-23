@@ -182,7 +182,7 @@ def print_results(opps):
     print(div)
     best = opps[0]
     print(f"  SUMMARY: {len(opps)} trade{'s' if len(opps) != 1 else ''} "
-          f"({len(sure_bets)} sure, {len(edge_bets)} edge) | "
+          f"({len(sure_bets)} sure, {len(edge_bets)} edge, {len(safe_no_bets)} safe_no) | "
           f"Best edge +{best['edge']}pp | Best confidence {best['confidence']}/100")
     print(div)
     print()
