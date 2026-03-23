@@ -206,11 +206,14 @@ def scan():
             )
             if passes:
                 counters["passed"] += 1
+                book = fetch_order_book(yes_id)
+                mkt_liq, mkt_vol = get_market_liquidity(mk)
+                liq_info = liquidity_adjusted_kelly(my_p, yes_price, book, mkt_liq, mkt_vol)
                 sig = TradeSignal(
                     "YES", bet_type, my_p, yes_price, yes_id, city, date_key,
                     band_c, band_f, band_type, forecast_info, confidence,
                     horizon_days, eff_s, question, condition_id, market_slug,
-                    event_slug, price_src, emp_p
+                    event_slug, price_src, emp_p, liquidity_info=liq_info
                 )
                 signals.append(sig)
 
