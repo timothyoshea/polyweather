@@ -1388,6 +1388,7 @@
             '<td>$' + l.cost_usd.toFixed(2) + '</td>' +
             '<td>$' + l.cum_cost_usd.toFixed(2) + '</td>' +
             '<td style="color:var(--green)">$' + l.profit_if_win.toFixed(2) + '</td>' +
+            '<td style="color:var(--cyan)">' + (l.cost_usd > 0 ? ((l.shares * 1.0) / l.cost_usd).toFixed(1) : '0') + 'x</td>' +
             '<td><div style="height:8px;width:' + barW.toFixed(0) + '%;background:' + edgeColor + ';border-radius:4px;min-width:2px"></div></td>' +
             '</tr>';
         }).join('');
@@ -1397,7 +1398,7 @@
           '</button>' +
           '<div class="model-values" id="' + bookId + '">' +
           '<table class="size-ladder">' +
-          '<thead><tr><th>Price</th><th>Mkt Prob</th><th>Edge</th><th>Shares</th><th>Cost</th><th>Cum. Cost</th><th>Profit if ✓</th><th>Depth</th></tr></thead>' +
+          '<thead><tr><th>Price</th><th>Mkt Prob</th><th>Edge</th><th>Shares</th><th>Cost</th><th>Cum. Cost</th><th>Profit if ✓</th><th>Return</th><th>Depth</th></tr></thead>' +
           '<tbody>' + rows + '</tbody></table></div>';
       })()}
 
