@@ -271,6 +271,97 @@ def expected_value(prob, price):
     return prob * (1.0 / price - 1.0) - (1 - prob)
 
 
+def liquidity_adjusted_kelly(prob, price, book, mkt_liq, mkt_vol):
+    """Compute Kelly sizing adjusted for order-book liquidity.
+
+    Args:
+        prob: our estimated probability
+        price: current market price
+        book: order book dict {"bids": [...], "asks": [...]} or None
+        mkt_liq: Gamma-reported liquidity in USD
+        mkt_vol: Gamma-reported volume in USD
+
+    Returns:
+        dict with liquidity metrics and adjusted sizing, or empty dict on failure.
+    """
+    from config import (
+        BANKROLL_USD, LIQUIDITY_SAFETY_FACTOR,
+        MIN_EDGE_AFTER_SLIPPAGE, MIN_LIQUIDITY_USD,
+    )
+
+    result = {
+        "mkt_liquidity_usd": round(mkt_liq, 2),
+        "mkt_volume_usd": round(mkt_vol, 2),
+        "book_available": book is not None,
+        "fillable_usd": 0.0,
+        "vwap": None,
+        "slippage": None,
+        "edge_after_slippage": None,
+        "kelly_raw": half_kelly(prob, price),
+        "kelly_adj": 0.0,
+        "stake_usd": 0.0,
+        "skip_reason": None,
+    }
+
+    if book is None:
+        result["skip_reason"] = "no_book"
+        return result
+
+    # For a BUY we consume asks; compute fillable depth
+    asks = book.get("asks", [])
+    if not asks:
+        result["skip_reason"] = "no_asks"
+        return result
+
+    # Walk the ask side to compute VWAP up to bankroll * kelly * safety
+    target_spend = BANKROLL_USD * result["kelly_raw"] * LIQUIDITY_SAFETY_FACTOR
+    if target_spend <= 0:
+        result["skip_reason"] = "zero_kelly"
+        return result
+
+    cumulative_cost = 0.0
+    cumulative_shares = 0.0
+    for ask_price, ask_size in asks:
+        if ask_price <= 0:
+            continue
+        layer_cost = ask_price * ask_size
+        if cumulative_cost + layer_cost >= target_spend:
+            remaining = target_spend - cumulative_cost
+            shares_here = remaining / ask_price
+            cumulative_shares += shares_here
+            cumulative_cost = target_spend
+            break
+        cumulative_cost += layer_cost
+        cumulative_shares += ask_size
+
+    fillable = cumulative_cost
+    result["fillable_usd"] = round(fillable, 2)
+
+    if fillable < MIN_LIQUIDITY_USD:
+        result["skip_reason"] = "low_liquidity"
+        return result
+
+    vwap = cumulative_cost / cumulative_shares if cumulative_shares > 0 else price
+    result["vwap"] = round(vwap, 4)
+
+    slippage = vwap - price
+    result["slippage"] = round(slippage, 4)
+
+    edge_after = (prob - vwap)
+    result["edge_after_slippage"] = round(edge_after, 4)
+
+    if edge_after < MIN_EDGE_AFTER_SLIPPAGE:
+        result["skip_reason"] = "edge_too_small_after_slippage"
+        return result
+
+    # Adjusted Kelly using VWAP as effective price
+    kelly_adj = half_kelly(prob, vwap)
+    result["kelly_adj"] = round(kelly_adj, 4)
+    result["stake_usd"] = round(BANKROLL_USD * kelly_adj * LIQUIDITY_SAFETY_FACTOR, 2)
+
+    return result
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # TRADE SIGNAL GENERATION
 # ══════════════════════════════════════════════════════════════════════════════
