@@ -1048,6 +1048,7 @@
       confidence: (a, b) => b.confidence - a.confidence,
       ev: (a, b) => b.ev_per_dollar - a.ev_per_dollar,
       city: (a, b) => a.city.localeCompare(b.city),
+      maxbet: (a, b) => ((b.liquidity || {}).adjusted_bet_usd || 0) - ((a.liquidity || {}).adjusted_bet_usd || 0),
     };
     opps.sort(sorters[sort] || sorters.edge);
 
