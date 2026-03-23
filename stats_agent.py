@@ -596,6 +596,7 @@ class TradeSignal:
             "hk": round(self.hk * 100, 1),
             "confidence": self.confidence,
             "city_tier": get_city_tier(self.city),
+            "icao": CITY_GEO.get(self.city, (0,0,"",""))[3] if len(CITY_GEO.get(self.city, ())) > 3 else "",
             "horizon_days": self.horizon_days,
             "effective_std": round(self.effective_std, 2),
             "ensemble_std": round(fc.get("ensemble_std") or 0, 2),
