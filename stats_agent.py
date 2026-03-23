@@ -345,6 +345,40 @@ def estimate_slippage(order_book, bet_size_usd, side):
     }
 
 
+def compute_size_ladder(order_book, prob, best_price):
+    """Compute slippage at multiple bet sizes to show the user their options.
+    Returns a list of dicts: [{size, vwap, slippage_cents, effective_edge_pp, shares, payout}, ...]
+    """
+    if not order_book or not order_book.get("asks"):
+        return []
+
+    sizes = [5, 10, 25, 50, 100, 250, 500]
+    ladder = []
+
+    for size_usd in sizes:
+        s = estimate_slippage(order_book, size_usd, "buy")
+        if not s or s["fillable_usd"] < 1:
+            continue
+        filled = s["fillable_usd"]
+        eff_edge = (prob - s["vwap"]) * 100
+        shares = filled / s["vwap"] if s["vwap"] > 0 else 0
+        payout = shares * 1.0  # each share pays $1 if correct
+        profit = payout - filled
+        ladder.append({
+            "bet_usd": round(filled, 2),
+            "target_usd": size_usd,
+            "vwap_cents": round(s["vwap"] * 100, 2),
+            "slippage_cents": round(s["slippage_cents"], 2),
+            "effective_edge_pp": round(eff_edge, 1),
+            "shares": round(shares, 1),
+            "payout_usd": round(payout, 2),
+            "profit_usd": round(profit, 2),
+            "fully_filled": s["fully_filled"],
+        })
+
+    return ladder
+
+
 def liquidity_adjusted_kelly(prob, price, order_book, gamma_liquidity=0, gamma_volume=0, bankroll_usd=None):
     """Compute position size accounting for liquidity constraints and slippage.
 
