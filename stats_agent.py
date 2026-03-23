@@ -485,6 +485,10 @@ def liquidity_adjusted_kelly(prob, price, order_book, gamma_liquidity=0, gamma_v
     else:
         result["cap_reason"] = "kelly"
 
+    # Size ladder: show slippage at multiple bet sizes
+    result["size_ladder"] = compute_size_ladder(order_book, prob, price)
+    result["total_depth_usd"] = round(sum(p * s for p, s in order_book.get("asks", [])), 2)
+
     return result
 
 
