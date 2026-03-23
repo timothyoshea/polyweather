@@ -998,9 +998,8 @@
     setStatus('scanning', 'Scanning markets…');
     showLoading();
 
-    const tier1 = document.getElementById('chk-tier1').checked;
-    const triggerUrl = `/api/scan?mode=${currentMode}&tier1_only=${tier1}&force=true`;
-    const pollUrl = `/api/scan?mode=${currentMode}&tier1_only=${tier1}&force=false`;
+    const triggerUrl = `/api/scan?mode=${currentMode}&force=true`;
+    const pollUrl = `/api/scan?mode=${currentMode}&force=false`;
 
     try {
       let data = await fetchWithPoll(triggerUrl, pollUrl);
