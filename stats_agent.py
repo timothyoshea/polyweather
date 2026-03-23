@@ -271,123 +271,133 @@ def expected_value(prob, price):
     return prob * (1.0 / price - 1.0) - (1 - prob)
 
 
-def liquidity_adjusted_kelly(prob, price, book, mkt_liq, mkt_vol):
-    """Compute Kelly sizing adjusted for order-book liquidity.
+def estimate_slippage(order_book, bet_size_usd, side):
+    """Walk order book to estimate effective price and slippage for a bet.
+
+    For buying YES: walk asks from lowest price up.
+    For buying NO: walk asks of the NO token. But since we have the YES book,
+    buying NO is equivalent to selling YES — walk bids from highest down.
+    Actually, we get the book for the specific token_id (YES or NO), so:
+    - Always walk the 'asks' to buy shares.
 
     Args:
-        prob: our estimated probability
-        price: current market price
-        book: order book dict {"bids": [...], "asks": [...]} or None
-        mkt_liq: Gamma-reported liquidity in USD
-        mkt_vol: Gamma-reported volume in USD
+        order_book: {"bids": [(price, size), ...], "asks": [(price, size), ...]}
+        bet_size_usd: how much we want to spend in USD
+        side: "YES" or "NO" (determines which side of the book to walk)
 
-    Returns:
-        dict with liquidity metrics and adjusted sizing, or empty dict on failure.
+    Returns dict with slippage info, or None if book is empty/None.
     """
-    from config import (
-        BANKROLL_USD, LIQUIDITY_SAFETY_FACTOR,
-        MIN_EDGE_AFTER_SLIPPAGE, MIN_LIQUIDITY_USD,
-    )
+    if not order_book:
+        return None
+
+    # For buying, walk the asks (sellers willing to sell to us)
+    levels = order_book.get("asks", [])
+    if not levels:
+        return None
+
+    best_price = levels[0][0] if levels else 0
+    total_cost = 0.0
+    total_shares = 0.0
+    remaining_usd = bet_size_usd
+
+    for price, size in levels:
+        if remaining_usd <= 0:
+            break
+        # Cost to buy all shares at this level
+        level_cost = price * size
+        if level_cost <= remaining_usd:
+            # Take the whole level
+            total_cost += level_cost
+            total_shares += size
+            remaining_usd -= level_cost
+        else:
+            # Partial fill at this level
+            shares_affordable = remaining_usd / price
+            total_cost += remaining_usd
+            total_shares += shares_affordable
+            remaining_usd = 0
+
+    if total_shares == 0:
+        return None
+
+    vwap = total_cost / total_shares
+    # Actually fillable_usd = bet_size_usd - remaining_usd
+    fillable_usd = bet_size_usd - remaining_usd
+
+    slippage_cents = (vwap - best_price) * 100
+    slippage_pct = ((vwap - best_price) / best_price * 100) if best_price > 0 else 0
+
+    # Depth at various slippage levels
+    depth_1pct = sum(p * s for p, s in levels if p <= best_price * 1.01)
+    depth_5pct = sum(p * s for p, s in levels if p <= best_price * 1.05)
+    total_depth = sum(p * s for p, s in levels)
+
+    return {
+        "vwap": round(vwap, 4),
+        "best_price": round(best_price, 4),
+        "slippage_cents": round(slippage_cents, 2),
+        "slippage_pct": round(slippage_pct, 1),
+        "fillable_usd": round(fillable_usd, 2),
+        "depth_1pct_usd": round(depth_1pct, 2),
+        "depth_5pct_usd": round(depth_5pct, 2),
+        "total_depth_usd": round(total_depth, 2),
+        "fully_filled": remaining_usd <= 0.01,
+    }
+
+
+def liquidity_adjusted_kelly(prob, price, order_book, gamma_liquidity=0, gamma_volume=0, bankroll_usd=None):
+    """Compute position size accounting for liquidity constraints and slippage.
+
+    Steps:
+    1. Compute raw Half-Kelly
+    2. Walk book to find max bet before edge erodes
+    3. Cap at safety factor of visible depth
+
+    Returns dict with sizing recommendation.
+    """
+    from config import (BANKROLL_USD, LIQUIDITY_SAFETY_FACTOR,
+                       MIN_EDGE_AFTER_SLIPPAGE, MIN_LIQUIDITY_USD)
+
+    if bankroll_usd is None:
+        bankroll_usd = BANKROLL_USD
 
     raw_hk = half_kelly(prob, price)
-    raw_bet = BANKROLL_USD * raw_hk
+    raw_bet = raw_hk * bankroll_usd
 
-    # Defaults (UI-compatible fields)
     result = {
-        "mkt_liquidity_usd": round(mkt_liq, 2),
-        "mkt_volume_usd": round(mkt_vol, 2),
-        "book_available": book is not None,
-        "fillable_usd": 0.0,
-        "vwap": None,
-        "slippage": None,
-        "edge_after_slippage": None,
-        "kelly_raw": raw_hk,
-        "kelly_adj": 0.0,
-        "stake_usd": 0.0,
-        "skip_reason": None,
-        # UI-expected fields (defaults when no book data)
+        "raw_hk_pct": round(raw_hk * 100, 1),
+        "raw_bet_usd": round(raw_bet, 2),
         "adjusted_bet_usd": round(raw_bet, 2),
         "effective_price": round(price, 4),
         "slippage_cents": 0,
         "effective_edge_pp": round((prob - price) * 100, 1),
         "effective_ev": round(expected_value(prob, price), 3),
+        "max_safe_bet_usd": round(raw_bet, 2),
         "liquidity_rating": "UNKNOWN",
         "cap_reason": "kelly",
+        "gamma_liquidity": round(gamma_liquidity, 2),
+        "gamma_volume": round(gamma_volume, 2),
     }
 
-    if book is None:
-        # Estimate rating from Gamma liquidity field
-        if mkt_liq > 500:
+    if not order_book or not order_book.get("asks"):
+        # No book data — use gamma liquidity for a rough rating
+        if gamma_liquidity > 500:
             result["liquidity_rating"] = "HIGH"
-        elif mkt_liq > 50:
+        elif gamma_liquidity > 50:
             result["liquidity_rating"] = "MEDIUM"
-        elif mkt_liq > 0:
+        elif gamma_liquidity > 0:
             result["liquidity_rating"] = "LOW"
-        result["skip_reason"] = "no_book"
         return result
 
-    # For a BUY we consume asks; compute fillable depth
-    asks = book.get("asks", [])
-    if not asks:
-        result["skip_reason"] = "no_asks"
+    # Walk the book for the raw kelly bet
+    slip = estimate_slippage(order_book, raw_bet, "buy")
+    if not slip:
         return result
 
-    # Walk the ask side to compute VWAP up to bankroll * kelly * safety
-    target_spend = BANKROLL_USD * result["kelly_raw"] * LIQUIDITY_SAFETY_FACTOR
-    if target_spend <= 0:
-        result["skip_reason"] = "zero_kelly"
-        return result
+    total_depth = slip["total_depth_usd"]
+    safe_depth = total_depth * LIQUIDITY_SAFETY_FACTOR
 
-    cumulative_cost = 0.0
-    cumulative_shares = 0.0
-    for ask_price, ask_size in asks:
-        if ask_price <= 0:
-            continue
-        layer_cost = ask_price * ask_size
-        if cumulative_cost + layer_cost >= target_spend:
-            remaining = target_spend - cumulative_cost
-            shares_here = remaining / ask_price
-            cumulative_shares += shares_here
-            cumulative_cost = target_spend
-            break
-        cumulative_cost += layer_cost
-        cumulative_shares += ask_size
-
-    fillable = cumulative_cost
-    result["fillable_usd"] = round(fillable, 2)
-
-    if fillable < MIN_LIQUIDITY_USD:
-        result["skip_reason"] = "low_liquidity"
-        return result
-
-    vwap = cumulative_cost / cumulative_shares if cumulative_shares > 0 else price
-    result["vwap"] = round(vwap, 4)
-
-    slippage = vwap - price
-    result["slippage"] = round(slippage, 4)
-
-    edge_after = (prob - vwap)
-    result["edge_after_slippage"] = round(edge_after, 4)
-
-    if edge_after < MIN_EDGE_AFTER_SLIPPAGE:
-        result["skip_reason"] = "edge_too_small_after_slippage"
-        return result
-
-    # Adjusted Kelly using VWAP as effective price
-    kelly_adj = half_kelly(prob, vwap)
-    result["kelly_adj"] = round(kelly_adj, 4)
-    stake = BANKROLL_USD * kelly_adj * LIQUIDITY_SAFETY_FACTOR
-    result["stake_usd"] = round(stake, 2)
-
-    # UI-expected fields
-    result["adjusted_bet_usd"] = round(stake, 2)
-    result["effective_price"] = round(vwap, 4)
-    result["slippage_cents"] = round(slippage * 100, 2)
-    result["effective_edge_pp"] = round(edge_after * 100, 1)
-    result["effective_ev"] = round(expected_value(prob, vwap), 3)
-
-    # Liquidity rating from fillable depth
-    total_depth = sum(p * s for p, s in book.get("asks", []))
+    # Liquidity rating
     if total_depth > 500:
         result["liquidity_rating"] = "HIGH"
     elif total_depth > 50:
@@ -395,9 +405,49 @@ def liquidity_adjusted_kelly(prob, price, book, mkt_liq, mkt_vol):
     else:
         result["liquidity_rating"] = "LOW"
 
-    # Cap reason
-    if stake < BANKROLL_USD * result["kelly_raw"]:
-        result["cap_reason"] = "order_book"
+    # Find max safe bet: binary search for largest bet where edge stays above threshold
+    min_edge = MIN_EDGE_AFTER_SLIPPAGE
+    lo_bet, hi_bet = 0, min(raw_bet, safe_depth)
+    best_bet = 0
+
+    for _ in range(20):  # binary search iterations
+        mid = (lo_bet + hi_bet) / 2
+        if mid < 0.5:
+            break
+        s = estimate_slippage(order_book, mid, "buy")
+        if not s:
+            hi_bet = mid
+            continue
+        effective_edge = prob - s["vwap"]
+        if effective_edge >= min_edge:
+            best_bet = mid
+            lo_bet = mid
+        else:
+            hi_bet = mid
+
+    # Use the smaller of: kelly bet, safe depth, max-edge-preserving bet
+    adjusted = min(raw_bet, safe_depth, best_bet if best_bet > 0 else raw_bet)
+    adjusted = max(adjusted, 0)
+
+    # Compute final slippage at adjusted size
+    final_slip = estimate_slippage(order_book, adjusted, "buy")
+    if final_slip:
+        result["effective_price"] = final_slip["vwap"]
+        result["slippage_cents"] = final_slip["slippage_cents"]
+        result["effective_edge_pp"] = round((prob - final_slip["vwap"]) * 100, 1)
+        result["effective_ev"] = round(expected_value(prob, final_slip["vwap"]), 3)
+
+    result["adjusted_bet_usd"] = round(adjusted, 2)
+    result["max_safe_bet_usd"] = round(min(safe_depth, best_bet if best_bet > 0 else safe_depth), 2)
+
+    # Determine cap reason
+    if adjusted < raw_bet:
+        if adjusted == safe_depth:
+            result["cap_reason"] = "order_book"
+        elif best_bet > 0 and adjusted == best_bet:
+            result["cap_reason"] = "slippage"
+        else:
+            result["cap_reason"] = "order_book"
     else:
         result["cap_reason"] = "kelly"
 
