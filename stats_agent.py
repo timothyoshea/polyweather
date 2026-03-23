@@ -532,6 +532,9 @@ def liquidity_adjusted_kelly(prob, price, order_book, gamma_liquidity=0, gamma_v
     result["size_ladder"] = compute_size_ladder(order_book, prob, price)
     result["total_depth_usd"] = round(sum(p * s for p, s in order_book.get("asks", [])), 2)
 
+    # Order book levels: show what's available at each price
+    result["book_levels"] = compute_book_levels(order_book, prob)
+
     return result
 
 
