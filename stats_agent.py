@@ -343,6 +343,18 @@ class TradeSignal:
         }
 
 
+def forecast_in_band(forecast_temp, lo, hi, band_type):
+    """Check if the forecast temperature falls within the band.
+    Returns True if the forecast is IN the band (the strongest signal).
+    """
+    if band_type == "below":
+        return forecast_temp <= lo + 1
+    elif band_type == "above":
+        return forecast_temp >= lo
+    else:
+        return lo <= forecast_temp < hi
+
+
 def evaluate_trade(side, prob, price, confidence, forecast_info, horizon_days,
                    ensemble_members=None, lo=None, hi=None, band_type=None):
     """Evaluate whether a potential trade meets our criteria.
@@ -350,11 +362,11 @@ def evaluate_trade(side, prob, price, confidence, forecast_info, horizon_days,
     Returns: (bet_type, passes) where bet_type is 'sure'/'edge'/'safe_no'/None
     and passes is True/False.
 
-    Logic:
-    1. Check sure bet criteria first (highest bar)
-    2. Then check edge bet criteria
-    3. Apply anti-false-positive filters
+    KEY RULE: For YES bets, the forecast MUST be in the band.
+    We don't recommend YES bets where the forecast is merely "close to" the band.
     """
+    forecast_temp = forecast_info.get("combined_forecast", 0)
+
     # Anti-false-positive: check parametric vs empirical agreement
     if ensemble_members and len(ensemble_members) >= 20:
         emp_yes_p = calc_probability_empirical(ensemble_members, lo, hi, band_type)
@@ -365,6 +377,11 @@ def evaluate_trade(side, prob, price, confidence, forecast_info, horizon_days,
             if abs(prob - emp_p) > 0.15:
                 dprint(f"  -> SKIP {side}: parametric ({prob:.1%}) vs empirical ({emp_p:.1%}) disagree by >{15}pp")
                 return None, False
+
+    # For YES bets: forecast MUST be in the band
+    if side == "YES" and not forecast_in_band(forecast_temp, lo, hi, band_type):
+        dprint(f"  -> SKIP YES: forecast {forecast_temp:.1f} not in band [{lo:.0f},{hi:.0f}) {band_type}")
+        return None, False
 
     # Sure bet check
     if 0 < price <= SURE_BET_MAX_PRICE:
