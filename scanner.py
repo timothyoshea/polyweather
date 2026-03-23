@@ -224,11 +224,14 @@ def scan():
             )
             if passes:
                 counters["passed"] += 1
+                book = fetch_order_book(no_id)
+                mkt_liq, mkt_vol = get_market_liquidity(mk)
+                liq_info = liquidity_adjusted_kelly(my_no_p, no_price, book, mkt_liq, mkt_vol)
                 sig = TradeSignal(
                     "NO", bet_type, my_no_p, no_price, no_id, city, date_key,
                     band_c, band_f, band_type, forecast_info, confidence,
                     horizon_days, eff_s, question, condition_id, market_slug,
-                    event_slug, price_src, emp_no_p
+                    event_slug, price_src, emp_no_p, liquidity_info=liq_info
                 )
                 signals.append(sig)
 
