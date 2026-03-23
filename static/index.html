@@ -1191,8 +1191,28 @@
       <div class="card-date">${dateStr}</div>
 
       <div class="forecast-row">
-        <div class="forecast-item"><strong>Band:</strong> ${esc(o.band_c)} (${esc(o.band_f)})</div>
-        <div class="forecast-item"><strong>Forecast:</strong> ${o.forecast_c.toFixed(1)}°C / ${o.forecast_f.toFixed(1)}°F</div>
+        <div class="forecast-item">
+          <strong>Band:</strong> ${esc(o.band_c)} (${esc(o.band_f)})
+          <span class="band-range">${(() => {
+            const bc = o.band_c || '';
+            const bt = o.band_type || '';
+            if (bt === 'below') {
+              const m = bc.match(/([\d.]+)/);
+              return m ? 'covers: ' + (-99) + '°C to ' + (parseFloat(m[1])+1) + '°C' : '';
+            }
+            if (bt === 'above') {
+              const m = bc.match(/([\d.]+)/);
+              return m ? 'covers: ' + m[1] + '°C and above' : '';
+            }
+            // exact band
+            const rm = bc.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
+            if (rm) return 'covers: ' + rm[1] + '.0°C to ' + rm[2] + '.0°C';
+            const sm = bc.match(/^(-?\d+)°C$/);
+            if (sm) return 'covers: ' + sm[1] + '.0°C to ' + (parseInt(sm[1])+1) + '.0°C';
+            return '';
+          })()}</span>
+        </div>
+        <div class="forecast-item"><strong>Forecast:</strong> ${o.forecast_c.toFixed(2)}°C / ${o.forecast_f.toFixed(1)}°F</div>
       </div>
 
       <div class="price-box">
