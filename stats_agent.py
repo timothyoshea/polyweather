@@ -347,7 +347,7 @@ def evaluate_trade(side, prob, price, confidence, forecast_info, horizon_days,
                    ensemble_members=None, lo=None, hi=None, band_type=None):
     """Evaluate whether a potential trade meets our criteria.
 
-    Returns: (bet_type, passes) where bet_type is 'sure'/'edge'/None
+    Returns: (bet_type, passes) where bet_type is 'sure'/'edge'/'safe_no'/None
     and passes is True/False.
 
     Logic:
