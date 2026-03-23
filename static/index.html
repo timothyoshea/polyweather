@@ -1066,12 +1066,14 @@
 
   function renderCard(o) {
     const isSure = o.bet_type === 'sure';
+    const isSafeNo = o.bet_type === 'safe_no';
     const isStrong = o.edge >= 10;
     const cardClass = isSure ? 'trade-card sure-bet' : 'trade-card';
 
     // Badges
     let typeBadge = '';
     if (isSure) typeBadge = '<span class="badge badge-sure">Sure Bet</span>';
+    else if (isSafeNo) typeBadge = '<span class="badge badge-safeno">Safe NO</span>';
     else if (isStrong) typeBadge = '<span class="badge badge-strong">Strong Edge</span>';
     else typeBadge = '<span class="badge badge-edge">Edge</span>';
 
