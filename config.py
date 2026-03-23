@@ -59,6 +59,13 @@ EDGE_MAX_PRICE      = 0.06
 EDGE_MIN_EDGE       = 0.05        # >=5pp edge
 EDGE_MIN_CONFIDENCE = 50
 
+# Safe NO criteria (high probability, low return, near-certain)
+SAFE_NO_MIN_PROB = 0.97       # >=97% NO probability
+SAFE_NO_MAX_NO_PRICE = 0.97   # NO price <=97¢ (i.e., YES price >=3¢)
+SAFE_NO_MIN_NO_PRICE = 0.90   # NO price >=90¢ (don't buy if too cheap — something's wrong)
+SAFE_NO_MIN_RETURN = 0.02     # >=2% return (buy at 97¢, get $1 = 3.1% return)
+SAFE_NO_MIN_CONFIDENCE = 60   # confidence >=60
+
 # Anti-false-positive: skip if models disagree by more than this
 MAX_MODEL_DISAGREEMENT = 3.0  # degrees C
 
