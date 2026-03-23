@@ -1216,35 +1216,49 @@
             }
             // YES bet — parse band to check if forecast is actually in it
             const bandStr = o.band_c || '';
-            const belowMatch = bandStr.match(/^<=?\s*([\d.]+)/);
-            const aboveMatch = bandStr.match(/^>=?\s*([\d.]+)/);
-            const rangeMatch = bandStr.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
+            const belowMatch = bandStr.match(/^<=?\s*(-?[\d.]+)/);
+            const aboveMatch = bandStr.match(/^>=?\s*(-?[\d.]+)/);
+            const rangeMatch = bandStr.match(/(-?[\d.]+)\s*[-–]\s*(-?[\d.]+)/);
+            const singleMatch = bandStr.match(/^(-?\d+)C$/);  // "16C" single-degree band
             let explanation = '';
             if (belowMatch) {
               const thresh = parseFloat(belowMatch[1]);
               if (o.forecast_c <= thresh) {
                 explanation = `forecast <strong>${fc}°C</strong> is at or below the <strong>${band}</strong> threshold`;
               } else {
-                explanation = `forecast <strong>${fc}°C</strong> is above the <strong>${band}</strong> threshold, but model still gives`;
+                explanation = `forecast <strong>${fc}°C</strong> is above <strong>${band}</strong>, but model gives`;
               }
             } else if (aboveMatch) {
               const thresh = parseFloat(aboveMatch[1]);
               if (o.forecast_c >= thresh) {
                 explanation = `forecast <strong>${fc}°C</strong> is at or above the <strong>${band}</strong> threshold`;
               } else {
-                explanation = `forecast <strong>${fc}°C</strong> is below the <strong>${band}</strong> threshold, but model still gives`;
+                explanation = `forecast <strong>${fc}°C</strong> is below <strong>${band}</strong>, but model gives`;
+              }
+            } else if (singleMatch) {
+              // Single-degree band: "16C" means 16.0-16.99°C
+              const bandVal = parseFloat(singleMatch[1]);
+              if (o.forecast_c >= bandVal && o.forecast_c < bandVal + 1) {
+                explanation = `forecast <strong>${fc}°C</strong> falls right in the <strong>${band}</strong> band`;
+              } else {
+                const dist = o.forecast_c < bandVal ? bandVal - o.forecast_c : o.forecast_c - (bandVal + 1);
+                if (dist < 1) {
+                  explanation = `forecast <strong>${fc}°C</strong> is close to the <strong>${band}</strong> band`;
+                } else {
+                  explanation = `forecast <strong>${fc}°C</strong> is ${dist.toFixed(1)}° from the <strong>${band}</strong> band, but model gives`;
+                }
               }
             } else if (rangeMatch) {
               const lo = parseFloat(rangeMatch[1]);
               const hi = parseFloat(rangeMatch[2]);
-              if (o.forecast_c >= lo && o.forecast_c <= hi) {
+              if (o.forecast_c >= lo && o.forecast_c < hi) {
                 explanation = `forecast <strong>${fc}°C</strong> falls right in the <strong>${band}</strong> band`;
               } else {
                 const dist = o.forecast_c < lo ? lo - o.forecast_c : o.forecast_c - hi;
                 if (dist <= 2) {
                   explanation = `forecast <strong>${fc}°C</strong> is close to the <strong>${band}</strong> band`;
                 } else {
-                  explanation = `forecast <strong>${fc}°C</strong> is near enough the <strong>${band}</strong> band for a`;
+                  explanation = `forecast <strong>${fc}°C</strong> is ${dist.toFixed(1)}° from the <strong>${band}</strong> band, but model gives`;
                 }
               }
             } else {
