@@ -1240,6 +1240,7 @@
 
       <div class="card-meta">
         <span class="city">${esc(o.city)}</span>
+        ${o.icao ? '<span class="sep">·</span><span class="detail" style="font-family:var(--mono);color:var(--cyan)">' + esc(o.icao) + '</span>' : ''}
         <span class="sep">·</span>
         <span class="detail">${tierLabel}</span>
         <span class="sep">·</span>
