@@ -411,6 +411,8 @@ def liquidity_adjusted_kelly(prob, price, order_book, gamma_liquidity=0, gamma_v
         "cap_reason": "kelly",
         "gamma_liquidity": round(gamma_liquidity, 2),
         "gamma_volume": round(gamma_volume, 2),
+        "size_ladder": [],
+        "total_depth_usd": 0,
     }
 
     if not order_book or not order_book.get("asks"):
