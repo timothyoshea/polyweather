@@ -87,49 +87,75 @@ DETERMINISTIC_MODELS = [
     "meteofrance_seamless",
 ]
 
-# ── City Geo Data (lat, lng, timezone) ───────────────────────────────────────
+# ── City Geo Data — EXACT AIRPORT STATION COORDINATES ────────────────────────
+# Polymarket resolves temperatures against specific ICAO weather stations
+# (usually major airports). Using city-centre coords can be 1-2°C off.
+# ICAO codes confirmed from Polymarket market description fields (Wunderground URLs).
+# Format: (lat, lng, timezone, icao_code)
 
 CITY_GEO = {
-    "London":       ( 51.5074,  -0.1278,  "Europe/London"),
-    "Paris":        ( 48.8566,   2.3522,  "Europe/Paris"),
-    "Berlin":       ( 52.5200,  13.4050,  "Europe/Berlin"),
-    "Madrid":       ( 40.4168,  -3.7038,  "Europe/Madrid"),
-    "Warsaw":       ( 52.2297,  21.0122,  "Europe/Warsaw"),
-    "Vienna":       ( 48.2082,  16.3738,  "Europe/Vienna"),
-    "Amsterdam":    ( 52.3676,   4.9041,  "Europe/Amsterdam"),
-    "Stockholm":    ( 59.3293,  18.0686,  "Europe/Stockholm"),
-    "Milan":        ( 45.4642,   9.1900,  "Europe/Rome"),
-    "Munich":       ( 48.1351,  11.5820,  "Europe/Berlin"),
-    "Ankara":       ( 39.9334,  32.8597,  "Europe/Istanbul"),
-    "Tel Aviv":     ( 32.0853,  34.7818,  "Asia/Jerusalem"),
-    "New York":     ( 40.7128, -74.0060,  "America/New_York"),
-    "NYC":          ( 40.7128, -74.0060,  "America/New_York"),
-    "Chicago":      ( 41.8781, -87.6298,  "America/Chicago"),
-    "Toronto":      ( 43.6532, -79.3832,  "America/Toronto"),
-    "Dallas":       ( 32.7767, -96.7970,  "America/Chicago"),
-    "Atlanta":      ( 33.7490, -84.3880,  "America/New_York"),
-    "Boston":       ( 42.3601, -71.0589,  "America/New_York"),
-    "Miami":        ( 25.7617, -80.1918,  "America/New_York"),
-    "Seattle":      ( 47.6062,-122.3321,  "America/Los_Angeles"),
-    "Sydney":       (-33.8688, 151.2093,  "Australia/Sydney"),
-    "Melbourne":    (-37.8136, 144.9631,  "Australia/Melbourne"),
-    "Wellington":   (-41.2865, 174.7762,  "Pacific/Auckland"),
-    "Tokyo":        ( 35.6762, 139.6503,  "Asia/Tokyo"),
-    "Seoul":        ( 37.5665, 126.9780,  "Asia/Seoul"),
-    "Shanghai":     ( 31.2304, 121.4737,  "Asia/Shanghai"),
-    "Beijing":      ( 39.9042, 116.4074,  "Asia/Shanghai"),
-    "Hong Kong":    ( 22.3193, 114.1694,  "Asia/Hong_Kong"),
-    "Taipei":       ( 25.0330, 121.5654,  "Asia/Taipei"),
-    "Singapore":    (  1.3521, 103.8198,  "Asia/Singapore"),
-    "Chongqing":    ( 29.4316, 106.9123,  "Asia/Shanghai"),
-    "Chengdu":      ( 30.5728, 104.0668,  "Asia/Shanghai"),
-    "Wuhan":        ( 30.5928, 114.3055,  "Asia/Shanghai"),
-    "Shenzhen":     ( 22.5431, 114.0579,  "Asia/Shanghai"),
-    "Lucknow":      ( 26.8467,  80.9462,  "Asia/Kolkata"),
-    "Buenos Aires": (-34.6037, -58.3816,  "America/Argentina/Buenos_Aires"),
-    "Sao Paulo":    (-23.5505, -46.6333,  "America/Sao_Paulo"),
-    "Moscow":       ( 55.7558,  37.6173,  "Europe/Moscow"),
-    "Cape Town":    (-33.9249,  18.4241,  "Africa/Johannesburg"),
+    # ── Europe (confirmed from Polymarket) ──
+    "London":       ( 51.5053,   0.0553, "Europe/London",     "EGLC"),  # London City Airport
+    "Paris":        ( 49.0097,   2.5478, "Europe/Paris",      "LFPG"),  # Charles de Gaulle
+    "Madrid":       ( 40.4722,  -3.5611, "Europe/Madrid",     "LEMD"),  # Barajas
+    "Warsaw":       ( 52.1657,  20.9671, "Europe/Warsaw",     "EPWA"),  # Chopin Airport
+    "Milan":        ( 45.6306,   8.7231, "Europe/Rome",       "LIMC"),  # Malpensa
+    "Munich":       ( 48.3538,  11.7861, "Europe/Berlin",     "EDDM"),  # Munich Airport
+    "Ankara":       ( 40.1281,  32.9951, "Europe/Istanbul",   "LTAC"),  # Esenboga
+    # ── Europe (inferred — no active Polymarket market yet) ──
+    "Berlin":       ( 52.3514,  13.4939, "Europe/Berlin",     "EDDB"),  # Brandenburg
+    "Vienna":       ( 48.1103,  16.5697, "Europe/Vienna",     "LOWW"),  # Vienna Intl
+    "Amsterdam":    ( 52.3086,   4.7639, "Europe/Amsterdam",  "EHAM"),  # Schiphol
+    "Stockholm":    ( 59.6519,  17.9186, "Europe/Stockholm",  "ESSA"),  # Arlanda
+
+    # ── Middle East (confirmed) ──
+    "Tel Aviv":     ( 32.0114,  34.8867, "Asia/Jerusalem",    "LLBG"),  # Ben Gurion (NOAA source)
+
+    # ── North America (confirmed) ──
+    "New York":     ( 40.7772, -73.8726, "America/New_York",  "KLGA"),  # LaGuardia
+    "NYC":          ( 40.7772, -73.8726, "America/New_York",  "KLGA"),  # LaGuardia
+    "Chicago":      ( 41.9742, -87.9073, "America/Chicago",   "KORD"),  # O'Hare
+    "Toronto":      ( 43.6772, -79.6306, "America/Toronto",   "CYYZ"),  # Pearson
+    "Dallas":       ( 32.8471, -96.8518, "America/Chicago",   "KDAL"),  # Love Field
+    "Atlanta":      ( 33.6407, -84.4277, "America/New_York",  "KATL"),  # Hartsfield-Jackson
+    "Miami":        ( 25.7959, -80.2870, "America/New_York",  "KMIA"),  # Miami Intl
+    "Seattle":      ( 47.4502,-122.3088, "America/Los_Angeles","KSEA"), # Sea-Tac
+    # ── North America (inferred) ──
+    "Boston":       ( 42.3656, -71.0096, "America/New_York",  "KBOS"),  # Logan
+    # ── North America (new cities found in active markets) ──
+    "Austin":       ( 30.1975, -97.6664, "America/Chicago",   "KAUS"),  # Bergstrom
+    "Denver":       ( 39.8561,-104.6737, "America/Denver",    "KDEN"),  # Denver Intl
+    "Houston":      ( 29.6454, -95.2789, "America/Chicago",   "KHOU"),  # Hobby
+    "Los Angeles":  ( 33.9425,-118.4081, "America/Los_Angeles","KLAX"), # LAX
+    "San Francisco":( 37.6213,-122.3790, "America/Los_Angeles","KSFO"), # SFO
+
+    # ── Asia-Pacific (confirmed) ──
+    "Tokyo":        ( 35.5494, 139.7798, "Asia/Tokyo",        "RJTT"),  # Haneda
+    "Seoul":        ( 37.4602, 126.4407, "Asia/Seoul",        "RKSI"),  # Incheon
+    "Shanghai":     ( 31.1443, 121.8083, "Asia/Shanghai",     "ZSPD"),  # Pudong
+    "Beijing":      ( 40.0799, 116.6031, "Asia/Shanghai",     "ZBAA"),  # Capital Intl
+    "Hong Kong":    ( 22.3080, 113.9185, "Asia/Hong_Kong",    "VHHH"),  # HK Intl (HK Observatory source)
+    "Taipei":       ( 25.0777, 121.2325, "Asia/Taipei",       "RCTP"),  # Taoyuan (NOAA source)
+    "Singapore":    (  1.3502, 103.9944, "Asia/Singapore",    "WSSS"),  # Changi
+    "Chongqing":    ( 29.7192, 106.6414, "Asia/Shanghai",     "ZUCK"),  # Jiangbei
+    "Chengdu":      ( 30.5785, 103.9471, "Asia/Shanghai",     "ZUUU"),  # Shuangliu
+    "Wuhan":        ( 30.7838, 114.2081, "Asia/Shanghai",     "ZHHH"),  # Tianhe
+    "Shenzhen":     ( 22.6393, 113.8107, "Asia/Shanghai",     "ZGSZ"),  # Bao'an
+    "Lucknow":      ( 26.7606,  80.8893, "Asia/Kolkata",      "VILK"),  # Chaudhary Charan Singh
+
+    # ── Oceania (confirmed) ──
+    "Wellington":   (-41.3272, 174.8053, "Pacific/Auckland",  "NZWN"),  # Wellington Intl
+    # ── Oceania (inferred) ──
+    "Sydney":       (-33.9461, 151.1772, "Australia/Sydney",  "YSSY"),  # Kingsford Smith
+    "Melbourne":    (-37.6733, 144.8433, "Australia/Melbourne","YMML"), # Tullamarine
+
+    # ── South America (confirmed) ──
+    "Buenos Aires": (-34.8222, -58.5358, "America/Argentina/Buenos_Aires", "SAEZ"),  # Ezeiza
+    "Sao Paulo":    (-23.4356, -46.4731, "America/Sao_Paulo", "SBGR"),  # Guarulhos
+
+    # ── Other (inferred) ──
+    "Moscow":       ( 55.9726,  37.4146, "Europe/Moscow",     "UUEE"),  # Sheremetyevo
+    "Cape Town":    (-33.9649,  18.6017, "Africa/Johannesburg","FACT"), # Cape Town Intl
 }
 
 CITY_NORMALIZE = {
