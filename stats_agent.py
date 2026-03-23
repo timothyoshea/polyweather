@@ -385,6 +385,15 @@ def evaluate_trade(side, prob, price, confidence, forecast_info, horizon_days,
                 dprint(f"  -> SKIP EDGE {side}: confidence {confidence} < {EDGE_MIN_CONFIDENCE}")
                 return None, False
 
+    # Safe NO check — high probability, low return, near-certain
+    if side == "NO":
+        if prob >= SAFE_NO_MIN_PROB and SAFE_NO_MIN_NO_PRICE <= price <= SAFE_NO_MAX_NO_PRICE:
+            safe_return = (1 - price) / price
+            if safe_return >= SAFE_NO_MIN_RETURN and confidence >= SAFE_NO_MIN_CONFIDENCE:
+                return "safe_no", True
+            else:
+                dprint(f"  -> SKIP SAFE_NO {side}: return={safe_return:.3f} conf={confidence}")
+
     return None, False
 
 
