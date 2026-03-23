@@ -88,6 +88,7 @@ def _run_scan(mode, tier1_only):
 
         sure_bets = [o for o in opps if o.get("bet_type") == "sure"]
         edge_bets = [o for o in opps if o.get("bet_type") == "edge"]
+        safe_no_bets = [o for o in opps if o.get("bet_type") == "safe_no"]
 
         with _lock:
             _state["status"] = "idle"
@@ -101,6 +102,7 @@ def _run_scan(mode, tier1_only):
                 "total": len(opps),
                 "sure_bets": len(sure_bets),
                 "edge_bets": len(edge_bets),
+                "safe_no_bets": len(safe_no_bets),
                 "scan_duration_seconds": scan_duration,
                 "opportunities": opps,
             }
