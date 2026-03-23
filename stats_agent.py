@@ -457,7 +457,7 @@ def rank_opportunities(signals):
     Sure bets first, then by a composite score of edge, confidence, and EV.
     """
     def sort_key(s):
-        type_rank = 0 if s.bet_type == "sure" else 1
+        type_rank = 0 if s.bet_type == "sure" else (2 if s.bet_type == "safe_no" else 1)
         # Composite: 40% confidence, 30% edge, 30% EV
         composite = 0.4 * (s.confidence / 100) + 0.3 * min(s.edge / 0.2, 1.0) + 0.3 * min(s.ev / 2.0, 1.0)
         return (type_rank, -composite)
