@@ -69,6 +69,14 @@ SAFE_NO_MIN_CONFIDENCE = 60   # confidence >=60
 # Anti-false-positive: skip if models disagree by more than this
 MAX_MODEL_DISAGREEMENT = 3.0  # degrees C
 
+# Liquidity / Position Sizing
+BANKROLL_USD = 100                    # default bankroll for Kelly sizing
+CLOB_API_BASE = "https://clob.polymarket.com"
+CLOB_TIMEOUT = 5                      # seconds
+LIQUIDITY_SAFETY_FACTOR = 0.4         # only use 40% of visible depth
+MIN_EDGE_AFTER_SLIPPAGE = 0.03        # 3pp minimum edge after impact
+MIN_LIQUIDITY_USD = 5.0               # skip if less than $5 fillable
+
 # ── Deterministic Models to Query ────────────────────────────────────────────
 
 DETERMINISTIC_MODELS = [
