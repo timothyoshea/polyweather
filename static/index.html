@@ -1346,7 +1346,9 @@
           const edgeColor = r.effective_edge_pp >= 5 ? 'var(--green)' : r.effective_edge_pp >= 2 ? 'var(--amber)' : 'var(--red)';
           const slipColor = r.slippage_cents < 1 ? 'var(--green)' : r.slippage_cents < 3 ? 'var(--amber)' : 'var(--red)';
           const filled = r.fully_filled ? '' : ' <span style="color:var(--red);font-size:10px;">partial</span>';
-          const xReturn = r.bet_usd > 0 ? (r.payout_usd / r.bet_usd).toFixed(1) : '0';
+          const profitPct = r.bet_usd > 0 ? (r.profit_usd / r.bet_usd * 100) : 0;
+          const returnStr = profitPct > 100 ? (r.payout_usd / r.bet_usd).toFixed(1) + 'x' : profitPct.toFixed(1) + '%';
+          const returnColor = profitPct > 50 ? 'var(--cyan)' : profitPct > 0 ? 'var(--green)' : 'var(--red)';
           return '<tr>' +
             '<td style="color:var(--text)">$' + r.target_usd + filled + '</td>' +
             '<td>' + r.vwap_cents.toFixed(1) + '¢</td>' +
@@ -1354,7 +1356,7 @@
             '<td style="color:' + edgeColor + '">' + r.effective_edge_pp.toFixed(1) + 'pp</td>' +
             '<td>' + r.shares.toFixed(0) + '</td>' +
             '<td style="color:var(--green)">$' + r.profit_usd.toFixed(2) + '</td>' +
-            '<td style="color:var(--cyan)">' + xReturn + 'x</td>' +
+            '<td style="color:' + returnColor + '">' + returnStr + '</td>' +
             '</tr>';
         }).join('');
         return '<button class="model-toggle" onclick="toggleModels(\'' + ladderId + '\', this)">' +
