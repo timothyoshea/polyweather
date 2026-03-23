@@ -182,18 +182,17 @@ def scan():
 
             # Build display band
             if band_type == "below":
-                band_c = f"<={lo:.0f}C"
-                band_f = f"<={lo_f:.0f}F"
+                band_c = f"<={lo:.0f}°C"
+                band_f = f"<={lo_f:.0f}°F"
             elif band_type == "above":
-                band_c = f">={lo:.0f}C"
-                band_f = f">={lo_f:.0f}F"
+                band_c = f">={lo:.0f}°C"
+                band_f = f">={lo_f:.0f}°F"
             else:
-                # Single-degree C bands (hi = lo+1) display as "16°C" to match Polymarket
                 if abs(hi - lo - 1.0) < 0.01:
-                    band_c = f"{lo:.0f}C"
+                    band_c = f"{lo:.0f}°C"
                 else:
-                    band_c = f"{lo:.0f}-{hi:.0f}C"
-                band_f = f"{lo_f:.0f}-{hi_f:.0f}F"
+                    band_c = f"{lo:.0f}-{hi:.0f}°C"
+                band_f = f"{lo_f:.0f}-{hi_f:.0f}°F"
 
             dprint(f"CANDIDATE {city} {date_key} {band_c} "
                    f"fcst={forecast_temp:.1f}C YES={yes_price*100:.1f}c NO={no_price*100:.1f}c "
