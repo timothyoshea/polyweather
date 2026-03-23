@@ -1371,14 +1371,43 @@
             const band = esc(o.band_c);
             const myP = o.my_p.toFixed(1);
             const mktP = o.mkt_p.toFixed(1);
-            if (o.bet_type === 'safe_no') {
-              const safeRet = ((100 - o.mkt_p) / o.mkt_p * 100).toFixed(1);
-              return `<span class="bet-verdict safe">SAFE NO — forecast <strong>${fc}°C</strong> is far from <strong>${band}</strong> band. Near-certain <strong>${myP}%</strong> NO probability for a safe <strong>${safeRet}%</strong> return</span>`;
-            }
-            if (o.side === 'NO') {
-              const noProb = (100 - o.my_p).toFixed(1);
-              const noMkt = (100 - o.mkt_p).toFixed(1);
-              return `<span class="bet-verdict no">NO — forecast <strong>${fc}°C</strong> makes <strong>${band}</strong> band very unlikely. <strong>${noProb}%</strong> chance of NO, market prices at <strong>${noMkt}¢</strong></span>`;
+            if (o.bet_type === 'safe_no' || o.side === 'NO') {
+              const bt = o.band_type || '';
+              const bc = o.band_c || '';
+              // Check if forecast actually supports NO or if it's a contrarian bet
+              let forecastSupportsNo = false;
+              let reason = '';
+              if (bt === 'below') {
+                const m = bc.match(/([\d.]+)/);
+                const thresh = m ? parseFloat(m[1]) : 0;
+                forecastSupportsNo = o.forecast_c > thresh + 1;
+                reason = forecastSupportsNo
+                  ? `forecast <strong>${fc}°C</strong> is well above the <strong>${band}</strong> threshold`
+                  : `forecast <strong>${fc}°C</strong> is near the <strong>${band}</strong> threshold, but model uncertainty favours NO`;
+              } else if (bt === 'above') {
+                const m = bc.match(/([\d.]+)/);
+                const thresh = m ? parseFloat(m[1]) : 0;
+                forecastSupportsNo = o.forecast_c < thresh;
+                reason = forecastSupportsNo
+                  ? `forecast <strong>${fc}°C</strong> is below the <strong>${band}</strong> threshold`
+                  : `forecast <strong>${fc}°C</strong> is above <strong>${band}</strong>, but model uncertainty means <strong>${myP}%</strong> chance it drops below`;
+              } else {
+                // exact band
+                const sm = bc.match(/^(-?\d+)°C$/);
+                const rm = bc.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
+                let lo = 0, hi = 0;
+                if (sm) { lo = parseFloat(sm[1]); hi = lo + 1; }
+                else if (rm) { lo = parseFloat(rm[1]); hi = parseFloat(rm[2]); }
+                forecastSupportsNo = o.forecast_c < lo - 1 || o.forecast_c > hi + 1;
+                reason = forecastSupportsNo
+                  ? `forecast <strong>${fc}°C</strong> is far from the <strong>${band}</strong> band`
+                  : `forecast <strong>${fc}°C</strong> is near <strong>${band}</strong>, but model gives <strong>${myP}%</strong> chance it lands outside`;
+              }
+              if (o.bet_type === 'safe_no') {
+                const safeRet = ((100 - o.mkt_p) / o.mkt_p * 100).toFixed(1);
+                return `<span class="bet-verdict safe">SAFE NO — ${reason}. <strong>${myP}%</strong> NO probability for a safe <strong>${safeRet}%</strong> return</span>`;
+              }
+              return `<span class="bet-verdict no">NO — ${reason}. Market prices NO at <strong>${mktP}¢</strong></span>`;
             }
             // YES bet — parse band to check if forecast is actually in it
             const bandStr = o.band_c || '';
