@@ -1117,6 +1117,24 @@
     const mktW = (o.mkt_p / maxP * 100).toFixed(1);
     const modelW = (o.my_p / maxP * 100).toFixed(1);
 
+    // Liquidity data
+    const liq = o.liquidity || {};
+    const maxBet = liq.adjusted_bet_usd || 0;
+    const maxBetStr = maxBet > 0 ? `$${maxBet.toFixed(2)}` : '—';
+    const slipCents = liq.slippage_cents || 0;
+    const slipStr = slipCents > 0 ? `${slipCents.toFixed(1)}¢` : '0¢';
+    const liqRating = liq.liquidity_rating || 'UNKNOWN';
+
+    // Colors
+    const liqColor = liq.cap_reason === 'kelly' ? 'green' : 'amber';
+    const slipColor = slipCents < 1 ? 'green' : slipCents < 3 ? 'amber' : 'red';
+    const liqBadgeClass = {
+      'HIGH': 'badge-risk-low',
+      'MEDIUM': 'badge-risk-medium',
+      'LOW': 'badge-risk-high',
+      'UNKNOWN': 'badge-edge'
+    }[liqRating] || 'badge-edge';
+
     return `
     <div class="${cardClass}">
       <div class="card-header">
