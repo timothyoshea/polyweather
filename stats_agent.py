@@ -317,7 +317,7 @@ class TradeSignal:
             "band_c": self.band_c,
             "band_f": self.band_f,
             "band_type": self.band_type,
-            "forecast_c": round(fc["combined_forecast"], 1),
+            "forecast_c": round(fc["combined_forecast"], 2),
             "forecast_f": round(fc["combined_forecast"] * 9 / 5 + 32, 1),
             "my_p": round(self.prob * 100, 1),
             "empirical_p": round(self.empirical_prob * 100, 1) if self.empirical_prob is not None else None,
