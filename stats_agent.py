@@ -432,6 +432,7 @@ class TradeSignal:
             "market_slug": self.market_slug,
             "event_slug": self.event_slug,
             "price_src": self.price_src,
+            "liquidity_info": self.liquidity_info,
         }
 
 
