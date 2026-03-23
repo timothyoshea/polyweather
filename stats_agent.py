@@ -289,6 +289,10 @@ def liquidity_adjusted_kelly(prob, price, book, mkt_liq, mkt_vol):
         MIN_EDGE_AFTER_SLIPPAGE, MIN_LIQUIDITY_USD,
     )
 
+    raw_hk = half_kelly(prob, price)
+    raw_bet = BANKROLL_USD * raw_hk
+
+    # Defaults (UI-compatible fields)
     result = {
         "mkt_liquidity_usd": round(mkt_liq, 2),
         "mkt_volume_usd": round(mkt_vol, 2),
@@ -297,13 +301,28 @@ def liquidity_adjusted_kelly(prob, price, book, mkt_liq, mkt_vol):
         "vwap": None,
         "slippage": None,
         "edge_after_slippage": None,
-        "kelly_raw": half_kelly(prob, price),
+        "kelly_raw": raw_hk,
         "kelly_adj": 0.0,
         "stake_usd": 0.0,
         "skip_reason": None,
+        # UI-expected fields (defaults when no book data)
+        "adjusted_bet_usd": round(raw_bet, 2),
+        "effective_price": round(price, 4),
+        "slippage_cents": 0,
+        "effective_edge_pp": round((prob - price) * 100, 1),
+        "effective_ev": round(expected_value(prob, price), 3),
+        "liquidity_rating": "UNKNOWN",
+        "cap_reason": "kelly",
     }
 
     if book is None:
+        # Estimate rating from Gamma liquidity field
+        if mkt_liq > 500:
+            result["liquidity_rating"] = "HIGH"
+        elif mkt_liq > 50:
+            result["liquidity_rating"] = "MEDIUM"
+        elif mkt_liq > 0:
+            result["liquidity_rating"] = "LOW"
         result["skip_reason"] = "no_book"
         return result
 
@@ -416,7 +435,7 @@ class TradeSignal:
         self.event_slug = event_slug
         self.price_src = price_src
         self.empirical_prob = empirical_prob
-        self.liquidity_info = liquidity_info
+        self.liquidity_info = liquidity_info or {}
 
         self.edge = prob - price
         self.hk = half_kelly(prob, price)
