@@ -357,7 +357,30 @@ def liquidity_adjusted_kelly(prob, price, book, mkt_liq, mkt_vol):
     # Adjusted Kelly using VWAP as effective price
     kelly_adj = half_kelly(prob, vwap)
     result["kelly_adj"] = round(kelly_adj, 4)
-    result["stake_usd"] = round(BANKROLL_USD * kelly_adj * LIQUIDITY_SAFETY_FACTOR, 2)
+    stake = BANKROLL_USD * kelly_adj * LIQUIDITY_SAFETY_FACTOR
+    result["stake_usd"] = round(stake, 2)
+
+    # UI-expected fields
+    result["adjusted_bet_usd"] = round(stake, 2)
+    result["effective_price"] = round(vwap, 4)
+    result["slippage_cents"] = round(slippage * 100, 2)
+    result["effective_edge_pp"] = round(edge_after * 100, 1)
+    result["effective_ev"] = round(expected_value(prob, vwap), 3)
+
+    # Liquidity rating from fillable depth
+    total_depth = sum(p * s for p, s in book.get("asks", []))
+    if total_depth > 500:
+        result["liquidity_rating"] = "HIGH"
+    elif total_depth > 50:
+        result["liquidity_rating"] = "MEDIUM"
+    else:
+        result["liquidity_rating"] = "LOW"
+
+    # Cap reason
+    if stake < BANKROLL_USD * result["kelly_raw"]:
+        result["cap_reason"] = "order_book"
+    else:
+        result["cap_reason"] = "kelly"
 
     return result
 
