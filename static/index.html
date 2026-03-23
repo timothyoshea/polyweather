@@ -1189,10 +1189,59 @@
         <div class="the-bet-label">THE BET</div>
         <div class="the-bet-question">${esc(o.question)}</div>
         <div class="the-bet-action">
-          ${o.side === 'YES'
-            ? `<span class="bet-verdict yes">YES — forecast <strong>${o.forecast_c.toFixed(1)}°C</strong> is right in the <strong>${esc(o.band_c)}</strong> band</span>`
-            : `<span class="bet-verdict no">NO — forecast <strong>${o.forecast_c.toFixed(1)}°C</strong> is far from the <strong>${esc(o.band_c)}</strong> band</span>`
-          }
+          ${(() => {
+            const fc = o.forecast_c.toFixed(1);
+            const band = esc(o.band_c);
+            const myP = o.my_p.toFixed(1);
+            const mktP = o.mkt_p.toFixed(1);
+            if (o.bet_type === 'safe_no') {
+              const noProb = (100 - o.my_p).toFixed(1);
+              const ret = (100 / o.mkt_p).toFixed(1);
+              return `<span class="bet-verdict safe">SAFE NO — forecast <strong>${fc}°C</strong> is far from <strong>${band}</strong> band. Near-certain <strong>${noProb}%</strong> NO probability for a safe <strong>${ret}%</strong> return</span>`;
+            }
+            if (o.side === 'NO') {
+              const noProb = (100 - o.my_p).toFixed(1);
+              const noMkt = (100 - o.mkt_p).toFixed(1);
+              return `<span class="bet-verdict no">NO — forecast <strong>${fc}°C</strong> makes <strong>${band}</strong> band very unlikely. <strong>${noProb}%</strong> chance of NO, market prices at <strong>${noMkt}¢</strong></span>`;
+            }
+            // YES bet — parse band to check if forecast is actually in it
+            const bandStr = o.band_c || '';
+            const belowMatch = bandStr.match(/^<=?\s*([\d.]+)/);
+            const aboveMatch = bandStr.match(/^>=?\s*([\d.]+)/);
+            const rangeMatch = bandStr.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
+            let explanation = '';
+            if (belowMatch) {
+              const thresh = parseFloat(belowMatch[1]);
+              if (o.forecast_c <= thresh) {
+                explanation = `forecast <strong>${fc}°C</strong> is at or below the <strong>${band}</strong> threshold`;
+              } else {
+                explanation = `forecast <strong>${fc}°C</strong> is above the <strong>${band}</strong> threshold, but model still gives`;
+              }
+            } else if (aboveMatch) {
+              const thresh = parseFloat(aboveMatch[1]);
+              if (o.forecast_c >= thresh) {
+                explanation = `forecast <strong>${fc}°C</strong> is at or above the <strong>${band}</strong> threshold`;
+              } else {
+                explanation = `forecast <strong>${fc}°C</strong> is below the <strong>${band}</strong> threshold, but model still gives`;
+              }
+            } else if (rangeMatch) {
+              const lo = parseFloat(rangeMatch[1]);
+              const hi = parseFloat(rangeMatch[2]);
+              if (o.forecast_c >= lo && o.forecast_c <= hi) {
+                explanation = `forecast <strong>${fc}°C</strong> falls right in the <strong>${band}</strong> band`;
+              } else {
+                const dist = o.forecast_c < lo ? lo - o.forecast_c : o.forecast_c - hi;
+                if (dist <= 2) {
+                  explanation = `forecast <strong>${fc}°C</strong> is close to the <strong>${band}</strong> band`;
+                } else {
+                  explanation = `forecast <strong>${fc}°C</strong> is near enough the <strong>${band}</strong> band for a`;
+                }
+              }
+            } else {
+              explanation = `forecast <strong>${fc}°C</strong> targets the <strong>${band}</strong> band`;
+            }
+            return `<span class="bet-verdict yes">YES — ${explanation}. Model gives <strong>${myP}%</strong> chance, market only prices <strong>${mktP}¢</strong></span>`;
+          })()}
         </div>
         <div class="the-bet-payout">
           Buy at <strong>${o.mkt_p.toFixed(1)}¢</strong> → pays <strong>$1.00</strong> if correct
