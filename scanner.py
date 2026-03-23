@@ -40,6 +40,7 @@ from stats_agent import (
     evaluate_trade,
     check_model_agreement,
     half_kelly,
+    liquidity_adjusted_kelly,
     TradeSignal,
     assess_risk,
     rank_opportunities,
