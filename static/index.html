@@ -1234,6 +1234,32 @@
       </div>
       ` : ''}
 
+      ${(() => {
+        const ladder = (liq.size_ladder || []);
+        if (!ladder.length) return '';
+        const ladderId = 'ladder-' + Math.random().toString(36).slice(2, 9);
+        const rows = ladder.map(r => {
+          const edgeColor = r.effective_edge_pp >= 5 ? 'var(--green)' : r.effective_edge_pp >= 2 ? 'var(--amber)' : 'var(--red)';
+          const slipColor = r.slippage_cents < 1 ? 'var(--green)' : r.slippage_cents < 3 ? 'var(--amber)' : 'var(--red)';
+          const filled = r.fully_filled ? '' : ' <span style="color:var(--red);font-size:10px;">partial</span>';
+          return '<tr>' +
+            '<td style="color:var(--text)">$' + r.target_usd + filled + '</td>' +
+            '<td>' + r.vwap_cents.toFixed(1) + '¢</td>' +
+            '<td style="color:' + slipColor + '">' + r.slippage_cents.toFixed(1) + '¢</td>' +
+            '<td style="color:' + edgeColor + '">' + r.effective_edge_pp.toFixed(1) + 'pp</td>' +
+            '<td>' + r.shares.toFixed(0) + '</td>' +
+            '<td style="color:var(--green)">$' + r.profit_usd.toFixed(2) + '</td>' +
+            '</tr>';
+        }).join('');
+        return '<button class="model-toggle" onclick="toggleModels(\'' + ladderId + '\', this)">' +
+          '<span class="arrow">▶</span> Size Options — bet size vs slippage (depth: $' + (liq.total_depth_usd || 0).toFixed(0) + ')' +
+          '</button>' +
+          '<div class="model-values" id="' + ladderId + '">' +
+          '<table class="size-ladder">' +
+          '<thead><tr><th>Bet</th><th>Avg Price</th><th>Slippage</th><th>Edge</th><th>Shares</th><th>Profit if ✓</th></tr></thead>' +
+          '<tbody>' + rows + '</tbody></table></div>';
+      })()}
+
       <div class="the-bet">
         <div class="the-bet-label">THE BET</div>
         <div class="the-bet-question">${esc(o.question)}</div>
