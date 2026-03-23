@@ -1117,6 +1117,8 @@
     const type = document.getElementById('filter-type').value;
     const side = document.getElementById('filter-side').value;
 
+    const tier1Only = document.getElementById('chk-tier1').checked;
+    if (tier1Only) opps = opps.filter(o => o.city_tier === 1);
     if (city) opps = opps.filter(o => o.city === city);
     if (risk) opps = opps.filter(o => o.risk === risk);
     if (type) opps = opps.filter(o => o.bet_type === type);
