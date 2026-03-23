@@ -1254,8 +1254,10 @@
           })()}
         </div>
         <div class="the-bet-payout">
-          Buy at <strong>${o.mkt_p.toFixed(1)}¢</strong> → pays <strong>$1.00</strong> if correct
-          <span class="the-bet-return">(${(100 / o.mkt_p).toFixed(0)}x return)</span>
+          ${o.bet_type === 'safe_no'
+            ? `Buy NO at <strong>${o.mkt_p.toFixed(1)}¢</strong> → collect <strong>$1.00</strong> = <span class="the-bet-return">${((100 - o.mkt_p) / o.mkt_p * 100).toFixed(1)}% return</span>`
+            : `Buy at <strong>${o.mkt_p.toFixed(1)}¢</strong> → pays <strong>$1.00</strong> if correct <span class="the-bet-return">(${(100 / o.mkt_p).toFixed(0)}x return)</span>`
+          }
         </div>
       </div>
 
