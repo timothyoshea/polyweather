@@ -153,6 +153,32 @@ def print_results(opps):
         for i, o in enumerate(edge_bets, 1):
             print_opp(i, o, is_sure=False)
 
+    if safe_no_bets:
+        print(f"  {'_' * 68}")
+        print(f"  SAFE NO BETS -- {len(safe_no_bets)} near-certain small-profit plays "
+              f"(>={SAFE_NO_MIN_PROB*100:.0f}% prob, >={SAFE_NO_MIN_CONFIDENCE} conf)")
+        print(f"  {'_' * 68}\n")
+        for i, o in enumerate(safe_no_bets, 1):
+            no_price = o['mkt_p'] / 100
+            safe_return = (1 - no_price) / no_price * 100
+            print(f"  SAFE_NO  #{i}")
+            print(f"  City         : {o['city']}  (Tier{o['city_tier']}, {o['horizon_days']}d out)")
+            print(f"  Date         : {o['date']}")
+            print(f"  Band         : {o['band_c']}  ({o['band_f']})")
+            print(f"  Forecast     : {o['forecast_c']}C / {o['forecast_f']}F")
+            print(f"  NO Price     : {o['mkt_p']}c  ->  Model: {o['my_p']}%")
+            print(f"  Return       : {safe_return:.1f}% (buy at {o['mkt_p']}c, collect $1)")
+            print(f"  Confidence   : {o['confidence']}/100")
+            print()
+            print(f"  >>> TRADE: Buy NO on \"{o['question']}\"")
+            print(f"      at {o['mkt_p']}c per share = {safe_return:.1f}% return")
+            print()
+            print(f"  Link         : {polymarket_url(o)}")
+            print(f"  Token ID     : {o['token_id']}")
+            print()
+            print(f"  {'_' * 68}")
+            print()
+
     print(div)
     best = opps[0]
     print(f"  SUMMARY: {len(opps)} trade{'s' if len(opps) != 1 else ''} "
