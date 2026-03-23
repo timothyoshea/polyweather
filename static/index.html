@@ -1247,6 +1247,7 @@
         <span class="detail">${horizonLabel}</span>
       </div>
       <div class="card-date">${dateStr}</div>
+      ${o.station_name ? '<div style="font-size:12px;color:var(--text2);margin-bottom:10px;">📍 Resolves at: <span style="color:var(--cyan)">' + esc(o.station_name) + '</span> (' + esc(o.icao) + ')</div>' : ''}
 
       <div class="forecast-row">
         <div class="forecast-item">
