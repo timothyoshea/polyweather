@@ -1310,6 +1310,7 @@
             ? `Buy NO at <strong>${o.mkt_p.toFixed(1)}¢</strong> → collect <strong>$1.00</strong> = <span class="the-bet-return">${((100 - o.mkt_p) / o.mkt_p * 100).toFixed(1)}% return</span>`
             : `Buy at <strong>${o.mkt_p.toFixed(1)}¢</strong> → pays <strong>$1.00</strong> if correct <span class="the-bet-return">(${(100 / o.mkt_p).toFixed(0)}x return)</span>`
           }
+          ${liq.slippage_cents > 0 ? `<br><span style="color:var(--text2);font-size:12px;">After slippage: effective price ${(liq.effective_price * 100).toFixed(1)}¢ (edge ${liq.effective_edge_pp}pp)</span>` : ''}
         </div>
       </div>
 
