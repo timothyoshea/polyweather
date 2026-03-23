@@ -1368,6 +1368,39 @@
           '<tbody>' + rows + '</tbody></table></div>';
       })()}
 
+      ${(() => {
+        const levels = (liq.book_levels || []);
+        if (!levels.length) return '';
+        const bookId = 'book-' + Math.random().toString(36).slice(2, 9);
+        const totalShares = levels.reduce((s, l) => s + l.shares, 0);
+        const totalCost = levels.reduce((s, l) => s + l.cost_usd, 0);
+        const goodLevels = levels.filter(l => l.edge_pp > 0);
+        const goodCost = goodLevels.reduce((s, l) => s + l.cost_usd, 0);
+        const goodProfit = goodLevels.reduce((s, l) => s + l.profit_if_win, 0);
+        const rows = levels.map(l => {
+          const edgeColor = l.edge_pp >= 5 ? 'var(--green)' : l.edge_pp >= 0 ? 'var(--amber)' : 'var(--red)';
+          const barW = Math.min(l.shares / (totalShares * 0.3) * 100, 100);
+          return '<tr>' +
+            '<td style="color:var(--text)">' + l.price_cents.toFixed(1) + '¢</td>' +
+            '<td>' + l.implied_prob.toFixed(1) + '%</td>' +
+            '<td style="color:' + edgeColor + '">' + (l.edge_pp >= 0 ? '+' : '') + l.edge_pp.toFixed(1) + 'pp</td>' +
+            '<td>' + l.shares.toFixed(0) + '</td>' +
+            '<td>$' + l.cost_usd.toFixed(2) + '</td>' +
+            '<td>$' + l.cum_cost_usd.toFixed(2) + '</td>' +
+            '<td style="color:var(--green)">$' + l.profit_if_win.toFixed(2) + '</td>' +
+            '<td><div style="height:8px;width:' + barW.toFixed(0) + '%;background:' + edgeColor + ';border-radius:4px;min-width:2px"></div></td>' +
+            '</tr>';
+        }).join('');
+        return '<button class="model-toggle" onclick="toggleModels(\'' + bookId + '\', this)">' +
+          '<span class="arrow">▶</span> Order Book — ' + levels.length + ' price levels' +
+          (goodLevels.length ? ' (' + goodLevels.length + ' with +edge, $' + goodCost.toFixed(0) + ' available, $' + goodProfit.toFixed(0) + ' profit if ✓)' : '') +
+          '</button>' +
+          '<div class="model-values" id="' + bookId + '">' +
+          '<table class="size-ladder">' +
+          '<thead><tr><th>Price</th><th>Mkt Prob</th><th>Edge</th><th>Shares</th><th>Cost</th><th>Cum. Cost</th><th>Profit if ✓</th><th>Depth</th></tr></thead>' +
+          '<tbody>' + rows + '</tbody></table></div>';
+      })()}
+
       <div class="the-bet">
         <div class="the-bet-label">THE BET</div>
         <div class="the-bet-question">${esc(o.question)}</div>
