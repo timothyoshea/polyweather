@@ -168,6 +168,8 @@ CITY_NORMALIZE = {
     "hong kong": "Hong Kong",
     "buenos aires": "Buenos Aires",
     "cape town": "Cape Town",
+    "los angeles": "Los Angeles",
+    "san francisco": "San Francisco",
 }
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
