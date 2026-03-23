@@ -132,9 +132,10 @@ def print_results(opps):
 
     sure_bets = [o for o in opps if o.get("bet_type") == "sure"]
     edge_bets = [o for o in opps if o.get("bet_type") == "edge"]
+    safe_no_bets = [o for o in opps if o.get("bet_type") == "safe_no"]
 
     print(f"\n  {len(opps)} opportunit{'y' if len(opps) == 1 else 'ies'} "
-          f"({len(sure_bets)} sure, {len(edge_bets)} edge)\n")
+          f"({len(sure_bets)} sure, {len(edge_bets)} edge, {len(safe_no_bets)} safe_no)\n")
 
     if sure_bets:
         print(f"  {'_' * 68}")
