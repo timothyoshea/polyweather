@@ -372,7 +372,7 @@ class TradeSignal:
     def __init__(self, side, bet_type, prob, price, token_id, city, date_key,
                  band_c, band_f, band_type, forecast_info, confidence,
                  horizon_days, eff_std, question, condition_id, market_slug,
-                 event_slug, price_src, empirical_prob=None):
+                 event_slug, price_src, empirical_prob=None, liquidity_info=None):
         self.side = side
         self.bet_type = bet_type
         self.prob = prob
