@@ -988,6 +988,8 @@
     currentMode = m;
     document.getElementById('btn-tomorrow').classList.toggle('active', m === 'tomorrow');
     document.getElementById('btn-all').classList.toggle('active', m !== 'tomorrow');
+    // Trigger a new scan with the new mode
+    scan();
   }
 
   // ── Scan ─────────────────────────────────────
