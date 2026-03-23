@@ -670,6 +670,33 @@
 
   .model-chip .val { color: var(--text); }
 
+  /* ── Size Ladder Table ────────────────────── */
+  .size-ladder {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 12px;
+    margin-top: 8px;
+  }
+  .size-ladder th {
+    text-align: left;
+    color: var(--text2);
+    font-weight: 500;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 4px 8px 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .size-ladder td {
+    padding: 5px 8px;
+    color: var(--text2);
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  .size-ladder tbody tr:hover {
+    background: rgba(255,255,255,0.03);
+  }
+
   /* ── The Bet (prominent trade explanation) ──── */
   .the-bet {
     margin-top: 16px;
