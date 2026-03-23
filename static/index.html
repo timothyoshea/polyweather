@@ -1196,12 +1196,12 @@
             <span class="price-cell-value">${o.empirical_p != null ? o.empirical_p.toFixed(1) + '%' : '—'}</span>
           </div>
           <div class="price-cell">
-            <span class="price-cell-label">Max Safe Bet</span>
+            <span class="price-cell-label">Recommended</span>
             <span class="price-cell-value ${liqColor}">${maxBetStr}</span>
           </div>
           <div class="price-cell">
-            <span class="price-cell-label">Slippage</span>
-            <span class="price-cell-value ${slipColor}">${slipStr}</span>
+            <span class="price-cell-label">Market Depth</span>
+            <span class="price-cell-value">${liq.total_depth_usd ? '$' + liq.total_depth_usd.toFixed(0) : '—'}</span>
           </div>
           <div class="price-cell">
             <span class="price-cell-label">Liquidity</span>
