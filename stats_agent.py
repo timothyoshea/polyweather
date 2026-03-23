@@ -393,6 +393,7 @@ class TradeSignal:
         self.event_slug = event_slug
         self.price_src = price_src
         self.empirical_prob = empirical_prob
+        self.liquidity_info = liquidity_info
 
         self.edge = prob - price
         self.hk = half_kelly(prob, price)
