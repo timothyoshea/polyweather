@@ -55,7 +55,7 @@ SURE_BET_MIN_CONFIDENCE = 70      # confidence score >=70
 
 # Edge Bet criteria
 EDGE_MIN_PROB       = 0.10
-EDGE_MAX_PRICE      = 0.06
+EDGE_MAX_PRICE      = 0.55        # allow bets up to 55c (was 6c — way too restrictive)
 EDGE_MIN_EDGE       = 0.05        # >=5pp edge
 EDGE_MIN_CONFIDENCE = 50
 
