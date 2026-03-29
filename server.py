@@ -10,6 +10,7 @@ Endpoints:
     GET /api/scan      — returns scanner results (JSON)
     GET /api/status    — returns scanner status + progress
 """
+import io
 import sys
 import time as _time
 import threading
