@@ -147,6 +147,67 @@
   .scan-btn:active { transform: translateY(0); }
   .scan-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 
+  .log-btn {
+    background: none;
+    border: 1px solid var(--card-border);
+    color: var(--text2);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .log-btn:hover { border-color: #444; color: var(--text); }
+  .log-btn.active { background: rgba(79, 195, 247, 0.15); border-color: var(--cyan); color: var(--cyan); }
+
+  .log-panel {
+    display: none;
+    background: #0d0d14;
+    border-top: 1px solid var(--card-border);
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 16px 24px;
+  }
+  .log-panel.open { display: block; }
+  .log-panel pre {
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text2);
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin: 0;
+  }
+  .log-panel .log-empty {
+    color: #555;
+    font-style: italic;
+  }
+  .log-panel .log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .log-panel .log-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .log-panel .log-copy-btn {
+    background: none;
+    border: 1px solid var(--card-border);
+    color: var(--text2);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: var(--sans);
+  }
+  .log-panel .log-copy-btn:hover { border-color: #444; color: var(--text); }
+
   /* ── Status Bar ─────────────────────────────── */
   .status-bar {
     display: flex;
