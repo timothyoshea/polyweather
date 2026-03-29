@@ -192,6 +192,12 @@ def api_scan():
     return jsonify({"status": "scanning", "progress_phase": "starting"})
 
 
+@app.route("/api/log")
+def api_log():
+    with _lock:
+        return jsonify({"log": _state["scan_log"]})
+
+
 @app.route("/api/status")
 def api_status():
     with _lock:
