@@ -1619,6 +1619,39 @@
       </div>`;
   }
 
+  // ── Log Panel ────────────────────────────────
+  function toggleLog() {
+    const panel = document.getElementById('log-panel');
+    const btn = document.getElementById('log-btn');
+    const isOpen = panel.classList.toggle('open');
+    btn.classList.toggle('active', isOpen);
+    if (isOpen) fetchLog();
+  }
+
+  async function fetchLog() {
+    try {
+      const resp = await fetch('/api/log');
+      const data = await resp.json();
+      const el = document.getElementById('log-content');
+      if (data.log && data.log.trim()) {
+        el.textContent = data.log;
+      } else {
+        el.innerHTML = '<span class="log-empty">No scan log yet. Run a scan to see debug output.</span>';
+      }
+    } catch (e) {
+      document.getElementById('log-content').textContent = 'Failed to fetch log: ' + e.message;
+    }
+  }
+
+  function copyLog() {
+    const text = document.getElementById('log-content').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.querySelector('.log-copy-btn');
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+    });
+  }
+
   // ── Error State ──────────────────────────────
   function showError(msg) {
     document.getElementById('content').innerHTML = `
