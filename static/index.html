@@ -1084,6 +1084,8 @@
       applyFilters();
       const ts = new Date(data.timestamp);
       setStatus('done', `Last scanned: ${ts.toLocaleTimeString()}`);
+      // Refresh log if panel is open
+      if (document.getElementById('log-panel').classList.contains('open')) fetchLog();
     } catch (err) {
       showError(err.message || 'Scan failed');
       setStatus('error', 'Scan failed');
