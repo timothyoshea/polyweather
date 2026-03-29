@@ -962,9 +962,20 @@
       <button class="scan-btn" id="scan-btn" onclick="scan()">
         Scan Now
       </button>
+      <button class="log-btn" id="log-btn" onclick="toggleLog()">
+        Scan Log
+      </button>
     </div>
   </div>
 </header>
+
+<div class="log-panel" id="log-panel">
+  <div class="log-header">
+    <span class="log-title">Scan Log</span>
+    <button class="log-copy-btn" onclick="copyLog()">Copy</button>
+  </div>
+  <pre id="log-content"><span class="log-empty">No scan log yet. Run a scan to see debug output.</span></pre>
+</div>
 
 <!-- ── TODO Banner ─────────────────────────────── -->
 <div style="background:linear-gradient(90deg,rgba(255,193,7,0.08),rgba(255,152,0,0.05));border-bottom:1px solid rgba(255,193,7,0.2);padding:10px 24px;display:flex;align-items:center;gap:10px;font-size:13px;color:#ffc107;">
