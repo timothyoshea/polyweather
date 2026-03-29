@@ -67,7 +67,7 @@ SAFE_NO_MIN_RETURN = 0.02     # >=2% return (buy at 97¢, get $1 = 3.1% return)
 SAFE_NO_MIN_CONFIDENCE = 60   # confidence >=60
 
 # Anti-false-positive: skip if models disagree by more than this
-MAX_MODEL_DISAGREEMENT = 3.0  # degrees C
+MAX_MODEL_DISAGREEMENT = 5.0  # degrees C (was 3.0 — too strict, filtered most cities)
 
 # Liquidity / Position Sizing
 BANKROLL_USD = 100                    # default bankroll for Kelly sizing
