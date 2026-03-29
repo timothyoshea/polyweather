@@ -69,8 +69,8 @@ def _run_scan(mode, tier1_only):
         # Set config flags before scanning
         config.TOMORROW = (mode == "tomorrow")
         config.TIER1_ONLY = tier1_only
-        config.JSON_OUT = True   # suppress print output
-        config.DEBUG = False
+        config.JSON_OUT = False  # allow print output so we capture it
+        config.DEBUG = True      # enable debug logging
 
         # Wire up progress callback
         set_progress_callback(_on_progress)
@@ -78,8 +78,21 @@ def _run_scan(mode, tier1_only):
         with _lock:
             _state["progress_phase"] = "fetching"
             _state["progress_done"] = 0
+            _state["scan_log"] = ""
 
-        opps = scan()
+        # Capture all stdout/stderr during the scan
+        log_buf = io.StringIO()
+        old_stdout, old_stderr = sys.stdout, sys.stderr
+        sys.stdout = log_buf
+        sys.stderr = log_buf
+
+        try:
+            opps = scan()
+        finally:
+            sys.stdout, sys.stderr = old_stdout, old_stderr
+
+        with _lock:
+            _state["scan_log"] = log_buf.getvalue()
         scan_duration = round(_time.time() - t0, 1)
 
         with _lock:
