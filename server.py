@@ -46,6 +46,8 @@ _state = {
     "progress_total": 0,
     "progress_city": "",
     "progress_phase": "",       # "fetching" | "analyzing"
+    # Scan log
+    "scan_log": "",
 }
 
 
