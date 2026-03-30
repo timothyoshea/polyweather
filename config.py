@@ -172,6 +172,8 @@ CITY_NORMALIZE = {
     "cape town": "Cape Town",
     "los angeles": "Los Angeles",
     "san francisco": "San Francisco",
+    "istanbul": "Istanbul",
+    "mexico city": "Mexico City",
 }
 
 # ── ICAO Station Names ───────────────────────────────────────────────────────
