@@ -283,8 +283,6 @@ def resolve_open_trades(supabase_url, supabase_service_key, city_geo):
     Returns:
         dict with resolved, won, lost, skipped counts
     """
-    import urllib.parse
-
     headers = {
         "apikey": supabase_service_key,
         "Authorization": f"Bearer {supabase_service_key}",
