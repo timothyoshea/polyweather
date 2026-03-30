@@ -1073,6 +1073,32 @@
   let allData = null;        // raw API response
   let allOpps = [];          // unfiltered opportunities
 
+  // Normalize opportunity data from Supabase (flatten forecast_details, add derived fields)
+  function normalizeOpps(rawOpps) {
+    return rawOpps.map(o => {
+      const fd = o.forecast_details || {};
+      return {
+        ...o,
+        city_tier: fd.city_tier || 2,
+        horizon_days: fd.horizon_days || 1,
+        combined_forecast: fd.combined_forecast || o.forecast_c,
+        ensemble_mean: fd.ensemble_mean,
+        ensemble_std: fd.ensemble_std,
+        ensemble_min: fd.ensemble_min,
+        ensemble_max: fd.ensemble_max,
+        multi_model_spread: fd.multi_model_spread,
+        eff_std: fd.eff_std,
+        forecast_f: o.forecast_c != null ? (o.forecast_c * 9/5 + 32) : null,
+        my_p: o.my_p || 0,
+        mkt_p: o.mkt_p || 0,
+        edge: o.edge || 0,
+        ev_per_dollar: o.ev_per_dollar || 0,
+        hk: o.half_kelly || 0,
+        confidence: o.confidence || 0,
+      };
+    });
+  }
+
   // ── Mode Toggle ──────────────────────────────
   function setMode(m) {
     currentMode = m;
