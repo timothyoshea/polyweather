@@ -5,6 +5,7 @@ from Open-Meteo. Uses 122 ensemble members across 3 models (ECMWF 51 + GFS 31 + 
 Handles rate limits gracefully: falls back to deterministic-only if ensemble API is throttled.
 Uses concurrent requests to speed up fetching.
 """
+import os
 import time
 import requests
 import numpy as np
@@ -13,6 +14,11 @@ from config import (
     FORECAST_DAYS, DETERMINISTIC_MODELS, CITY_GEO,
     dprint,
 )
+
+# Open-Meteo API key — uses commercial endpoint for higher rate limits
+OPEN_METEO_API_KEY = os.environ.get("OPEN_METEO_API_KEY", "")
+_FORECAST_BASE = f"https://customer-api.open-meteo.com/v1/forecast?apikey={OPEN_METEO_API_KEY}" if OPEN_METEO_API_KEY else "https://api.open-meteo.com/v1/forecast"
+_ENSEMBLE_BASE = f"https://customer-api.open-meteo.com/v1/ensemble?apikey={OPEN_METEO_API_KEY}" if OPEN_METEO_API_KEY else "https://ensemble-api.open-meteo.com/v1/ensemble"
 
 # Ensemble models to request and their internal API names + member counts
 ENSEMBLE_MODELS = {
