@@ -99,7 +99,7 @@ def scan():
         det_models = city_det.get(city, {}).get(date_key, {})
         ens_members = city_ens.get(city, {}).get(date_key, [])
 
-        forecast_info = compute_combined_forecast(det_models, ens_members)
+        forecast_info = compute_combined_forecast(det_models, ens_members, city=city)
         if forecast_info is None:
             dprint(f"SKIP no forecast data {city} {date_key}")
             continue
