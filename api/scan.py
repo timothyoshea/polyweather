@@ -137,7 +137,10 @@ class handler(BaseHTTPRequestHandler):
                 }).encode())
                 return
 
-            result = run_scan_and_save()
+            from urllib.parse import urlparse, parse_qs
+            params = parse_qs(urlparse(self.path).query)
+            mode = params.get("mode", ["all"])[0]
+            result = run_scan_and_save(mode)
 
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
