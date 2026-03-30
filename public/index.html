@@ -1435,7 +1435,10 @@
     }
     if (!opps.length) return;
 
-    el.innerHTML = '<div class="cards-grid">' + opps.map(renderCard).join('') + '</div>';
+    el.innerHTML = '<div class="cards-grid">' + opps.map(function(o, i) {
+      try { return renderCard(o); }
+      catch(e) { console.error('renderCard error on opp ' + i + ' (' + o.city + '):', e); return '<div class="trade-card" style="padding:20px;color:var(--red);">Error rendering ' + (o.city||'?') + ' ' + (o.band_c||'?') + ': ' + e.message + '</div>'; }
+    }).join('') + '</div>';
   }
 
   function renderCard(o) {
