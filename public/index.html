@@ -929,6 +929,113 @@
     .logo { font-size: 18px; }
   }
 
+  /* ── Nav Tabs ────────────────────────────────── */
+  .nav-tabs { display: flex; gap: 4px; }
+  .nav-tab {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    color: var(--text2);
+    padding: 6px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+  .nav-tab.active { background: var(--cyan); color: #000; border-color: var(--cyan); }
+  .nav-tab:hover:not(.active) { color: var(--text); border-color: var(--text2); }
+
+  /* ── Trading Dashboard ─────────────────────────── */
+  .trading-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    padding: 16px 24px;
+  }
+  .trading-stat-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+  }
+  .trading-stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text2);
+    margin-bottom: 6px;
+  }
+  .trading-stat-value {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 700;
+  }
+  .pnl-chart-wrap {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 0 24px 16px;
+  }
+  .breakdown-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 0 24px 16px;
+  }
+  .breakdown-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .breakdown-card h4 {
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .breakdown-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 13px;
+    font-family: var(--mono);
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  .trade-table-wrap {
+    padding: 0 24px 24px;
+    overflow-x: auto;
+  }
+  .trade-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    font-family: var(--mono);
+  }
+  .trade-table th {
+    text-align: left;
+    padding: 8px 6px;
+    color: var(--cyan);
+    text-transform: uppercase;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--card-border);
+    white-space: nowrap;
+  }
+  .trade-table td {
+    padding: 8px 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    white-space: nowrap;
+  }
+  .trade-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .badge-won { background: rgba(0,230,118,0.15); color: var(--green); }
+  .badge-lost { background: rgba(255,82,82,0.15); color: var(--red); }
+  .badge-open { background: rgba(79,195,247,0.15); color: var(--cyan); }
+
   /* Delay stagger for card animations */
   .trade-card:nth-child(1) { animation-delay: 0.02s; }
   .trade-card:nth-child(2) { animation-delay: 0.06s; }
