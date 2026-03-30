@@ -38,9 +38,8 @@ def compute_position_from_book_levels(liquidity):
     total_shares = 0.0
     for lv in positive_levels:
         cost = lv.get("cost_usd", 0)
-        price = lv.get("price", 0)
-        if price > 0 and cost > 0:
-            shares = cost / price
+        shares = lv.get("shares", 0)
+        if shares > 0 and cost > 0:
             total_cost += cost
             total_shares += shares
 
@@ -48,7 +47,7 @@ def compute_position_from_book_levels(liquidity):
         return None
 
     return {
-        "entry_price": round(total_cost / total_shares, 4),
+        "entry_price": round(total_cost / total_shares, 6),
         "total_cost_usd": round(total_cost, 2),
         "total_shares": round(total_shares, 2),
         "num_levels": len(positive_levels),
