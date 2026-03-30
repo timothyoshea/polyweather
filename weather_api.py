@@ -86,7 +86,7 @@ def fetch_ensemble_forecasts(lat, lng, timezone):
 
     models_str = ",".join(ENSEMBLE_MODELS.keys())
     try:
-        r = requests.get("https://ensemble-api.open-meteo.com/v1/ensemble", params={
+        r = requests.get(_ENSEMBLE_BASE, params={
             "latitude": lat,
             "longitude": lng,
             "daily": "temperature_2m_max",
