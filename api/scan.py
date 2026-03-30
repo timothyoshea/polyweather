@@ -22,7 +22,7 @@ sys.argv = ["scanner.py", "--json"]
 import config
 config.JSON_OUT = True
 config.TOMORROW = False  # scan all dates (tomorrow through 5 days out)
-config.DEBUG = False
+config.DEBUG = True  # temporarily enable for diagnostics
 
 from scanner import scan
 from output import polymarket_url
