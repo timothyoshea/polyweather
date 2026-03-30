@@ -50,8 +50,13 @@ def supabase_insert(table, rows):
 
 def run_scan_and_save():
     """Run the scanner and persist results to Supabase."""
+    import io, contextlib
     t0 = time.time()
-    opps = scan()
+    # Capture debug output
+    debug_buf = io.StringIO()
+    with contextlib.redirect_stdout(debug_buf):
+        opps = scan()
+    debug_log = debug_buf.getvalue()
     duration = round(time.time() - t0, 1)
 
     # Enrich with URLs
