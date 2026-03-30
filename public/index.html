@@ -2363,6 +2363,57 @@
     document.getElementById('snapshot-modal-body').innerHTML = '';
   }
 
+  async function loadPositionHistory(tradeId, containerId) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    if (el.innerHTML && el.innerHTML.indexOf('table') > -1) { el.innerHTML = ''; return; } // toggle
+    el.innerHTML = '<span style="color:var(--text2);font-size:12px;">Loading snapshots...</span>';
+    try {
+      const resp = await fetch('/api/trades?id=' + tradeId + '&snapshots=true');
+      const data = await resp.json();
+      const snaps = data.snapshots || [];
+      if (!snaps.length) { el.innerHTML = '<span style="color:var(--text2);font-size:12px;">No snapshots yet.</span>'; return; }
+
+      // Show each snapshot with timestamp and position size changes
+      var html = '<table style="width:100%;font-size:11px;font-family:var(--mono);margin:4px 0;">' +
+        '<tr style="color:var(--cyan);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;">' +
+        '<th style="padding:4px 6px;text-align:left;">Time</th>' +
+        '<th style="padding:4px 6px;text-align:right;">Edge Cost</th>' +
+        '<th style="padding:4px 6px;text-align:right;">Edge Shares</th>' +
+        '<th style="padding:4px 6px;text-align:right;">New Liq</th>' +
+        '<th style="padding:4px 6px;text-align:right;">Mkt Price</th>' +
+        '<th style="padding:4px 6px;text-align:right;">Model Prob</th>' +
+        '<th style="padding:4px 6px;text-align:right;">Edge</th>' +
+        '<th style="padding:4px 6px;text-align:right;">Conf</th>' +
+        '<th style="padding:4px 6px;text-align:right;">Depth</th></tr>';
+
+      var prevCost = 0;
+      snaps.forEach(function(s) {
+        var ts = s.created_at ? new Date(s.created_at).toLocaleString('en-GB', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '?';
+        var cost = s.positive_edge_cost_usd || 0;
+        var shares = s.positive_edge_shares || 0;
+        var diff = cost - prevCost;
+        var diffStr = diff > 1 ? '<span style="color:var(--green);">+$' + diff.toFixed(2) + '</span>' : (diff < -1 ? '<span style="color:var(--red);">-$' + Math.abs(diff).toFixed(2) + '</span>' : '<span style="color:var(--text2);">\u2014</span>');
+        var edgeColor = (s.edge || 0) >= 5 ? 'var(--green)' : 'var(--amber)';
+        html += '<tr style="border-bottom:1px solid rgba(255,255,255,0.03);">' +
+          '<td style="padding:4px 6px;color:var(--text2);">' + ts + '</td>' +
+          '<td style="padding:4px 6px;text-align:right;">$' + cost.toFixed(2) + '</td>' +
+          '<td style="padding:4px 6px;text-align:right;">' + shares.toFixed(0) + '</td>' +
+          '<td style="padding:4px 6px;text-align:right;">' + diffStr + '</td>' +
+          '<td style="padding:4px 6px;text-align:right;">' + (s.mkt_p != null ? s.mkt_p.toFixed(1) + '\u00A2' : '\u2014') + '</td>' +
+          '<td style="padding:4px 6px;text-align:right;">' + (s.my_p != null ? s.my_p.toFixed(1) + '%' : '\u2014') + '</td>' +
+          '<td style="padding:4px 6px;text-align:right;color:' + edgeColor + ';">' + (s.edge != null ? s.edge.toFixed(1) + 'pp' : '\u2014') + '</td>' +
+          '<td style="padding:4px 6px;text-align:right;">' + (s.confidence || '\u2014') + '</td>' +
+          '<td style="padding:4px 6px;text-align:right;">$' + (s.total_depth_usd || 0).toFixed(0) + '</td></tr>';
+        prevCost = cost;
+      });
+      html += '</table>';
+      el.innerHTML = html;
+    } catch(e) {
+      el.innerHTML = '<span style="color:var(--red);font-size:12px;">Error: ' + e.message + '</span>';
+    }
+  }
+
   // Store current trades for snapshot access
   var _currentTrades = [];
 </script>
