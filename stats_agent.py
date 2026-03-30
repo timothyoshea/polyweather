@@ -26,69 +26,50 @@ from config import (
 # FORECAST COMBINATION
 # ══════════════════════════════════════════════════════════════════════════════
 
-# Regional model weights — based on verified accuracy by geography
-# Keys are model names from Open-Meteo, values are relative weights (normalized at runtime)
-# ECMWF: best globally, especially Europe/Middle East/tropics
-# ICON: strong in Europe, good midlatitudes
-# GFS: strong in North America
-# GEM: strong in Canada/North America
-# MeteoFrance: strong in Western Europe/Mediterranean
-REGIONAL_MODEL_WEIGHTS = {
-    "europe": {
-        "ecmwf_ifs025": 0.30, "icon_seamless": 0.28, "meteofrance_seamless": 0.22,
-        "gfs_seamless": 0.12, "gem_seamless": 0.08,
-    },
-    "north_america": {
-        "gfs_seamless": 0.28, "ecmwf_ifs025": 0.28, "gem_seamless": 0.20,
-        "icon_seamless": 0.14, "meteofrance_seamless": 0.10,
-    },
-    "asia": {
-        "ecmwf_ifs025": 0.40, "icon_seamless": 0.20, "gfs_seamless": 0.20,
-        "gem_seamless": 0.10, "meteofrance_seamless": 0.10,
-    },
-    "south_america": {
-        "ecmwf_ifs025": 0.35, "gfs_seamless": 0.25, "icon_seamless": 0.20,
-        "gem_seamless": 0.10, "meteofrance_seamless": 0.10,
-    },
-    "oceania": {
-        "ecmwf_ifs025": 0.35, "gfs_seamless": 0.20, "icon_seamless": 0.20,
-        "gem_seamless": 0.15, "meteofrance_seamless": 0.10,
-    },
-    "middle_east": {
-        "ecmwf_ifs025": 0.40, "icon_seamless": 0.20, "gfs_seamless": 0.15,
-        "meteofrance_seamless": 0.15, "gem_seamless": 0.10,
-    },
-    "default": {
-        "ecmwf_ifs025": 0.30, "gfs_seamless": 0.20, "icon_seamless": 0.20,
-        "gem_seamless": 0.15, "meteofrance_seamless": 0.15,
-    },
+# Per-city model weights — derived from 60-day MAE verification (Jan-Mar 2026)
+# using Open-Meteo Previous Runs API (day-1 forecasts) vs Archive API (actuals)
+# at exact Polymarket ICAO station coordinates.
+# Weights = 1/MAE^2, normalized. Lower error = higher weight.
+CITY_MODEL_WEIGHTS = {
+    "Ankara": {"ecmwf_ifs025": 0.259, "gfs_seamless": 0.156, "icon_seamless": 0.123, "gem_seamless": 0.123, "meteofrance_seamless": 0.34},
+    "Atlanta": {"ecmwf_ifs025": 0.408, "gfs_seamless": 0.09, "icon_seamless": 0.289, "gem_seamless": 0.13, "meteofrance_seamless": 0.082},
+    "Austin": {"ecmwf_ifs025": 0.56, "gfs_seamless": 0.085, "icon_seamless": 0.214, "gem_seamless": 0.057, "meteofrance_seamless": 0.085},
+    "Beijing": {"ecmwf_ifs025": 0.586, "gfs_seamless": 0.179, "icon_seamless": 0.116, "gem_seamless": 0.047, "meteofrance_seamless": 0.073},
+    "Buenos Aires": {"ecmwf_ifs025": 0.629, "gfs_seamless": 0.022, "icon_seamless": 0.112, "gem_seamless": 0.132, "meteofrance_seamless": 0.105},
+    "Chicago": {"ecmwf_ifs025": 0.69, "gfs_seamless": 0.047, "icon_seamless": 0.133, "gem_seamless": 0.047, "meteofrance_seamless": 0.083},
+    "Dallas": {"ecmwf_ifs025": 0.526, "gfs_seamless": 0.068, "icon_seamless": 0.102, "gem_seamless": 0.137, "meteofrance_seamless": 0.166},
+    "Denver": {"ecmwf_ifs025": 0.42, "gfs_seamless": 0.131, "icon_seamless": 0.125, "gem_seamless": 0.178, "meteofrance_seamless": 0.146},
+    "Hong Kong": {"ecmwf_ifs025": 0.121, "gfs_seamless": 0.128, "icon_seamless": 0.27, "gem_seamless": 0.139, "meteofrance_seamless": 0.342},
+    "Houston": {"ecmwf_ifs025": 0.706, "gfs_seamless": 0.03, "icon_seamless": 0.12, "gem_seamless": 0.021, "meteofrance_seamless": 0.123},
+    "Istanbul": {"ecmwf_ifs025": 0.363, "gfs_seamless": 0.091, "icon_seamless": 0.223, "gem_seamless": 0.122, "meteofrance_seamless": 0.202},
+    "London": {"ecmwf_ifs025": 0.634, "gfs_seamless": 0.112, "icon_seamless": 0.066, "gem_seamless": 0.096, "meteofrance_seamless": 0.092},
+    "Los Angeles": {"ecmwf_ifs025": 0.048, "gfs_seamless": 0.329, "icon_seamless": 0.318, "gem_seamless": 0.184, "meteofrance_seamless": 0.12},
+    "Lucknow": {"ecmwf_ifs025": 0.661, "gfs_seamless": 0.011, "icon_seamless": 0.097, "gem_seamless": 0.087, "meteofrance_seamless": 0.144},
+    "Madrid": {"ecmwf_ifs025": 0.589, "gfs_seamless": 0.132, "icon_seamless": 0.093, "gem_seamless": 0.093, "meteofrance_seamless": 0.093},
+    "Mexico City": {"ecmwf_ifs025": 0.193, "gfs_seamless": 0.244, "icon_seamless": 0.073, "gem_seamless": 0.252, "meteofrance_seamless": 0.237},
+    "Miami": {"ecmwf_ifs025": 0.129, "gfs_seamless": 0.256, "icon_seamless": 0.229, "gem_seamless": 0.205, "meteofrance_seamless": 0.181},
+    "Milan": {"ecmwf_ifs025": 0.302, "gfs_seamless": 0.118, "icon_seamless": 0.302, "gem_seamless": 0.074, "meteofrance_seamless": 0.204},
+    "Munich": {"ecmwf_ifs025": 0.483, "gfs_seamless": 0.128, "icon_seamless": 0.139, "gem_seamless": 0.078, "meteofrance_seamless": 0.172},
+    "NYC": {"ecmwf_ifs025": 0.538, "gfs_seamless": 0.093, "icon_seamless": 0.133, "gem_seamless": 0.098, "meteofrance_seamless": 0.138},
+    "Paris": {"ecmwf_ifs025": 0.735, "gfs_seamless": 0.073, "icon_seamless": 0.068, "gem_seamless": 0.061, "meteofrance_seamless": 0.063},
+    "San Francisco": {"ecmwf_ifs025": 0.272, "gfs_seamless": 0.612, "icon_seamless": 0.034, "gem_seamless": 0.07, "meteofrance_seamless": 0.012},
+    "Sao Paulo": {"ecmwf_ifs025": 0.457, "gfs_seamless": 0.11, "icon_seamless": 0.232, "gem_seamless": 0.075, "meteofrance_seamless": 0.126},
+    "Seattle": {"ecmwf_ifs025": 0.367, "gfs_seamless": 0.143, "icon_seamless": 0.187, "gem_seamless": 0.13, "meteofrance_seamless": 0.172},
+    "Seoul": {"ecmwf_ifs025": 0.279, "gfs_seamless": 0.051, "icon_seamless": 0.102, "gem_seamless": 0.479, "meteofrance_seamless": 0.09},
+    "Shanghai": {"ecmwf_ifs025": 0.296, "gfs_seamless": 0.354, "icon_seamless": 0.087, "gem_seamless": 0.226, "meteofrance_seamless": 0.038},
+    "Singapore": {"ecmwf_ifs025": 0.099, "gfs_seamless": 0.213, "icon_seamless": 0.362, "gem_seamless": 0.273, "meteofrance_seamless": 0.053},
+    "Taipei": {"ecmwf_ifs025": 0.17, "gfs_seamless": 0.17, "icon_seamless": 0.209, "gem_seamless": 0.29, "meteofrance_seamless": 0.162},
+    "Tel Aviv": {"ecmwf_ifs025": 0.208, "gfs_seamless": 0.201, "icon_seamless": 0.159, "gem_seamless": 0.137, "meteofrance_seamless": 0.295},
+    "Tokyo": {"ecmwf_ifs025": 0.353, "gfs_seamless": 0.205, "icon_seamless": 0.159, "gem_seamless": 0.2, "meteofrance_seamless": 0.083},
+    "Toronto": {"ecmwf_ifs025": 0.716, "gfs_seamless": 0.071, "icon_seamless": 0.109, "gem_seamless": 0.061, "meteofrance_seamless": 0.043},
+    "Warsaw": {"ecmwf_ifs025": 0.672, "gfs_seamless": 0.079, "icon_seamless": 0.084, "gem_seamless": 0.079, "meteofrance_seamless": 0.086},
+    "Wellington": {"ecmwf_ifs025": 0.553, "gfs_seamless": 0.142, "icon_seamless": 0.159, "gem_seamless": 0.053, "meteofrance_seamless": 0.093},
 }
 
-CITY_REGION = {
-    # Europe
-    "London": "europe", "Paris": "europe", "Madrid": "europe", "Warsaw": "europe",
-    "Milan": "europe", "Munich": "europe", "Ankara": "europe", "Istanbul": "europe",
-    "Berlin": "europe", "Vienna": "europe", "Amsterdam": "europe", "Stockholm": "europe",
-    "Moscow": "europe",
-    # North America
-    "New York": "north_america", "NYC": "north_america", "Chicago": "north_america",
-    "Toronto": "north_america", "Dallas": "north_america", "Atlanta": "north_america",
-    "Miami": "north_america", "Seattle": "north_america", "Boston": "north_america",
-    "Austin": "north_america", "Denver": "north_america", "Houston": "north_america",
-    "Los Angeles": "north_america", "San Francisco": "north_america",
-    # Asia
-    "Tokyo": "asia", "Seoul": "asia", "Shanghai": "asia", "Beijing": "asia",
-    "Hong Kong": "asia", "Taipei": "asia", "Singapore": "asia", "Chongqing": "asia",
-    "Chengdu": "asia", "Wuhan": "asia", "Shenzhen": "asia", "Lucknow": "asia",
-    # South America
-    "Buenos Aires": "south_america", "Sao Paulo": "south_america",
-    # Oceania
-    "Wellington": "oceania", "Sydney": "oceania", "Melbourne": "oceania",
-    # Middle East
-    "Tel Aviv": "middle_east",
-    # Mexico — closer to GFS/GEM coverage
-    "Mexico City": "north_america",
-    "Cape Town": "default",
+# Fallback for cities not yet verified
+DEFAULT_MODEL_WEIGHTS = {
+    "ecmwf_ifs025": 0.35, "gfs_seamless": 0.20, "icon_seamless": 0.18,
+    "gem_seamless": 0.13, "meteofrance_seamless": 0.14,
 }
 
 
