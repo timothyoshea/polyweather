@@ -65,7 +65,7 @@ def run_scan_and_save(mode="all"):
 
     # Insert scan record
     scan_rows = supabase_insert("scans", [{
-        "mode": "all",
+        "mode": mode,
         "duration_seconds": duration,
         "total_opportunities": len(opps),
         "sure_bets": sure_bets,
