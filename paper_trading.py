@@ -89,6 +89,7 @@ def open_paper_trades(opps, scan_id, supabase_url, supabase_service_key):
         "Prefer": "return=representation",
     }
 
+    count = 0
     for opp in opps:
         try:
             liquidity = opp.get("liquidity")
@@ -120,12 +121,24 @@ def open_paper_trades(opps, scan_id, supabase_url, supabase_service_key):
                 "ev_per_dollar": opp.get("ev_per_dollar"),
                 "half_kelly": opp.get("hk"),
                 "forecast_c": opp.get("forecast_c"),
+                "risk": opp.get("risk"),
+                "empirical_p": opp.get("empirical_p"),
+                "price_source": opp.get("price_source"),
                 "question": opp.get("question"),
                 "token_id": opp.get("token_id"),
                 "condition_id": opp.get("condition_id"),
                 "event_slug": opp.get("event_slug"),
                 "market_slug": opp.get("market_slug"),
                 "url": opp.get("url"),
+                "liquidity": liquidity,
+                "model_values": opp.get("model_values"),
+                "forecast_details": {
+                    k: opp.get(k) for k in [
+                        "combined_forecast", "ensemble_mean", "ensemble_std",
+                        "ensemble_min", "ensemble_max", "multi_model_spread",
+                        "eff_std", "horizon_days", "city_tier",
+                    ] if opp.get(k) is not None
+                },
                 "status": "open",
             }
 
