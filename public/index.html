@@ -2308,33 +2308,50 @@
       ...t,
       city_tier: fd.city_tier || 2,
       horizon_days: fd.horizon_days || 1,
-      combined_forecast: fd.combined_forecast || t.forecast_c,
+      combined_forecast: fd.combined_forecast || t.forecast_c || 0,
       ensemble_mean: fd.ensemble_mean,
       ensemble_std: fd.ensemble_std,
       ensemble_min: fd.ensemble_min,
       ensemble_max: fd.ensemble_max,
       multi_model_spread: fd.multi_model_spread,
       eff_std: fd.eff_std,
-      forecast_f: t.forecast_c != null ? (t.forecast_c * 9/5 + 32) : null,
+      forecast_c: t.forecast_c || 0,
+      forecast_f: t.forecast_c != null ? (t.forecast_c * 9/5 + 32) : 32,
       my_p: t.my_p || 0,
       mkt_p: t.mkt_p || 0,
       edge: t.edge || 0,
       ev_per_dollar: t.ev_per_dollar || 0,
       hk: t.half_kelly || 0,
       confidence: t.confidence || 0,
+      empirical_p: t.empirical_p,
       model_values: t.model_values || {},
       liquidity: liq,
+      band_c: t.band_c || '',
+      band_f: t.band_f || '',
+      band_type: t.band_type || 'exact',
+      bet_type: t.bet_type || 'edge',
+      side: t.side || 'YES',
+      city: t.city || '',
+      date: t.date || '',
+      question: t.question || '',
+      url: t.url || '',
+      risk: t.risk || 'MEDIUM',
     };
   }
 
   function showTradeSnapshot(idx) {
     const t = _currentTrades[idx];
-    if (!t) return;
-    const opp = tradeToOpp(t);
-    const cardHtml = renderCard(opp);
-    const modal = document.getElementById('snapshot-modal');
-    document.getElementById('snapshot-modal-body').innerHTML = cardHtml;
-    modal.style.display = 'flex';
+    if (!t) { alert('Trade not found'); return; }
+    try {
+      const opp = tradeToOpp(t);
+      const cardHtml = renderCard(opp);
+      const modal = document.getElementById('snapshot-modal');
+      document.getElementById('snapshot-modal-body').innerHTML = cardHtml;
+      modal.style.display = 'flex';
+    } catch(e) {
+      console.error('Snapshot render error:', e);
+      alert('Error rendering snapshot: ' + e.message);
+    }
   }
 
   function closeSnapshotModal() {
