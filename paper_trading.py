@@ -170,6 +170,7 @@ def open_paper_trades(opps, scan_id, supabase_url, supabase_service_key):
 
             # Insert a snapshot for this scan
             if trade_id:
+                liq = liquidity or {}
                 snapshot_row = {
                     "trade_id": trade_id,
                     "scan_id": scan_id,
@@ -177,21 +178,28 @@ def open_paper_trades(opps, scan_id, supabase_url, supabase_service_key):
                     "mkt_p": opp.get("mkt_p"),
                     "edge": opp.get("edge"),
                     "confidence": opp.get("confidence"),
-                    "entry_price": position["entry_price"],
-                    "total_cost_usd": position["total_cost_usd"],
-                    "total_shares": position["total_shares"],
-                    "num_levels": position["num_levels"],
                     "forecast_c": opp.get("forecast_c"),
-                    "liquidity": liquidity,
+                    "ev_per_dollar": opp.get("ev_per_dollar"),
+                    "total_depth_usd": liq.get("total_depth_usd"),
+                    "adjusted_bet_usd": liq.get("adjusted_bet_usd"),
+                    "effective_price": liq.get("effective_price"),
+                    "effective_edge_pp": liq.get("effective_edge_pp"),
+                    "liquidity_rating": liq.get("liquidity_rating"),
+                    "book_levels": liq.get("book_levels"),
+                    "positive_edge_cost_usd": position["total_cost_usd"],
+                    "positive_edge_shares": position["total_shares"],
                 }
                 snapshot_url = f"{supabase_url}/rest/v1/trade_snapshots"
                 try:
                     _supabase_request(snapshot_url, [snapshot_row], headers)
                 except Exception as snap_err:
                     print(f"[WARN] Snapshot insert error for trade {trade_id}: {snap_err}")
+                count += 1
 
         except Exception as e:
             print(f"[WARN] Paper trade error for {opp.get('city')}/{opp.get('date')}: {e}")
+
+    return count
 
 
 def fetch_actual_temperature(city, date_str, city_geo):
