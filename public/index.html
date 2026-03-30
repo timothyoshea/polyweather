@@ -1268,7 +1268,7 @@
         </tr>
       </thead>
       <tbody id="trade-table-body">
-        <tr><td colspan="15" style="text-align:center;color:var(--text2);padding:40px;">Loading trades...</td></tr>
+        <tr><td colspan="17" style="text-align:center;color:var(--text2);padding:40px;">Loading trades...</td></tr>
       </tbody>
     </table>
   </div>
@@ -2169,7 +2169,7 @@
   function renderTradeTable(trades) {
     const tbody = document.getElementById('trade-table-body');
     if (!trades || !trades.length) {
-      tbody.innerHTML = '<tr><td colspan="15" style="text-align:center;color:var(--text2);padding:40px;">No trades found. Trades will appear after the next scan.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="17" style="text-align:center;color:var(--text2);padding:40px;">No trades found. Trades will appear after the next scan.</td></tr>';
       _currentTrades = [];
       return;
     }
@@ -2261,7 +2261,7 @@
         '<td>' + roiStr + '</td>' +
         '</tr>';
 
-      var detailRow = '<tr id="' + detailId + '" style="display:none;"><td colspan="15" style="padding:8px 12px;background:rgba(255,255,255,0.02);">' +
+      var detailRow = '<tr id="' + detailId + '" style="display:none;"><td colspan="17" style="padding:8px 12px;background:rgba(255,255,255,0.02);">' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">' +
         '<div>' +
         '<div style="font-size:11px;text-transform:uppercase;color:var(--cyan);letter-spacing:0.5px;margin-bottom:6px;">Order Book Fills (' + positiveLevels.length + ' levels with +edge)</div>' +
