@@ -6,8 +6,9 @@ import json
 import requests
 from datetime import datetime
 from dateutil import parser as dateparser
+import config
 from config import (
-    CITY_GEO, TOMORROW, TIER1_ONLY, JSON_OUT,
+    CITY_GEO, TIER1_ONLY, JSON_OUT,
     TOMORROW_DATE, TOMORROW_STR, MAX_DATE,
     normalize_city, get_city_tier, dprint,
 )
