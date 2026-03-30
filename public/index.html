@@ -1966,7 +1966,7 @@
       const trades = await tradesResp.json();
       tradingLoaded = true;
 
-      updateSummaryCards(tradingSummary);
+      updateSummaryCards(tradingSummary, trades);
       drawPnlChart(tradingSummary.daily_pnl || []);
       renderBreakdowns(tradingSummary);
       renderTradeTable(trades);
