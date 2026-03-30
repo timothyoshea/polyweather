@@ -106,11 +106,12 @@ def run_scan_and_save(mode="all"):
                 "liquidity": o.get("liquidity"),
                 "model_values": o.get("model_values"),
                 "forecast_details": {
-                    k: o.get(k) for k in [
+                    **{k: o.get(k) for k in [
                         "combined_forecast", "ensemble_mean", "ensemble_std",
                         "ensemble_min", "ensemble_max", "multi_model_spread",
                         "eff_std", "horizon_days", "city_tier",
-                    ] if o.get(k) is not None
+                    ] if o.get(k) is not None},
+                    "model_weights": o.get("model_weights", {}),
                 },
             })
         supabase_insert("opportunities", opp_rows)
