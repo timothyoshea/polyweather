@@ -126,6 +126,8 @@ def run_scan_and_save():
         "sure_bets": sure_bets,
         "edge_bets": edge_bets,
         "safe_no_bets": safe_no_bets,
+        "debug_log": debug_log,
+        "config_tomorrow": config.TOMORROW,
     }
 
 
