@@ -115,6 +115,13 @@ def run_scan_and_save(mode="all"):
             })
         supabase_insert("opportunities", opp_rows)
 
+        # Open paper trades (best-effort, don't break scan on failure)
+        try:
+            from paper_trading import open_paper_trades
+            open_paper_trades(opps, scan_id, SUPABASE_URL, SUPABASE_SERVICE_KEY)
+        except Exception as e:
+            print(f"[WARN] Paper trading error: {e}")
+
     return {
         "scan_id": scan_id,
         "duration_seconds": duration,
