@@ -10,80 +10,90 @@ PolyWeather combines two data sources to produce temperature forecasts:
 The final forecast is a weighted blend:
 
 ```
-forecast = 0.6 x ensemble_mean + 0.4 x weighted_deterministic_mean
+forecast = 0.6 × ensemble_mean + 0.4 × weighted_deterministic_mean
 ```
 
-The ensemble gets 60% weight because 122 members provide a more robust average. The deterministic models get 40% but are individually weighted by region based on historical accuracy.
+The ensemble gets 60% weight because 122 members provide a more robust average. The deterministic models get 40% but are individually weighted **per city** based on verified historical accuracy.
 
-## Regional Model Weights
+## Per-City Model Weights (Data-Driven)
 
-Different weather models have different strengths depending on geography. The deterministic model blend uses region-specific weights rather than a simple average.
+Weights are derived from a **60-day verification study** (Jan 28 – Mar 29, 2026) using:
+- **Open-Meteo Previous Runs API** — what each model forecasted 1 day ahead
+- **Open-Meteo Archive API** — actual measured temperatures
+- At exact **Polymarket ICAO station coordinates** (the same stations markets resolve against)
 
-### Europe
-*Cities: London, Paris, Madrid, Warsaw, Milan, Munich, Ankara, Istanbul, Moscow, Berlin, Vienna, Amsterdam, Stockholm*
+Methodology: `weight = 1 / MAE²`, normalized per city. Lower error = exponentially higher weight.
 
-| Model | Weight | Rationale |
-|-------|--------|-----------|
-| ECMWF IFS | 30% | Gold standard globally, strong European coverage |
-| ICON | 28% | German DWD model, highest resolution in Europe |
-| MeteoFrance | 22% | ARPEGE model, excels in Western Europe and Mediterranean |
-| GFS | 12% | Decent but less tuned for Europe |
-| GEM | 8% | Weakest in European domain |
+### ECMWF IFS — Best in 22/33 cities (avg MAE: 0.66°C)
 
-### North America
-*Cities: NYC, Chicago, Toronto, Dallas, Atlanta, Miami, Seattle, Austin, Denver, Houston, Los Angeles, San Francisco, Boston, Mexico City*
+Dominant model globally. Highest weights in:
+- Paris (74%), Toronto (72%), Houston (71%), Chicago (69%)
+- Warsaw (67%), Lucknow (66%), Buenos Aires (63%), London (63%)
 
-| Model | Weight | Rationale |
-|-------|--------|-----------|
-| GFS | 28% | US flagship model, best North American synoptic coverage |
-| ECMWF IFS | 28% | Still excellent globally |
-| GEM | 20% | Canadian model, strong for Toronto and northern US/Canada |
-| ICON | 14% | Good but less tuned for NA |
-| MeteoFrance | 10% | Weakest in NA domain |
+### GFS — Best in 4 cities (avg MAE: 1.06°C)
 
-### Asia
-*Cities: Tokyo, Seoul, Shanghai, Beijing, Hong Kong, Taipei, Singapore, Chongqing, Chengdu, Wuhan, Shenzhen, Lucknow*
+Strongest on US West Coast:
+- San Francisco (61%), Los Angeles (33%), Miami (26%), Shanghai (35%)
 
-| Model | Weight | Rationale |
-|-------|--------|-----------|
-| ECMWF IFS | 40% | Dominant in Asia where other models have less station data |
-| ICON | 20% | Reasonable global coverage |
-| GFS | 20% | Decent but less verified in East/South Asia |
-| GEM | 10% | Limited Asian focus |
-| MeteoFrance | 10% | Limited Asian focus |
+### ICON — Best in 1 city (avg MAE: 0.94°C)
 
-### South America
-*Cities: Buenos Aires, Sao Paulo*
+- Singapore (36%) — also strong secondary in Milan (30%), Atlanta (29%)
 
-| Model | Weight | Rationale |
-|-------|--------|-----------|
-| ECMWF IFS | 35% | Best in tropics and subtropics |
-| GFS | 25% | Good Southern Hemisphere coverage |
-| ICON | 20% | Reasonable global model |
-| GEM | 10% | Limited SA focus |
-| MeteoFrance | 10% | Limited SA focus |
+### GEM — Best in 3 cities (avg MAE: 1.02°C)
 
-### Middle East
-*Cities: Tel Aviv*
+Surprisingly strong in parts of Asia:
+- Seoul (48%), Taipei (29%), Mexico City (25%)
 
-| Model | Weight | Rationale |
-|-------|--------|-----------|
-| ECMWF IFS | 40% | Strongest for arid/Mediterranean climates |
-| ICON | 20% | Decent for Mediterranean basin |
-| GFS | 15% | Adequate coverage |
-| MeteoFrance | 15% | ARPEGE handles Mediterranean well |
-| GEM | 10% | Weakest in this region |
+### MeteoFrance — Best in 3 cities (avg MAE: 1.14°C)
 
-### Oceania
-*Cities: Wellington, Sydney, Melbourne*
+Mediterranean and Middle East:
+- Hong Kong (34%), Ankara (34%), Tel Aviv (30%)
 
-| Model | Weight | Rationale |
-|-------|--------|-----------|
-| ECMWF IFS | 35% | Most reliable Southern Hemisphere model |
-| GFS | 20% | Good global coverage |
-| ICON | 20% | Reasonable but less verified here |
-| GEM | 15% | Decent Southern Hemisphere performance |
-| MeteoFrance | 10% | Limited Oceania focus |
+## Full Weight Table
+
+| City | ECMWF | GFS | ICON | GEM | MeteoFr | Best Model | MAE |
+|------|-------|-----|------|-----|---------|------------|-----|
+| Paris | **73.5%** | 7.3% | 6.8% | 6.1% | 6.3% | ECMWF | 0.17°C |
+| London | **63.4%** | 11.2% | 6.6% | 9.6% | 9.2% | ECMWF | 0.21°C |
+| Warsaw | **67.2%** | 7.9% | 8.4% | 7.9% | 8.6% | ECMWF | 0.24°C |
+| Madrid | **58.9%** | 13.2% | 9.3% | 9.3% | 9.3% | ECMWF | 0.27°C |
+| Houston | **70.6%** | 3.0% | 12.0% | 2.1% | 12.3% | ECMWF | 0.28°C |
+| Lucknow | **66.1%** | 1.1% | 9.7% | 8.7% | 14.4% | ECMWF | 0.28°C |
+| Chicago | **69.0%** | 4.7% | 13.3% | 4.7% | 8.3% | ECMWF | 0.36°C |
+| Beijing | **58.6%** | 17.9% | 11.6% | 4.7% | 7.3% | ECMWF | 0.37°C |
+| Munich | **48.3%** | 12.8% | 13.9% | 7.8% | 17.2% | ECMWF | 0.37°C |
+| Wellington | **55.3%** | 14.2% | 15.9% | 5.3% | 9.3% | ECMWF | 0.37°C |
+| Buenos Aires | **62.9%** | 2.2% | 11.2% | 13.2% | 10.5% | ECMWF | 0.38°C |
+| Toronto | **71.6%** | 7.1% | 10.9% | 6.1% | 4.3% | ECMWF | 0.41°C |
+| Austin | **56.0%** | 8.5% | 21.4% | 5.7% | 8.5% | ECMWF | 0.42°C |
+| Denver | **42.0%** | 13.1% | 12.5% | 17.8% | 14.6% | ECMWF | 0.43°C |
+| Dallas | **52.6%** | 6.8% | 10.2% | 13.7% | 16.6% | ECMWF | 0.45°C |
+| Istanbul | **36.3%** | 9.1% | 22.3% | 12.2% | 20.2% | ECMWF | 0.47°C |
+| Atlanta | **40.8%** | 9.0% | 28.9% | 13.0% | 8.2% | ECMWF | 0.48°C |
+| Seattle | **36.7%** | 14.3% | 18.7% | 13.0% | 17.2% | ECMWF | 0.50°C |
+| Sao Paulo | **45.7%** | 11.0% | 23.2% | 7.5% | 12.6% | ECMWF | 0.52°C |
+| Milan | **30.2%** | 11.8% | **30.2%** | 7.4% | 20.4% | ECMWF/ICON | 0.55°C |
+| Tokyo | **35.3%** | 20.5% | 15.9% | 20.0% | 8.3% | ECMWF | 0.67°C |
+| NYC | **53.8%** | 9.3% | 13.3% | 9.8% | 13.8% | ECMWF | 0.73°C |
+| Taipei | 17.0% | 17.0% | 20.9% | **29.0%** | 16.2% | GEM | 0.62°C |
+| Mexico City | 19.3% | 24.4% | 7.3% | **25.2%** | 23.7% | GEM | 0.63°C |
+| Seoul | 27.9% | 5.1% | 10.2% | **47.9%** | 9.0% | GEM | 1.26°C |
+| Shanghai | 29.6% | **35.4%** | 8.7% | 22.6% | 3.8% | GFS | 0.64°C |
+| Singapore | 9.9% | 21.3% | **36.2%** | 27.3% | 5.3% | ICON | 0.66°C |
+| Miami | 12.9% | **25.6%** | 22.9% | 20.5% | 18.1% | GFS | 0.68°C |
+| San Francisco | 27.2% | **61.2%** | 3.4% | 7.0% | 1.2% | GFS | 0.76°C |
+| Hong Kong | 12.1% | 12.8% | 27.0% | 13.9% | **34.2%** | MeteoFrance | 0.79°C |
+| Tel Aviv | 20.8% | 20.1% | 15.9% | 13.7% | **29.5%** | MeteoFrance | 0.47°C |
+| Ankara | 25.9% | 15.6% | 12.3% | 12.3% | **34.0%** | MeteoFrance | 0.48°C |
+| Los Angeles | 4.8% | **32.9%** | 31.8% | 18.4% | 12.0% | GFS | 1.22°C |
+
+## Key Insights
+
+1. **ECMWF dominates** — best in 22/33 cities, but NOT best everywhere
+2. **Los Angeles & San Francisco** — ECMWF is worst here (3.18°C and 1.14°C MAE), GFS is far better. Likely due to complex coastal microclimate that US model handles better with higher-res terrain.
+3. **Seoul** — All models struggle (1.26°C+ MAE), GEM surprisingly best. Korean peninsula weather is notoriously hard to forecast.
+4. **Singapore** — ICON best, likely due to good tropical convection physics
+5. **Mediterranean cities** (Tel Aviv, Ankara, Hong Kong) — MeteoFrance ARPEGE model excels, likely due to its Mediterranean climate tuning
 
 ## Uncertainty Calculation
 
@@ -92,11 +102,7 @@ The combined standard deviation uses a conservative approach — it takes the **
 - Ensemble standard deviation (spread across 122 members)
 - Deterministic model spread / 3.5 (how much the 5 models disagree)
 
-This ensures that if *either* source shows high uncertainty, it's reflected in the confidence score and position sizing.
-
 ## Ensemble Composition
-
-The ensemble forecast averages 122 members from three model families:
 
 | Model | Members | Source |
 |-------|---------|--------|
@@ -104,19 +110,17 @@ The ensemble forecast averages 122 members from three model families:
 | NCEP GEFS | 31 | US National Centers for Environmental Prediction |
 | ICON EPS | 39 | German Deutscher Wetterdienst |
 
-The ensemble mean is an unweighted average across all 122 members. ECMWF naturally dominates (41% of members) which aligns with its higher accuracy.
-
 ## Implementation
 
-- Regional weights are defined in `stats_agent.py` in the `REGIONAL_MODEL_WEIGHTS` dict
-- City-to-region mapping is in `CITY_REGION` dict
-- The `compute_combined_forecast(det_models, ensemble_members, city=None)` function applies weights
-- Weights are normalized at runtime so missing models don't break the calculation
-- The applied weights and region are stored in `forecast_details.model_weights` and `forecast_details.region` on each opportunity
+- Per-city weights defined in `stats_agent.py` → `CITY_MODEL_WEIGHTS`
+- Fallback weights in `DEFAULT_MODEL_WEIGHTS` for unverified cities
+- `compute_combined_forecast(det_models, ensemble_members, city=None)` applies weights
+- Weights normalized at runtime so missing models don't break calculation
+- Verification methodology: 60-day window, day-1 forecast vs actual, `1/MAE²` weighting
 
-## Sources
+## Data Sources
 
-- ECMWF verification reports: consistently ranked #1 in WMO global model intercomparisons
-- DWD (ICON) verification: strongest short-range performance in European domain
-- NCEP GFS: best-verified model for North American synoptic patterns
-- Regional accuracy informed by WMO Lead Centre for Deterministic NWP Verification scores
+- Open-Meteo Previous Runs API: https://open-meteo.com/en/docs/previous-runs-api
+- Open-Meteo Archive API: https://open-meteo.com/en/docs/historical-weather-api
+- Verification period: 2026-01-28 to 2026-03-29 (60 days)
+- Station coordinates: Polymarket ICAO weather stations (see `config.py`)
