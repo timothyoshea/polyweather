@@ -1932,7 +1932,7 @@
       const resp = await fetch('/api/history?scan_id=' + scanId);
       const rawOpps = await resp.json();
       allOpps = normalizeOpps(rawOpps);
-      allData = { total: opps.length, sure_bets: opps.filter(o=>o.bet_type==='sure').length, edge_bets: opps.filter(o=>o.bet_type==='edge').length, safe_no_bets: opps.filter(o=>o.bet_type==='safe_no').length, scan_duration_seconds: 0 };
+      allData = { total: allOpps.length, sure_bets: allOpps.filter(o=>o.bet_type==='sure').length, edge_bets: allOpps.filter(o=>o.bet_type==='edge').length, safe_no_bets: allOpps.filter(o=>o.bet_type==='safe_no').length, scan_duration_seconds: 0 };
       populateCityFilter();
       updateStats();
       applyFilters();
