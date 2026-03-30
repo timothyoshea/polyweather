@@ -2371,6 +2371,34 @@
     document.getElementById('snapshot-modal-body').innerHTML = '';
   }
 
+  var _showProfitableOnly = false;
+  function toggleProfitableExits() {
+    _showProfitableOnly = !_showProfitableOnly;
+    var btn = document.getElementById('profitable-exit-btn');
+    if (_showProfitableOnly) {
+      btn.style.background = 'var(--green)';
+      btn.style.color = '#000';
+      btn.textContent = 'Showing Profitable Exits';
+      // Filter to open trades with unrealized profit
+      var profitable = _currentTrades.filter(function(t) {
+        if (t.status !== 'open' || !t.mkt_p || !t.total_shares || !t.total_cost_usd) return false;
+        var currentValue = t.total_shares * (t.mkt_p / 100);
+        return currentValue > t.total_cost_usd;
+      });
+      profitable.sort(function(a, b) {
+        var aPnl = a.total_shares * (a.mkt_p / 100) - a.total_cost_usd;
+        var bPnl = b.total_shares * (b.mkt_p / 100) - b.total_cost_usd;
+        return bPnl - aPnl;
+      });
+      renderTradeTable(profitable);
+    } else {
+      btn.style.background = '';
+      btn.style.color = '';
+      btn.textContent = 'Show Profitable Exits';
+      loadTradeTable();
+    }
+  }
+
   async function loadPositionHistory(tradeId, containerId) {
     const el = document.getElementById(containerId);
     if (!el) return;
