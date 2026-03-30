@@ -133,11 +133,12 @@ def open_paper_trades(opps, scan_id, supabase_url, supabase_service_key):
                 "liquidity": liquidity,
                 "model_values": opp.get("model_values"),
                 "forecast_details": {
-                    k: opp.get(k) for k in [
+                    **{k: opp.get(k) for k in [
                         "combined_forecast", "ensemble_mean", "ensemble_std",
                         "ensemble_min", "ensemble_max", "multi_model_spread",
                         "eff_std", "horizon_days", "city_tier",
-                    ] if opp.get(k) is not None
+                    ] if opp.get(k) is not None},
+                    "model_weights": opp.get("model_weights", {}),
                 },
                 "status": "open",
             }
