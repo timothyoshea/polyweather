@@ -2295,6 +2295,10 @@
         (t.url ? '<a href="' + t.url + '" target="_blank" style="color:var(--cyan);font-size:11px;text-decoration:none;">Polymarket \u2192</a>' : '') +
         '</div>' +
         '</div></div>' +
+        '<div style="margin-top:12px;">' +
+        '<div style="font-size:11px;text-transform:uppercase;color:var(--cyan);letter-spacing:0.5px;margin-bottom:6px;cursor:pointer;" onclick="event.stopPropagation();loadPositionHistory(\'' + t.id + '\', \'pos-history-' + idx + '\');">\u25B6 Position Build-Up History (click to load)</div>' +
+        '<div id="pos-history-' + idx + '"></div>' +
+        '</div>' +
         '</td></tr>';
 
       return mainRow + detailRow;
