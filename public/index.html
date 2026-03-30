@@ -2267,6 +2267,13 @@
           return '\u2014';
         })() + '</td>' +
         '<td>' + statusBadge + '</td>' +
+        '<td>' + (function() {
+          if (t.status !== 'open' || !t.mkt_p || !t.total_shares || !t.total_cost_usd) return '\u2014';
+          var currentValue = t.total_shares * (t.mkt_p / 100);
+          var unrealPnl = currentValue - t.total_cost_usd;
+          var color = unrealPnl >= 0 ? 'var(--green)' : 'var(--red)';
+          return '<span style="color:' + color + '">' + (unrealPnl >= 0 ? '+' : '') + '$' + unrealPnl.toFixed(2) + '</span>';
+        })() + '</td>' +
         '<td>' + actualStr + '</td>' +
         '<td>' + pnlStr + '</td>' +
         '<td>' + roiStr + '</td>' +
