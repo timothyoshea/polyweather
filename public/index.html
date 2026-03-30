@@ -1,0 +1,1671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PolyWeather — Weather Trading Scanner</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --card: #12121a;
+    --card-border: #1e1e2e;
+    --green: #00e676;
+    --red: #ff5252;
+    --amber: #ffc107;
+    --cyan: #4fc3f7;
+    --text: #e0e0e0;
+    --text2: #888;
+    --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* ── Header ─────────────────────────────────── */
+  .header {
+    background: linear-gradient(180deg, #101018 0%, var(--bg) 100%);
+    border-bottom: 1px solid var(--card-border);
+    padding: 16px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    white-space: nowrap;
+  }
+
+  .logo-icon {
+    font-size: 26px;
+    filter: drop-shadow(0 0 6px rgba(79, 195, 247, 0.5));
+  }
+
+  .logo span {
+    background: linear-gradient(135deg, var(--cyan), var(--green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .control-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .toggle-btn {
+    background: none;
+    border: 1px solid var(--card-border);
+    color: var(--text2);
+    padding: 5px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+
+  .toggle-btn.active {
+    background: rgba(79, 195, 247, 0.15);
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+
+  .toggle-btn:hover:not(.active) {
+    border-color: #444;
+    color: var(--text);
+  }
+
+  label.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text2);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  label.checkbox-label input {
+    accent-color: var(--cyan);
+    width: 14px;
+    height: 14px;
+  }
+
+  .scan-btn {
+    background: linear-gradient(135deg, var(--cyan), #039be5);
+    color: #000;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .scan-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(79, 195, 247, 0.3); }
+  .scan-btn:active { transform: translateY(0); }
+  .scan-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  .log-btn {
+    background: none;
+    border: 1px solid var(--card-border);
+    color: var(--text2);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .log-btn:hover { border-color: #444; color: var(--text); }
+  .log-btn.active { background: rgba(79, 195, 247, 0.15); border-color: var(--cyan); color: var(--cyan); }
+
+  .log-panel {
+    display: none;
+    background: #0d0d14;
+    border-top: 1px solid var(--card-border);
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 16px 24px;
+  }
+  .log-panel.open { display: block; }
+  .log-panel pre {
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text2);
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin: 0;
+  }
+  .log-panel .log-empty {
+    color: #555;
+    font-style: italic;
+  }
+  .log-panel .log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .log-panel .log-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .log-panel .log-copy-btn {
+    background: none;
+    border: 1px solid var(--card-border);
+    color: var(--text2);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: var(--sans);
+  }
+  .log-panel .log-copy-btn:hover { border-color: #444; color: var(--text); }
+
+  /* ── Status Bar ─────────────────────────────── */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 10px 24px;
+    border-bottom: 1px solid var(--card-border);
+    font-size: 13px;
+  }
+
+  .status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #555;
+    transition: background 0.3s;
+  }
+
+  .status-dot.scanning {
+    background: var(--amber);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+
+  .status-dot.done { background: var(--green); }
+  .status-dot.error { background: var(--red); }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.4); }
+    50% { opacity: 0.6; box-shadow: 0 0 0 6px rgba(255, 193, 7, 0); }
+  }
+
+  .stats {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text2);
+  }
+
+  .stat-value {
+    font-family: var(--mono);
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* ── Filters Bar ────────────────────────────── */
+  .filters-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 24px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--card-border);
+  }
+
+  .filter-label {
+    font-size: 12px;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+
+  .filter-select {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    color: var(--text);
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-family: var(--sans);
+    font-size: 12px;
+    cursor: pointer;
+    outline: none;
+  }
+
+  .filter-select:focus { border-color: var(--cyan); }
+
+  /* ── Main Content ───────────────────────────── */
+  .main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 24px 60px;
+  }
+
+  /* ── Loading State ──────────────────────────── */
+  .loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    text-align: center;
+  }
+
+  .spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid var(--card-border);
+    border-top-color: var(--cyan);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 24px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-state h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+
+  .loading-state p {
+    color: var(--text2);
+    font-size: 14px;
+    max-width: 400px;
+  }
+
+  /* ── Empty State ────────────────────────────── */
+  .empty-state {
+    text-align: center;
+    padding: 80px 20px;
+  }
+
+  .empty-state .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+  .empty-state h3 { font-size: 18px; margin-bottom: 8px; }
+  .empty-state p { color: var(--text2); font-size: 14px; max-width: 420px; margin: 0 auto; }
+
+  /* ── Error State ────────────────────────────── */
+  .error-state {
+    text-align: center;
+    padding: 60px 20px;
+  }
+
+  .error-state h3 { color: var(--red); margin-bottom: 8px; }
+  .error-state p { color: var(--text2); font-size: 14px; margin-bottom: 20px; }
+
+  .retry-btn {
+    background: var(--card);
+    border: 1px solid var(--red);
+    color: var(--red);
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-family: var(--sans);
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+
+  .retry-btn:hover { background: rgba(255, 82, 82, 0.1); }
+
+  /* ── Trade Cards ────────────────────────────── */
+  .cards-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .trade-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.3s ease;
+    animation: cardIn 0.4s ease-out both;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .trade-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .trade-card:hover {
+    border-color: #2a2a3e;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+
+  .trade-card:hover::before { opacity: 1; }
+
+  .trade-card.sure-bet {
+    border-color: rgba(0, 230, 118, 0.3);
+    box-shadow: 0 0 20px rgba(0, 230, 118, 0.06);
+  }
+
+  .trade-card.sure-bet::before {
+    background: linear-gradient(90deg, transparent, var(--green), transparent);
+    opacity: 1;
+  }
+
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .card-badges {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: var(--mono);
+  }
+
+  .badge-sure {
+    background: rgba(0, 230, 118, 0.15);
+    color: var(--green);
+    border: 1px solid rgba(0, 230, 118, 0.3);
+    text-shadow: 0 0 8px rgba(0, 230, 118, 0.4);
+  }
+
+  .badge-strong {
+    background: rgba(79, 195, 247, 0.12);
+    color: var(--cyan);
+    border: 1px solid rgba(79, 195, 247, 0.25);
+  }
+
+  .badge-edge {
+    background: rgba(224, 224, 224, 0.08);
+    color: var(--text2);
+    border: 1px solid rgba(224, 224, 224, 0.15);
+  }
+
+  .badge-safeno {
+    background: rgba(144, 202, 249, 0.12);
+    color: #90caf9;
+    border: 1px solid rgba(144, 202, 249, 0.25);
+  }
+
+  .badge-yes {
+    background: rgba(0, 230, 118, 0.1);
+    color: var(--green);
+    border: 1px solid rgba(0, 230, 118, 0.2);
+  }
+
+  .badge-no {
+    background: rgba(255, 152, 0, 0.1);
+    color: #ff9800;
+    border: 1px solid rgba(255, 152, 0, 0.2);
+  }
+
+  .badge-risk-low {
+    background: rgba(0, 230, 118, 0.08);
+    color: var(--green);
+    border: 1px solid rgba(0, 230, 118, 0.15);
+  }
+
+  .badge-risk-medium {
+    background: rgba(255, 193, 7, 0.08);
+    color: var(--amber);
+    border: 1px solid rgba(255, 193, 7, 0.15);
+  }
+
+  .badge-risk-high {
+    background: rgba(255, 82, 82, 0.08);
+    color: var(--red);
+    border: 1px solid rgba(255, 82, 82, 0.15);
+  }
+
+  .confidence-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .confidence-label {
+    font-size: 12px;
+    color: var(--text2);
+  }
+
+  .confidence-bar-bg {
+    width: 80px;
+    height: 6px;
+    background: #1e1e2e;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .confidence-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s ease;
+  }
+
+  .confidence-value {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    min-width: 28px;
+    text-align: right;
+  }
+
+  /* ── Card meta row ──────────────────────────── */
+  .card-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+  }
+
+  .card-meta .city {
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .card-meta .sep { color: #333; }
+
+  .card-meta .detail { color: var(--text2); font-size: 13px; }
+
+  .card-date {
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 14px;
+  }
+
+  /* ── Forecast row ───────────────────────────── */
+  .forecast-row {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .forecast-item {
+    font-size: 13px;
+    color: var(--text2);
+  }
+
+  .forecast-item strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  /* ── Price Box ──────────────────────────────── */
+  .price-box {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+  }
+
+  .price-box-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text2);
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+
+  .price-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+  }
+
+  .price-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .price-cell-label {
+    font-size: 11px;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .tip {
+    cursor: help;
+    font-size: 11px;
+    color: rgba(255,255,255,0.3);
+    position: relative;
+    display: inline-block;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .tip:hover {
+    color: var(--cyan);
+  }
+  .tip:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a1a2e;
+    color: var(--text);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.4;
+    white-space: normal;
+    width: 220px;
+    text-align: left;
+    z-index: 1000;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    pointer-events: none;
+  }
+  .tip:hover::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 2px);
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #1a1a2e;
+    z-index: 1001;
+    pointer-events: none;
+  }
+
+  .band-range {
+    display: block;
+    font-size: 12px;
+    color: var(--text2);
+    font-weight: 400;
+    margin-top: 2px;
+    font-family: var(--mono);
+  }
+
+  .price-cell-value {
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .price-cell-value.green { color: var(--green); }
+  .price-cell-value.cyan { color: var(--cyan); }
+  .price-cell-value.amber { color: var(--amber); }
+
+  /* ── Visual bar comparing market vs model ──── */
+  .prob-compare {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    font-size: 12px;
+  }
+
+  .prob-compare-label { color: var(--text2); min-width: 50px; font-size: 11px; text-transform: uppercase; }
+
+  .prob-bar-track {
+    flex: 1;
+    height: 8px;
+    background: #1a1a24;
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .prob-bar-mkt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background: rgba(255, 82, 82, 0.5);
+    border-radius: 4px;
+    transition: width 0.6s ease;
+  }
+
+  .prob-bar-model {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background: var(--green);
+    border-radius: 4px;
+    opacity: 0.7;
+    transition: width 0.6s ease;
+  }
+
+  .prob-bar-pct {
+    font-family: var(--mono);
+    font-size: 11px;
+    min-width: 36px;
+    text-align: right;
+  }
+
+  /* ── Model consensus (collapsible) ──────────── */
+  .model-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: var(--text2);
+    font-family: var(--sans);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 0;
+    margin-bottom: 4px;
+    transition: color 0.2s;
+  }
+
+  .model-toggle:hover { color: var(--text); }
+
+  .model-toggle .arrow {
+    font-size: 10px;
+    transition: transform 0.2s;
+    display: inline-block;
+  }
+
+  .model-toggle .arrow.open { transform: rotate(90deg); }
+
+  .model-values {
+    display: none;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 0 4px;
+  }
+
+  .model-values.open { display: flex; }
+
+  .model-chip {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--card-border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--text2);
+  }
+
+  .model-chip .name {
+    color: var(--text2);
+    font-size: 11px;
+    margin-right: 4px;
+  }
+
+  .model-chip .val { color: var(--text); }
+
+  /* ── Size Ladder Table ────────────────────── */
+  .size-ladder {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 12px;
+    margin-top: 8px;
+  }
+  .size-ladder th {
+    text-align: left;
+    color: var(--text2);
+    font-weight: 500;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 4px 8px 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .size-ladder td {
+    padding: 5px 8px;
+    color: var(--text2);
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  .size-ladder tbody tr:hover {
+    background: rgba(255,255,255,0.03);
+  }
+
+  /* ── The Bet (prominent trade explanation) ──── */
+  .the-bet {
+    margin-top: 16px;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, rgba(79,195,247,0.06), rgba(0,230,118,0.04));
+    border: 1px solid rgba(79,195,247,0.2);
+    border-radius: 10px;
+  }
+
+  .the-bet-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 6px;
+  }
+
+  .the-bet-question {
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 10px;
+    line-height: 1.4;
+  }
+
+  .the-bet-action {
+    margin-bottom: 10px;
+  }
+
+  .bet-verdict {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .bet-verdict.yes { color: var(--green); }
+  .bet-verdict.no { color: #ff9800; }
+  .bet-verdict.safe { color: var(--cyan); }
+  .bet-verdict strong { color: #fff; }
+
+  .the-bet-payout {
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--text);
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .the-bet-payout strong {
+    color: #fff;
+  }
+  .the-bet-return {
+    color: var(--green);
+    font-weight: 600;
+    margin-left: 6px;
+  }
+
+  /* ── CTA Button ─────────────────────────────── */
+  .cta-row {
+    display: flex;
+    margin-top: 14px;
+  }
+
+  .cta-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 700;
+    padding: 14px 24px;
+    border-radius: 10px;
+    text-decoration: none;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+  }
+
+  .cta-btn.yes {
+    background: linear-gradient(135deg, rgba(0,230,118,0.2), rgba(0,230,118,0.08));
+    color: var(--green);
+    border: 1px solid rgba(0,230,118,0.4);
+  }
+
+  .cta-btn.yes:hover {
+    background: rgba(0,230,118,0.3);
+    box-shadow: 0 4px 20px rgba(0,230,118,0.2);
+    transform: translateY(-1px);
+  }
+
+  .cta-btn.no {
+    background: linear-gradient(135deg, rgba(255,152,0,0.2), rgba(255,152,0,0.08));
+    color: #ff9800;
+    border: 1px solid rgba(255,152,0,0.4);
+  }
+
+  .cta-btn.no:hover {
+    background: rgba(255,152,0,0.3);
+    box-shadow: 0 4px 20px rgba(255,152,0,0.2);
+    transform: translateY(-1px);
+  }
+
+  .cta-arrow { font-size: 16px; }
+
+  /* ── Responsive ─────────────────────────────── */
+  @media (max-width: 640px) {
+    .header { padding: 12px 16px; }
+    .status-bar, .filters-bar { padding: 10px 16px; }
+    .main { padding: 16px; }
+    .trade-card { padding: 16px; }
+    .price-grid { grid-template-columns: 1fr 1fr; }
+    .confidence-bar-bg { width: 50px; }
+    .logo { font-size: 18px; }
+  }
+
+  /* Delay stagger for card animations */
+  .trade-card:nth-child(1) { animation-delay: 0.02s; }
+  .trade-card:nth-child(2) { animation-delay: 0.06s; }
+  .trade-card:nth-child(3) { animation-delay: 0.10s; }
+  .trade-card:nth-child(4) { animation-delay: 0.14s; }
+  .trade-card:nth-child(5) { animation-delay: 0.18s; }
+  .trade-card:nth-child(6) { animation-delay: 0.22s; }
+  .trade-card:nth-child(7) { animation-delay: 0.26s; }
+  .trade-card:nth-child(8) { animation-delay: 0.30s; }
+  .trade-card:nth-child(9) { animation-delay: 0.34s; }
+  .trade-card:nth-child(10) { animation-delay: 0.38s; }
+</style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────── -->
+<header class="header">
+  <div class="header-top">
+    <div class="logo">
+      <span class="logo-icon">⛈</span>
+      <span>PolyWeather</span>
+    </div>
+    <div class="controls">
+      <div class="control-group">
+        <button class="toggle-btn active" id="btn-tomorrow" onclick="setMode('tomorrow')">Tomorrow</button>
+        <button class="toggle-btn" id="btn-all" onclick="setMode('all')">All Days</button>
+      </div>
+      <label class="checkbox-label">
+        <input type="checkbox" id="chk-tier1" onchange="applyFilters()"> Tier 1 Only
+      </label>
+      <button class="scan-btn" id="scan-btn" onclick="scan()">
+        Scan Now
+      </button>
+      <button class="log-btn" id="log-btn" onclick="toggleLog()">
+        Scan Log
+      </button>
+      <button class="log-btn" id="history-btn" onclick="toggleHistory()">
+        History
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="log-panel" id="log-panel">
+  <div class="log-header">
+    <span class="log-title">Scan Log</span>
+    <button class="log-copy-btn" onclick="copyLog()">Copy</button>
+  </div>
+  <pre id="log-content"><span class="log-empty">No scan log yet. Run a scan to see debug output.</span></pre>
+</div>
+
+<!-- ── TODO Banner ─────────────────────────────── -->
+<div style="background:linear-gradient(90deg,rgba(255,193,7,0.08),rgba(255,152,0,0.05));border-bottom:1px solid rgba(255,193,7,0.2);padding:10px 24px;display:flex;align-items:center;gap:10px;font-size:13px;color:#ffc107;">
+  <span style="font-size:16px;">📌</span>
+  <span><strong>TODO:</strong> Add Open-Meteo API key for full 122-member ensemble &nbsp;|&nbsp; Grab historical Cold Math backtest data to analyse best outcome bets</span>
+</div>
+
+<!-- ── Status Bar ──────────────────────────────── -->
+<div class="status-bar">
+  <div class="status-indicator">
+    <div class="status-dot" id="status-dot"></div>
+    <span id="status-text" style="color: var(--text2); font-size: 13px;">Ready to scan</span>
+  </div>
+  <div class="stats" id="stats-bar" style="display:none;">
+    <div class="stat"><span class="stat-value" id="stat-total">0</span> trades</div>
+    <div class="stat"><span class="stat-value" id="stat-sure" style="color:var(--green)">0</span> sure bets</div>
+    <div class="stat"><span class="stat-value" id="stat-edge" style="color:var(--cyan)">0</span> edge bets</div>
+    <div class="stat"><span class="stat-value" id="stat-safeno" style="color:#90caf9">0</span> safe NOs</div>
+    <div class="stat">scanned in <span class="stat-value" id="stat-duration">0</span>s</div>
+  </div>
+</div>
+
+<!-- ── Filters Bar ─────────────────────────────── -->
+<div class="filters-bar">
+  <span class="filter-label">Sort</span>
+  <select class="filter-select" id="filter-sort" onchange="applyFilters()">
+    <option value="edge">Edge</option>
+    <option value="confidence">Confidence</option>
+    <option value="ev">EV / Dollar</option>
+    <option value="city">City</option>
+    <option value="maxbet">Max Safe Bet</option>
+  </select>
+
+  <span class="filter-label" style="margin-left:12px;">City</span>
+  <select class="filter-select" id="filter-city" onchange="applyFilters()">
+    <option value="">All Cities</option>
+  </select>
+
+  <span class="filter-label" style="margin-left:12px;">Risk</span>
+  <select class="filter-select" id="filter-risk" onchange="applyFilters()">
+    <option value="">All</option>
+    <option value="LOW">Low</option>
+    <option value="MEDIUM">Medium</option>
+    <option value="HIGH">High</option>
+  </select>
+
+  <span class="filter-label" style="margin-left:12px;">Type</span>
+  <select class="filter-select" id="filter-type" onchange="applyFilters()">
+    <option value="">All</option>
+    <option value="sure">Sure Bets</option>
+    <option value="edge">Edge</option>
+    <option value="safe_no">Safe NO</option>
+  </select>
+
+  <span class="filter-label" style="margin-left:12px;">Side</span>
+  <select class="filter-select" id="filter-side" onchange="applyFilters()">
+    <option value="">All</option>
+    <option value="YES">YES</option>
+    <option value="NO">NO</option>
+  </select>
+</div>
+
+<!-- ── Main Content ────────────────────────────── -->
+<div class="main">
+  <div id="content">
+    <div class="empty-state">
+      <div class="icon">🌤</div>
+      <h3>Welcome to PolyWeather</h3>
+      <p>Click "Scan Now" to analyze weather markets for trading opportunities across 30 cities and 5 forecast models.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── State ────────────────────────────────────
+  let currentMode = 'tomorrow';
+  let allData = null;        // raw API response
+  let allOpps = [];          // unfiltered opportunities
+
+  // ── Mode Toggle ──────────────────────────────
+  function setMode(m) {
+    currentMode = m;
+    document.getElementById('btn-tomorrow').classList.toggle('active', m === 'tomorrow');
+    document.getElementById('btn-all').classList.toggle('active', m !== 'tomorrow');
+    // Trigger a new scan with the new mode
+    scan();
+  }
+
+  // ── Scan ─────────────────────────────────────
+  async function scan() {
+    const btn = document.getElementById('scan-btn');
+    btn.disabled = true;
+    btn.textContent = 'Scanning…';
+    setStatus('scanning', 'Scanning markets…');
+    showLoading();
+
+    const triggerUrl = `/api/scan?mode=${currentMode}&force=true`;
+    const pollUrl = `/api/scan?mode=${currentMode}&force=false`;
+
+    try {
+      let data = await fetchWithPoll(triggerUrl, pollUrl);
+      allData = data;
+      allOpps = data.opportunities || [];
+      populateCityFilter();
+      updateStats();
+      applyFilters();
+      const ts = new Date(data.timestamp);
+      setStatus('done', `Last scanned: ${ts.toLocaleTimeString()}`);
+      // Refresh log if panel is open
+      if (document.getElementById('log-panel').classList.contains('open')) fetchLog();
+    } catch (err) {
+      showError(err.message || 'Scan failed');
+      setStatus('error', 'Scan failed');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Scan Now';
+    }
+  }
+
+  async function fetchWithPoll(triggerUrl, pollUrl) {
+    // First request triggers the scan with force=true
+    const firstResp = await fetch(triggerUrl);
+    if (!firstResp.ok) throw new Error(`HTTP ${firstResp.status}`);
+    const firstData = await firstResp.json();
+    if (firstData.status !== 'scanning') return firstData; // already had results
+
+    // Now poll with force=false so we don't re-trigger
+    const maxPolls = 60;
+    let polls = 0;
+    while (polls < maxPolls) {
+      await sleep(2000);
+      polls++;
+      const resp = await fetch(pollUrl);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      if (data.status === 'scanning') {
+        updateProgress(data);
+        continue;
+      }
+      return data;
+    }
+    throw new Error('Scan timed out — try again.');
+  }
+
+  function updateProgress(data) {
+    const el = document.getElementById('scan-progress');
+    if (!el) return;
+    const done = data.progress_done || 0;
+    const total = data.progress_total || 30;
+    const city = data.progress_city || '';
+    const phase = data.progress_phase || 'starting';
+    const pct = total > 0 ? Math.round(done / total * 100) : 0;
+
+    let msg = '';
+    if (phase === 'starting') {
+      msg = 'Fetching Polymarket events…';
+    } else if (phase === 'fetching') {
+      msg = `Fetching forecasts: ${done}/${total} cities (${city})`;
+    } else if (phase === 'analyzing') {
+      msg = 'Analyzing trade opportunities…';
+    }
+
+    el.innerHTML = `
+      <div style="margin-top:16px; width: 300px; max-width: 80%;">
+        <div style="display:flex; justify-content:space-between; font-size:13px; color:var(--text2); margin-bottom:6px;">
+          <span>${msg}</span>
+          <span style="font-family:var(--mono)">${pct}%</span>
+        </div>
+        <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden;">
+          <div style="height:100%; width:${pct}%; background:var(--cyan); border-radius:3px; transition:width 0.3s;"></div>
+        </div>
+      </div>`;
+  }
+
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  // ── Status ───────────────────────────────────
+  function setStatus(state, text) {
+    const dot = document.getElementById('status-dot');
+    const label = document.getElementById('status-text');
+    dot.className = 'status-dot ' + state;
+    label.textContent = text;
+  }
+
+  // ── Stats ────────────────────────────────────
+  function updateStats() {
+    if (!allData) return;
+    document.getElementById('stats-bar').style.display = 'flex';
+    document.getElementById('stat-total').textContent = allData.total || 0;
+    document.getElementById('stat-sure').textContent = allData.sure_bets || 0;
+    document.getElementById('stat-edge').textContent = allData.edge_bets || 0;
+    document.getElementById('stat-safeno').textContent = allData.safe_no_bets || 0;
+    document.getElementById('stat-duration').textContent = (allData.scan_duration_seconds || 0).toFixed(1);
+  }
+
+  // ── City Filter Options ──────────────────────
+  function populateCityFilter() {
+    const sel = document.getElementById('filter-city');
+    const cities = [...new Set(allOpps.map(o => o.city))].sort();
+    sel.innerHTML = '<option value="">All Cities</option>';
+    cities.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = c;
+      sel.appendChild(opt);
+    });
+  }
+
+  // ── Filter + Sort + Render ───────────────────
+  function applyFilters() {
+    let opps = [...allOpps];
+
+    const city = document.getElementById('filter-city').value;
+    const risk = document.getElementById('filter-risk').value;
+    const type = document.getElementById('filter-type').value;
+    const side = document.getElementById('filter-side').value;
+
+    const tier1Only = document.getElementById('chk-tier1').checked;
+    if (tier1Only) opps = opps.filter(o => o.city_tier === 1);
+    if (city) opps = opps.filter(o => o.city === city);
+    if (risk) opps = opps.filter(o => o.risk === risk);
+    if (type) opps = opps.filter(o => o.bet_type === type);
+    if (side) opps = opps.filter(o => o.side === side);
+
+    const sort = document.getElementById('filter-sort').value;
+    const sorters = {
+      edge: (a, b) => b.edge - a.edge,
+      confidence: (a, b) => b.confidence - a.confidence,
+      ev: (a, b) => b.ev_per_dollar - a.ev_per_dollar,
+      city: (a, b) => a.city.localeCompare(b.city),
+      maxbet: (a, b) => ((b.liquidity || {}).adjusted_bet_usd || 0) - ((a.liquidity || {}).adjusted_bet_usd || 0),
+    };
+    opps.sort(sorters[sort] || sorters.edge);
+
+    renderCards(opps);
+  }
+
+  // ── Render Cards ─────────────────────────────
+  function renderCards(opps) {
+    const el = document.getElementById('content');
+    if (!opps.length && allData) {
+      el.innerHTML = `
+        <div class="empty-state">
+          <div class="icon">📊</div>
+          <h3>No opportunities found</h3>
+          <p>Markets are efficiently priced right now, or filters are too restrictive. Adjust filters or try again later.</p>
+        </div>`;
+      return;
+    }
+    if (!opps.length) return;
+
+    el.innerHTML = '<div class="cards-grid">' + opps.map(renderCard).join('') + '</div>';
+  }
+
+  function renderCard(o) {
+    const isSure = o.bet_type === 'sure';
+    const isSafeNo = o.bet_type === 'safe_no';
+    const isStrong = o.edge >= 10;
+    const cardClass = isSure ? 'trade-card sure-bet' : 'trade-card';
+
+    // Badges
+    let typeBadge = '';
+    if (isSure) typeBadge = '<span class="badge badge-sure">Sure Bet</span>';
+    else if (isSafeNo) typeBadge = '<span class="badge badge-safeno">Safe NO</span>';
+    else if (isStrong) typeBadge = '<span class="badge badge-strong">Strong Edge</span>';
+    else typeBadge = '<span class="badge badge-edge">Edge</span>';
+
+    const sideBadge = o.side === 'YES'
+      ? '<span class="badge badge-yes">Buy YES</span>'
+      : '<span class="badge badge-no">Buy NO</span>';
+
+    const riskClass = { LOW: 'badge-risk-low', MEDIUM: 'badge-risk-medium', HIGH: 'badge-risk-high' }[o.risk] || 'badge-risk-low';
+    const riskBadge = `<span class="badge ${riskClass}">${o.risk}</span>`;
+
+    // Confidence
+    const confColor = o.confidence >= 80 ? 'var(--green)' : o.confidence >= 50 ? 'var(--amber)' : 'var(--red)';
+    const confTextColor = o.confidence >= 80 ? 'var(--green)' : o.confidence >= 50 ? 'var(--amber)' : 'var(--red)';
+
+    // Date
+    const d = new Date(o.date + 'T00:00:00');
+    const dateStr = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+    // Tier
+    const tierLabel = `Tier ${o.city_tier}`;
+    const horizonLabel = o.horizon_days === 1 ? '1d out' : `${o.horizon_days}d out`;
+
+    // Models
+    const modelId = 'models-' + Math.random().toString(36).slice(2, 9);
+    let modelChips = '';
+    if (o.model_values) {
+      modelChips = Object.entries(o.model_values).map(([name, val]) => {
+        const short = name.replace(/_/g, ' ').replace(/seamless/gi, '').trim();
+        return `<div class="model-chip"><span class="name">${esc(short)}</span><span class="val">${val.toFixed(1)}°C</span></div>`;
+      }).join('');
+    }
+
+    // Prob bar max scale
+    const maxP = Math.max(o.my_p, o.mkt_p, 10);
+    const mktW = (o.mkt_p / maxP * 100).toFixed(1);
+    const modelW = (o.my_p / maxP * 100).toFixed(1);
+
+    // Liquidity data
+    const liq = o.liquidity || {};
+    const maxBet = liq.adjusted_bet_usd || 0;
+    const maxBetStr = maxBet > 0 ? `$${maxBet.toFixed(2)}` : '—';
+    const slipCents = liq.slippage_cents || 0;
+    const slipStr = slipCents > 0 ? `${slipCents.toFixed(1)}¢` : '0¢';
+    const liqRating = liq.liquidity_rating || 'UNKNOWN';
+
+    // Colors
+    const liqColor = liq.cap_reason === 'kelly' ? 'green' : 'amber';
+    const slipColor = slipCents < 1 ? 'green' : slipCents < 3 ? 'amber' : 'red';
+    const liqBadgeClass = {
+      'HIGH': 'badge-risk-low',
+      'MEDIUM': 'badge-risk-medium',
+      'LOW': 'badge-risk-high',
+      'UNKNOWN': 'badge-edge'
+    }[liqRating] || 'badge-edge';
+
+    return `
+    <div class="${cardClass}">
+      <div class="card-header">
+        <div class="card-badges">
+          ${typeBadge}
+          ${sideBadge}
+          ${riskBadge}
+        </div>
+        <div class="confidence-wrap">
+          <span class="confidence-label">Confidence</span>
+          <div class="confidence-bar-bg">
+            <div class="confidence-bar-fill" style="width:${o.confidence}%; background:${confColor}"></div>
+          </div>
+          <span class="confidence-value" style="color:${confTextColor}">${o.confidence}</span>
+        </div>
+      </div>
+
+      <div class="card-meta">
+        <span class="city">${esc(o.city)}</span>
+        ${o.icao ? '<span class="sep">·</span><span class="detail" style="font-family:var(--mono);color:var(--cyan)">' + esc(o.icao) + '</span>' : ''}
+        <span class="sep">·</span>
+        <span class="detail">${tierLabel}</span>
+        <span class="sep">·</span>
+        <span class="detail">${horizonLabel}</span>
+      </div>
+      <div class="card-date">${dateStr}</div>
+      ${o.station_name ? '<div style="font-size:12px;color:var(--text2);margin-bottom:10px;">📍 Resolves at: <span style="color:var(--cyan)">' + esc(o.station_name) + '</span> (' + esc(o.icao) + ')</div>' : ''}
+
+      <div class="forecast-row">
+        <div class="forecast-item">
+          <strong>Band:</strong> ${esc(o.band_c)} (${esc(o.band_f)})
+          <span class="band-range">${(() => {
+            const bc = o.band_c || '';
+            const bt = o.band_type || '';
+            if (bt === 'below') {
+              const m = bc.match(/([\d.]+)/);
+              return m ? 'covers: ' + (-99) + '°C to ' + (parseFloat(m[1])+1) + '°C' : '';
+            }
+            if (bt === 'above') {
+              const m = bc.match(/([\d.]+)/);
+              return m ? 'covers: ' + m[1] + '°C and above' : '';
+            }
+            // exact band
+            const rm = bc.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
+            if (rm) return 'covers: ' + rm[1] + '.0°C to ' + rm[2] + '.0°C';
+            const sm = bc.match(/^(-?\d+)°C$/);
+            if (sm) return 'covers: ' + sm[1] + '.0°C to ' + (parseInt(sm[1])+1) + '.0°C';
+            return '';
+          })()}</span>
+        </div>
+        <div class="forecast-item"><strong>Forecast:</strong> ${o.forecast_c.toFixed(2)}°C / ${o.forecast_f.toFixed(1)}°F</div>
+      </div>
+
+      <div class="price-box">
+        <div class="price-box-title">Price vs Model</div>
+        <div class="price-grid">
+          <div class="price-cell">
+            <span class="price-cell-label">Market <span class="tip" data-tip="Current price on Polymarket for this outcome. This is what you pay per share.">ⓘ</span></span>
+            <span class="price-cell-value">${o.mkt_p.toFixed(1)}¢</span>
+          </div>
+          <div class="price-cell">
+            <span class="price-cell-label">Model <span class="tip" data-tip="Our probability estimate from multi-model weather forecasts (5 deterministic models + up to 122 ensemble members).">ⓘ</span></span>
+            <span class="price-cell-value cyan">${o.my_p.toFixed(1)}%</span>
+          </div>
+          <div class="price-cell">
+            <span class="price-cell-label">Edge <span class="tip" data-tip="Model probability minus market price. Higher = more mispriced in our favour. Measured in percentage points (pp).">ⓘ</span></span>
+            <span class="price-cell-value green">+${o.edge.toFixed(1)}pp</span>
+          </div>
+          <div class="price-cell">
+            <span class="price-cell-label">EV / Dollar <span class="tip" data-tip="Expected value per dollar wagered. A $1.00 EV means you expect to double your money on average.">ⓘ</span></span>
+            <span class="price-cell-value green">$${o.ev_per_dollar.toFixed(2)}</span>
+          </div>
+          <div class="price-cell">
+            <span class="price-cell-label">Half-Kelly <span class="tip" data-tip="Half-Kelly criterion: recommended % of bankroll to bet for optimal long-term growth with reduced variance.">ⓘ</span></span>
+            <span class="price-cell-value amber">${o.hk.toFixed(1)}%</span>
+          </div>
+          <div class="price-cell">
+            <span class="price-cell-label">Empirical <span class="tip" data-tip="Probability calculated directly by counting ensemble members that fall in this band. Cross-check against the parametric model probability.">ⓘ</span></span>
+            <span class="price-cell-value">${o.empirical_p != null ? o.empirical_p.toFixed(1) + '%' : '—'}</span>
+          </div>
+          <div class="price-cell">
+            <span class="price-cell-label">Recommended <span class="tip" data-tip="Liquidity-adjusted bet size. Accounts for order book depth and slippage — capped so your edge isn't eaten by market impact.">ⓘ</span></span>
+            <span class="price-cell-value ${liqColor}">${maxBetStr}</span>
+          </div>
+          <div class="price-cell">
+            <span class="price-cell-label">Market Depth <span class="tip" data-tip="Total USD available on the ask side of the order book. This is how much you could theoretically buy before exhausting all sellers.">ⓘ</span></span>
+            <span class="price-cell-value">${liq.total_depth_usd ? '$' + liq.total_depth_usd.toFixed(0) : '—'}</span>
+          </div>
+          <div class="price-cell">
+            <span class="price-cell-label">Liquidity <span class="tip" data-tip="Overall liquidity rating based on order book depth. HIGH = deep book (>$500), MEDIUM = moderate ($50-500), LOW = thin (<$50).">ⓘ</span></span>
+            <span class="badge ${liqBadgeClass}">${liqRating}</span>
+          </div>
+        </div>
+
+        <div class="prob-compare">
+          <span class="prob-compare-label">Market</span>
+          <div class="prob-bar-track">
+            <div class="prob-bar-mkt" style="width:${mktW}%"></div>
+          </div>
+          <span class="prob-bar-pct" style="color:var(--red)">${o.mkt_p.toFixed(1)}%</span>
+        </div>
+        <div class="prob-compare">
+          <span class="prob-compare-label">Model</span>
+          <div class="prob-bar-track">
+            <div class="prob-bar-model" style="width:${modelW}%"></div>
+          </div>
+          <span class="prob-bar-pct" style="color:var(--green)">${o.my_p.toFixed(1)}%</span>
+        </div>
+      </div>
+
+      ${modelChips ? `
+      <button class="model-toggle" onclick="toggleModels('${modelId}', this)">
+        <span class="arrow">▶</span> Model Consensus (${o.model_count} models, ${o.ensemble_count} ensemble)
+      </button>
+      <div class="model-values" id="${modelId}">
+        ${modelChips}
+      </div>
+      ` : ''}
+
+      ${(() => {
+        const ladder = (liq.size_ladder || []);
+        if (!ladder.length) return '';
+        const ladderId = 'ladder-' + Math.random().toString(36).slice(2, 9);
+        const rows = ladder.map(r => {
+          const edgeColor = r.effective_edge_pp >= 5 ? 'var(--green)' : r.effective_edge_pp >= 2 ? 'var(--amber)' : 'var(--red)';
+          const slipColor = r.slippage_cents < 1 ? 'var(--green)' : r.slippage_cents < 3 ? 'var(--amber)' : 'var(--red)';
+          const filled = r.fully_filled ? '' : ' <span style="color:var(--red);font-size:10px;">partial</span>';
+          const profitPct = r.bet_usd > 0 ? (r.profit_usd / r.bet_usd * 100) : 0;
+          const returnStr = profitPct > 100 ? (r.payout_usd / r.bet_usd).toFixed(1) + 'x' : profitPct.toFixed(1) + '%';
+          const returnColor = profitPct > 50 ? 'var(--cyan)' : profitPct > 0 ? 'var(--green)' : 'var(--red)';
+          return '<tr>' +
+            '<td style="color:var(--text)">$' + r.target_usd + filled + '</td>' +
+            '<td>' + r.vwap_cents.toFixed(1) + '¢</td>' +
+            '<td style="color:' + slipColor + '">' + r.slippage_cents.toFixed(1) + '¢</td>' +
+            '<td style="color:' + edgeColor + '">' + r.effective_edge_pp.toFixed(1) + 'pp</td>' +
+            '<td>' + r.shares.toFixed(0) + '</td>' +
+            '<td style="color:var(--green)">$' + r.profit_usd.toFixed(2) + '</td>' +
+            '<td style="color:' + returnColor + '">' + returnStr + '</td>' +
+            '</tr>';
+        }).join('');
+        return '<button class="model-toggle" onclick="toggleModels(\'' + ladderId + '\', this)">' +
+          '<span class="arrow">▶</span> Size Options — bet size vs slippage (depth: $' + (liq.total_depth_usd || 0).toFixed(0) + ')' +
+          '</button>' +
+          '<div class="model-values" id="' + ladderId + '">' +
+          '<table class="size-ladder">' +
+          '<thead><tr><th>Bet</th><th>Avg Price</th><th>Slippage</th><th>Edge</th><th>Shares</th><th>Profit if ✓</th><th>Return</th></tr></thead>' +
+          '<tbody>' + rows + '</tbody></table></div>';
+      })()}
+
+      ${(() => {
+        const levels = (liq.book_levels || []);
+        if (!levels.length) return '';
+        const bookId = 'book-' + Math.random().toString(36).slice(2, 9);
+        const totalShares = levels.reduce((s, l) => s + l.shares, 0);
+        const totalCost = levels.reduce((s, l) => s + l.cost_usd, 0);
+        const goodLevels = levels.filter(l => l.edge_pp > 0);
+        const goodCost = goodLevels.reduce((s, l) => s + l.cost_usd, 0);
+        const goodProfit = goodLevels.reduce((s, l) => s + l.profit_if_win, 0);
+        const rows = levels.map(l => {
+          const edgeColor = l.edge_pp >= 5 ? 'var(--green)' : l.edge_pp >= 0 ? 'var(--amber)' : 'var(--red)';
+          const barW = Math.min(l.shares / (totalShares * 0.3) * 100, 100);
+          return '<tr>' +
+            '<td style="color:var(--text)">' + l.price_cents.toFixed(1) + '¢</td>' +
+            '<td>' + l.implied_prob.toFixed(1) + '%</td>' +
+            '<td style="color:' + edgeColor + '">' + (l.edge_pp >= 0 ? '+' : '') + l.edge_pp.toFixed(1) + 'pp</td>' +
+            '<td>' + l.shares.toFixed(0) + '</td>' +
+            '<td>$' + l.cost_usd.toFixed(2) + '</td>' +
+            '<td>$' + l.cum_cost_usd.toFixed(2) + '</td>' +
+            '<td style="color:var(--green)">$' + l.profit_if_win.toFixed(2) + '</td>' +
+            '<td style="color:var(--cyan)">' + (l.cost_usd > 0 ? ((l.shares * 1.0) / l.cost_usd).toFixed(1) : '0') + 'x</td>' +
+            '<td><div style="height:8px;width:' + barW.toFixed(0) + '%;background:' + edgeColor + ';border-radius:4px;min-width:2px"></div></td>' +
+            '</tr>';
+        }).join('');
+        return '<button class="model-toggle" onclick="toggleModels(\'' + bookId + '\', this)">' +
+          '<span class="arrow">▶</span> Order Book — ' + levels.length + ' price levels' +
+          (goodLevels.length ? ' (' + goodLevels.length + ' with +edge, $' + goodCost.toFixed(0) + ' available, $' + goodProfit.toFixed(0) + ' profit if ✓)' : '') +
+          '</button>' +
+          '<div class="model-values" id="' + bookId + '">' +
+          '<table class="size-ladder">' +
+          '<thead><tr><th>Price</th><th>Mkt Prob</th><th>Edge</th><th>Shares</th><th>Cost</th><th>Cum. Cost</th><th>Profit if ✓</th><th>Return</th><th>Depth</th></tr></thead>' +
+          '<tbody>' + rows + '</tbody></table></div>';
+      })()}
+
+      <div class="the-bet">
+        <div class="the-bet-label">THE BET</div>
+        <div class="the-bet-question">${esc(o.question)}</div>
+        <div class="the-bet-action">
+          ${(() => {
+            const fc = o.forecast_c.toFixed(1);
+            const band = esc(o.band_c);
+            const myP = o.my_p.toFixed(1);
+            const mktP = o.mkt_p.toFixed(1);
+            if (o.bet_type === 'safe_no' || o.side === 'NO') {
+              const bt = o.band_type || '';
+              const bc = o.band_c || '';
+              // Check if forecast actually supports NO or if it's a contrarian bet
+              let forecastSupportsNo = false;
+              let reason = '';
+              if (bt === 'below') {
+                const m = bc.match(/([\d.]+)/);
+                const thresh = m ? parseFloat(m[1]) : 0;
+                forecastSupportsNo = o.forecast_c > thresh + 1;
+                reason = forecastSupportsNo
+                  ? `forecast <strong>${fc}°C</strong> is well above the <strong>${band}</strong> threshold`
+                  : `forecast <strong>${fc}°C</strong> is near the <strong>${band}</strong> threshold, but model uncertainty favours NO`;
+              } else if (bt === 'above') {
+                const m = bc.match(/([\d.]+)/);
+                const thresh = m ? parseFloat(m[1]) : 0;
+                forecastSupportsNo = o.forecast_c < thresh;
+                reason = forecastSupportsNo
+                  ? `forecast <strong>${fc}°C</strong> is below the <strong>${band}</strong> threshold`
+                  : `forecast <strong>${fc}°C</strong> is above <strong>${band}</strong>, but model uncertainty means <strong>${myP}%</strong> chance it drops below`;
+              } else {
+                // exact band
+                const sm = bc.match(/^(-?\d+)°C$/);
+                const rm = bc.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
+                let lo = 0, hi = 0;
+                if (sm) { lo = parseFloat(sm[1]); hi = lo + 1; }
+                else if (rm) { lo = parseFloat(rm[1]); hi = parseFloat(rm[2]); }
+                forecastSupportsNo = o.forecast_c < lo - 1 || o.forecast_c > hi + 1;
+                reason = forecastSupportsNo
+                  ? `forecast <strong>${fc}°C</strong> is far from the <strong>${band}</strong> band`
+                  : `forecast <strong>${fc}°C</strong> is near <strong>${band}</strong>, but model gives <strong>${myP}%</strong> chance it lands outside`;
+              }
+              if (o.bet_type === 'safe_no') {
+                const safeRet = ((100 - o.mkt_p) / o.mkt_p * 100).toFixed(1);
+                return `<span class="bet-verdict safe">SAFE NO — ${reason}. <strong>${myP}%</strong> NO probability for a safe <strong>${safeRet}%</strong> return</span>`;
+              }
+              return `<span class="bet-verdict no">NO — ${reason}. Market prices NO at <strong>${mktP}¢</strong></span>`;
+            }
+            // YES bet — parse band to check if forecast is actually in it
+            const bandStr = o.band_c || '';
+            const belowMatch = bandStr.match(/^<=?\s*(-?[\d.]+)/);
+            const aboveMatch = bandStr.match(/^>=?\s*(-?[\d.]+)/);
+            const rangeMatch = bandStr.match(/(-?[\d.]+)\s*[-–]\s*(-?[\d.]+)/);
+            const singleMatch = bandStr.match(/^(-?\d+)C$/);  // "16C" single-degree band
+            let explanation = '';
+            if (belowMatch) {
+              const thresh = parseFloat(belowMatch[1]);
+              if (o.forecast_c <= thresh) {
+                explanation = `forecast <strong>${fc}°C</strong> is at or below the <strong>${band}</strong> threshold`;
+              } else {
+                explanation = `forecast <strong>${fc}°C</strong> is above <strong>${band}</strong>, but model gives`;
+              }
+            } else if (aboveMatch) {
+              const thresh = parseFloat(aboveMatch[1]);
+              if (o.forecast_c >= thresh) {
+                explanation = `forecast <strong>${fc}°C</strong> is at or above the <strong>${band}</strong> threshold`;
+              } else {
+                explanation = `forecast <strong>${fc}°C</strong> is below <strong>${band}</strong>, but model gives`;
+              }
+            } else if (singleMatch) {
+              // Single-degree band: "16C" means 16.0-16.99°C
+              const bandVal = parseFloat(singleMatch[1]);
+              if (o.forecast_c >= bandVal && o.forecast_c < bandVal + 1) {
+                explanation = `forecast <strong>${fc}°C</strong> falls right in the <strong>${band}</strong> band`;
+              } else {
+                const dist = o.forecast_c < bandVal ? bandVal - o.forecast_c : o.forecast_c - (bandVal + 1);
+                if (dist < 1) {
+                  explanation = `forecast <strong>${fc}°C</strong> is close to the <strong>${band}</strong> band`;
+                } else {
+                  explanation = `forecast <strong>${fc}°C</strong> is ${dist.toFixed(1)}° from the <strong>${band}</strong> band, but model gives`;
+                }
+              }
+            } else if (rangeMatch) {
+              const lo = parseFloat(rangeMatch[1]);
+              const hi = parseFloat(rangeMatch[2]);
+              if (o.forecast_c >= lo && o.forecast_c < hi) {
+                explanation = `forecast <strong>${fc}°C</strong> falls right in the <strong>${band}</strong> band`;
+              } else {
+                const dist = o.forecast_c < lo ? lo - o.forecast_c : o.forecast_c - hi;
+                if (dist <= 2) {
+                  explanation = `forecast <strong>${fc}°C</strong> is close to the <strong>${band}</strong> band`;
+                } else {
+                  explanation = `forecast <strong>${fc}°C</strong> is ${dist.toFixed(1)}° from the <strong>${band}</strong> band, but model gives`;
+                }
+              }
+            } else {
+              explanation = `forecast <strong>${fc}°C</strong> targets the <strong>${band}</strong> band`;
+            }
+            return `<span class="bet-verdict yes">YES — ${explanation}. Model gives <strong>${myP}%</strong> chance, market only prices <strong>${mktP}¢</strong></span>`;
+          })()}
+        </div>
+        <div class="the-bet-payout">
+          ${o.bet_type === 'safe_no'
+            ? `Buy NO at <strong>${o.mkt_p.toFixed(1)}¢</strong> → collect <strong>$1.00</strong> = <span class="the-bet-return">${((100 - o.mkt_p) / o.mkt_p * 100).toFixed(1)}% return</span>`
+            : `Buy at <strong>${o.mkt_p.toFixed(1)}¢</strong> → pays <strong>$1.00</strong> if correct <span class="the-bet-return">(${(100 / o.mkt_p).toFixed(0)}x return)</span>`
+          }
+          ${liq.slippage_cents > 0 ? `<br><span style="color:var(--text2);font-size:12px;">After slippage: effective price ${(liq.effective_price * 100).toFixed(1)}¢ (edge ${liq.effective_edge_pp}pp)</span>` : ''}
+        </div>
+      </div>
+
+      <div class="cta-row">
+        <a class="cta-btn ${o.side === 'YES' ? 'yes' : 'no'}" href="${esc(o.url)}" target="_blank" rel="noopener">
+          Buy ${o.side} on "${esc(o.question)}" at ${o.mkt_p.toFixed(1)}¢ <span class="cta-arrow">→</span> Polymarket
+        </a>
+      </div>
+    </div>`;
+  }
+
+  function toggleModels(id, btn) {
+    const el = document.getElementById(id);
+    const arrow = btn.querySelector('.arrow');
+    el.classList.toggle('open');
+    arrow.classList.toggle('open');
+  }
+
+  // ── HTML escape ──────────────────────────────
+  function esc(s) {
+    if (!s) return '';
+    const div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+  }
+
+  // ── Loading State ────────────────────────────
+  function showLoading() {
+    document.getElementById('content').innerHTML = `
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <h3>Scanning Markets</h3>
+        <p>Fetching forecasts from 5 weather models + 122 ensemble members…</p>
+        <div id="scan-progress"></div>
+      </div>`;
+  }
+
+  // ── Log Panel ────────────────────────────────
+  function toggleLog() {
+    const panel = document.getElementById('log-panel');
+    const btn = document.getElementById('log-btn');
+    const isOpen = panel.classList.toggle('open');
+    btn.classList.toggle('active', isOpen);
+    if (isOpen) fetchLog();
+  }
+
+  async function fetchLog() {
+    try {
+      const resp = await fetch('/api/log');
+      const data = await resp.json();
+      const el = document.getElementById('log-content');
+      if (data.log && data.log.trim()) {
+        el.textContent = data.log;
+      } else {
+        el.innerHTML = '<span class="log-empty">No scan log yet. Run a scan to see debug output.</span>';
+      }
+    } catch (e) {
+      document.getElementById('log-content').textContent = 'Failed to fetch log: ' + e.message;
+    }
+  }
+
+  function copyLog() {
+    const text = document.getElementById('log-content').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.querySelector('.log-copy-btn');
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+    });
+  }
+
+  // ── Error State ──────────────────────────────
+  function showError(msg) {
+    document.getElementById('content').innerHTML = `
+      <div class="error-state">
+        <h3>Scan Error</h3>
+        <p>${esc(msg)}</p>
+        <button class="retry-btn" onclick="scan()">Retry Scan</button>
+      </div>`;
+  }
+</script>
+</body>
+</html>
