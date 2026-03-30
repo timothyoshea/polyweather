@@ -1677,6 +1677,79 @@
         <button class="retry-btn" onclick="scan()">Retry Scan</button>
       </div>`;
   }
+
+  // ── History Panel ───────────────────────────
+  function toggleHistory() {
+    const panel = document.getElementById('history-panel');
+    const btn = document.getElementById('history-btn');
+    const isOpen = panel.classList.toggle('open');
+    btn.classList.toggle('active', isOpen);
+    if (isOpen) loadHistory();
+  }
+
+  async function loadHistory() {
+    const el = document.getElementById('history-content');
+    el.innerHTML = '<span style="color:var(--text2)">Loading...</span>';
+    try {
+      const resp = await fetch('/api/history?limit=20');
+      const scans = await resp.json();
+      if (!scans.length) {
+        el.innerHTML = '<span class="log-empty">No scan history yet. Scans run every 10 minutes automatically.</span>';
+        return;
+      }
+      el.innerHTML = `
+        <table style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;">
+          <thead>
+            <tr style="color:var(--cyan);border-bottom:1px solid var(--card-border);text-align:left;">
+              <th style="padding:6px 8px;">Time</th>
+              <th style="padding:6px 8px;">Opportunities</th>
+              <th style="padding:6px 8px;">Sure</th>
+              <th style="padding:6px 8px;">Edge</th>
+              <th style="padding:6px 8px;">Safe NO</th>
+              <th style="padding:6px 8px;">Duration</th>
+              <th style="padding:6px 8px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${scans.map(s => {
+              const t = new Date(s.created_at);
+              const timeStr = t.toLocaleString();
+              return `<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                <td style="padding:6px 8px;color:var(--text2);">${timeStr}</td>
+                <td style="padding:6px 8px;">${s.total_opportunities}</td>
+                <td style="padding:6px 8px;color:var(--green);">${s.sure_bets}</td>
+                <td style="padding:6px 8px;color:var(--cyan);">${s.edge_bets}</td>
+                <td style="padding:6px 8px;color:#90caf9;">${s.safe_no_bets}</td>
+                <td style="padding:6px 8px;color:var(--text2);">${(s.duration_seconds || 0).toFixed(1)}s</td>
+                <td style="padding:6px 8px;">
+                  <button onclick="loadScanOpps('${s.id}')" style="background:none;border:1px solid var(--card-border);color:var(--cyan);padding:2px 8px;border-radius:4px;cursor:pointer;font-size:11px;">View</button>
+                </td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>`;
+    } catch (e) {
+      el.innerHTML = '<span style="color:var(--red)">Failed to load history: ' + esc(e.message) + '</span>';
+    }
+  }
+
+  async function loadScanOpps(scanId) {
+    try {
+      const resp = await fetch('/api/history?scan_id=' + scanId);
+      const opps = await resp.json();
+      allOpps = opps;
+      allData = { total: opps.length, sure_bets: opps.filter(o=>o.bet_type==='sure').length, edge_bets: opps.filter(o=>o.bet_type==='edge').length, safe_no_bets: opps.filter(o=>o.bet_type==='safe_no').length, scan_duration_seconds: 0 };
+      populateCityFilter();
+      updateStats();
+      applyFilters();
+      setStatus('done', 'Viewing historical scan');
+      // Close history panel
+      document.getElementById('history-panel').classList.remove('open');
+      document.getElementById('history-btn').classList.remove('active');
+    } catch (e) {
+      showError('Failed to load scan: ' + e.message);
+    }
+  }
 </script>
 </body>
 </html>
