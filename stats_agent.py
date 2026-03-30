@@ -26,13 +26,82 @@ from config import (
 # FORECAST COMBINATION
 # ══════════════════════════════════════════════════════════════════════════════
 
-def compute_combined_forecast(det_models, ensemble_members):
+# Regional model weights — based on verified accuracy by geography
+# Keys are model names from Open-Meteo, values are relative weights (normalized at runtime)
+# ECMWF: best globally, especially Europe/Middle East/tropics
+# ICON: strong in Europe, good midlatitudes
+# GFS: strong in North America
+# GEM: strong in Canada/North America
+# MeteoFrance: strong in Western Europe/Mediterranean
+REGIONAL_MODEL_WEIGHTS = {
+    "europe": {
+        "ecmwf_ifs025": 0.30, "icon_seamless": 0.28, "meteofrance_seamless": 0.22,
+        "gfs_seamless": 0.12, "gem_seamless": 0.08,
+    },
+    "north_america": {
+        "gfs_seamless": 0.28, "ecmwf_ifs025": 0.28, "gem_seamless": 0.20,
+        "icon_seamless": 0.14, "meteofrance_seamless": 0.10,
+    },
+    "asia": {
+        "ecmwf_ifs025": 0.40, "icon_seamless": 0.20, "gfs_seamless": 0.20,
+        "gem_seamless": 0.10, "meteofrance_seamless": 0.10,
+    },
+    "south_america": {
+        "ecmwf_ifs025": 0.35, "gfs_seamless": 0.25, "icon_seamless": 0.20,
+        "gem_seamless": 0.10, "meteofrance_seamless": 0.10,
+    },
+    "oceania": {
+        "ecmwf_ifs025": 0.35, "gfs_seamless": 0.20, "icon_seamless": 0.20,
+        "gem_seamless": 0.15, "meteofrance_seamless": 0.10,
+    },
+    "middle_east": {
+        "ecmwf_ifs025": 0.40, "icon_seamless": 0.20, "gfs_seamless": 0.15,
+        "meteofrance_seamless": 0.15, "gem_seamless": 0.10,
+    },
+    "default": {
+        "ecmwf_ifs025": 0.30, "gfs_seamless": 0.20, "icon_seamless": 0.20,
+        "gem_seamless": 0.15, "meteofrance_seamless": 0.15,
+    },
+}
+
+CITY_REGION = {
+    # Europe
+    "London": "europe", "Paris": "europe", "Madrid": "europe", "Warsaw": "europe",
+    "Milan": "europe", "Munich": "europe", "Ankara": "europe", "Istanbul": "europe",
+    "Berlin": "europe", "Vienna": "europe", "Amsterdam": "europe", "Stockholm": "europe",
+    "Moscow": "europe",
+    # North America
+    "New York": "north_america", "NYC": "north_america", "Chicago": "north_america",
+    "Toronto": "north_america", "Dallas": "north_america", "Atlanta": "north_america",
+    "Miami": "north_america", "Seattle": "north_america", "Boston": "north_america",
+    "Austin": "north_america", "Denver": "north_america", "Houston": "north_america",
+    "Los Angeles": "north_america", "San Francisco": "north_america",
+    # Asia
+    "Tokyo": "asia", "Seoul": "asia", "Shanghai": "asia", "Beijing": "asia",
+    "Hong Kong": "asia", "Taipei": "asia", "Singapore": "asia", "Chongqing": "asia",
+    "Chengdu": "asia", "Wuhan": "asia", "Shenzhen": "asia", "Lucknow": "asia",
+    # South America
+    "Buenos Aires": "south_america", "Sao Paulo": "south_america",
+    # Oceania
+    "Wellington": "oceania", "Sydney": "oceania", "Melbourne": "oceania",
+    # Middle East
+    "Tel Aviv": "middle_east",
+    # Mexico — closer to GFS/GEM coverage
+    "Mexico City": "north_america",
+    "Cape Town": "default",
+}
+
+
+def compute_combined_forecast(det_models, ensemble_members, city=None):
     """Combine deterministic model forecasts and ensemble members into a
     unified forecast with uncertainty estimate.
+
+    Uses region-specific model weighting when city is provided.
 
     Args:
         det_models: dict of {model_name: temp_celsius} from deterministic models
         ensemble_members: list of temperatures from ECMWF ensemble members
+        city: optional city name for region-based deterministic model weighting
 
     Returns:
         dict with forecast statistics, or None if insufficient data.
