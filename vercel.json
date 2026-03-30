@@ -12,7 +12,11 @@
   ],
   "crons": [
     {
-      "path": "/api/scan",
+      "path": "/api/scan?mode=tomorrow",
+      "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/scan?mode=all",
       "schedule": "*/10 * * * *"
     }
   ]
