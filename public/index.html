@@ -980,6 +980,17 @@
   <pre id="log-content"><span class="log-empty">No scan log yet. Run a scan to see debug output.</span></pre>
 </div>
 
+<!-- ── History Panel ──────────────────────────── -->
+<div class="log-panel" id="history-panel" style="max-height:400px;">
+  <div class="log-header">
+    <span class="log-title">Scan History (from Supabase)</span>
+    <button class="log-copy-btn" onclick="loadHistory()">Refresh</button>
+  </div>
+  <div id="history-content" style="padding:12px;font-size:13px;color:var(--text2);overflow-y:auto;max-height:340px;">
+    <span class="log-empty">Click to load scan history.</span>
+  </div>
+</div>
+
 <!-- ── TODO Banner ─────────────────────────────── -->
 <div style="background:linear-gradient(90deg,rgba(255,193,7,0.08),rgba(255,152,0,0.05));border-bottom:1px solid rgba(255,193,7,0.2);padding:10px 24px;display:flex;align-items:center;gap:10px;font-size:13px;color:#ffc107;">
   <span style="font-size:16px;">📌</span>
