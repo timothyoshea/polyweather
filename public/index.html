@@ -2126,11 +2126,11 @@
   function renderTradeTable(trades) {
     const tbody = document.getElementById('trade-table-body');
     if (!trades || !trades.length) {
-      tbody.innerHTML = '<tr><td colspan="14" style="text-align:center;color:var(--text2);padding:40px;">No trades found. Trades will appear after the next scan.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="15" style="text-align:center;color:var(--text2);padding:40px;">No trades found. Trades will appear after the next scan.</td></tr>';
       return;
     }
 
-    tbody.innerHTML = trades.map(function(t) {
+    tbody.innerHTML = trades.map(function(t, idx) {
       const statusBadge = {
         open: '<span class="badge badge-open">OPEN</span>',
         won: '<span class="badge badge-won">WON</span>',
@@ -2152,7 +2152,54 @@
 
       const actualStr = t.actual_temp_c != null ? t.actual_temp_c.toFixed(1) + '\u00B0C' : '\u2014';
 
-      return '<tr>' +
+      // Format time
+      const timeStr = t.created_at ? new Date(t.created_at).toLocaleString('en-GB', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '\u2014';
+
+      // Build book levels detail row
+      const liq = t.liquidity || {};
+      const bookLevels = liq.book_levels || [];
+      const positiveLevels = bookLevels.filter(function(lv) { return lv.edge_pp > 0; });
+      const detailId = 'book-detail-' + idx;
+
+      let bookHtml = '';
+      if (positiveLevels.length > 0) {
+        bookHtml = '<table style="width:100%;font-size:11px;font-family:var(--mono);margin:4px 0;">' +
+          '<tr style="color:var(--cyan);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;">' +
+          '<th style="padding:4px 6px;text-align:left;">Price</th>' +
+          '<th style="padding:4px 6px;text-align:right;">Shares</th>' +
+          '<th style="padding:4px 6px;text-align:right;">Cost</th>' +
+          '<th style="padding:4px 6px;text-align:right;">Cum Cost</th>' +
+          '<th style="padding:4px 6px;text-align:right;">Edge</th>' +
+          '<th style="padding:4px 6px;text-align:right;">Profit if Win</th></tr>';
+        positiveLevels.forEach(function(lv) {
+          const edgeColor = lv.edge_pp >= 5 ? 'var(--green)' : 'var(--amber)';
+          bookHtml += '<tr style="border-bottom:1px solid rgba(255,255,255,0.03);">' +
+            '<td style="padding:4px 6px;">' + (lv.price_cents || 0).toFixed(1) + '\u00A2</td>' +
+            '<td style="padding:4px 6px;text-align:right;">' + (lv.shares || 0).toFixed(1) + '</td>' +
+            '<td style="padding:4px 6px;text-align:right;">$' + (lv.cost_usd || 0).toFixed(2) + '</td>' +
+            '<td style="padding:4px 6px;text-align:right;">$' + (lv.cum_cost_usd || 0).toFixed(2) + '</td>' +
+            '<td style="padding:4px 6px;text-align:right;color:' + edgeColor + '">+' + (lv.edge_pp || 0).toFixed(1) + 'pp</td>' +
+            '<td style="padding:4px 6px;text-align:right;color:var(--green);">$' + (lv.profit_if_win || 0).toFixed(2) + '</td></tr>';
+        });
+        // Show levels beyond edge (greyed out)
+        var negLevels = bookLevels.filter(function(lv) { return lv.edge_pp <= 0; }).slice(0, 3);
+        negLevels.forEach(function(lv) {
+          bookHtml += '<tr style="border-bottom:1px solid rgba(255,255,255,0.03);opacity:0.35;">' +
+            '<td style="padding:4px 6px;">' + (lv.price_cents || 0).toFixed(1) + '\u00A2</td>' +
+            '<td style="padding:4px 6px;text-align:right;">' + (lv.shares || 0).toFixed(1) + '</td>' +
+            '<td style="padding:4px 6px;text-align:right;">$' + (lv.cost_usd || 0).toFixed(2) + '</td>' +
+            '<td style="padding:4px 6px;text-align:right;">$' + (lv.cum_cost_usd || 0).toFixed(2) + '</td>' +
+            '<td style="padding:4px 6px;text-align:right;color:var(--red);">' + (lv.edge_pp || 0).toFixed(1) + 'pp</td>' +
+            '<td style="padding:4px 6px;text-align:right;color:var(--text2);">$' + (lv.profit_if_win || 0).toFixed(2) + '</td></tr>';
+        });
+        if (bookLevels.filter(function(lv) { return lv.edge_pp <= 0; }).length > 3) {
+          bookHtml += '<tr><td colspan="6" style="padding:4px 6px;color:var(--text2);font-size:10px;">...and ' + (bookLevels.filter(function(lv) { return lv.edge_pp <= 0; }).length - 3) + ' more levels below edge</td></tr>';
+        }
+        bookHtml += '</table>';
+      }
+
+      var mainRow = '<tr style="cursor:pointer;" onclick="var d=document.getElementById(\'' + detailId + '\');d.style.display=d.style.display===\'none\'?\'\':\'none\';">' +
+        '<td style="font-size:11px;color:var(--text2);">' + timeStr + '</td>' +
         '<td>' + t.date + '</td>' +
         '<td>' + t.city + '</td>' +
         '<td>' + (t.band_c || '') + '</td>' +
@@ -2168,6 +2215,31 @@
         '<td>' + pnlStr + '</td>' +
         '<td>' + roiStr + '</td>' +
         '</tr>';
+
+      var detailRow = '<tr id="' + detailId + '" style="display:none;"><td colspan="15" style="padding:8px 12px;background:rgba(255,255,255,0.02);">' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">' +
+        '<div>' +
+        '<div style="font-size:11px;text-transform:uppercase;color:var(--cyan);letter-spacing:0.5px;margin-bottom:6px;">Order Book Fills (' + positiveLevels.length + ' levels with +edge)</div>' +
+        bookHtml +
+        '</div>' +
+        '<div style="font-size:12px;font-family:var(--mono);">' +
+        '<div style="font-size:11px;text-transform:uppercase;color:var(--cyan);letter-spacing:0.5px;margin-bottom:6px;">Trade Details</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;">' +
+        '<span style="color:var(--text2);">Forecast:</span><span>' + (t.forecast_c != null ? t.forecast_c.toFixed(1) + '\u00B0C' : '\u2014') + '</span>' +
+        '<span style="color:var(--text2);">Model Prob:</span><span>' + (t.my_p != null ? t.my_p.toFixed(1) + '%' : '\u2014') + '</span>' +
+        '<span style="color:var(--text2);">Market Price:</span><span>' + (t.mkt_p != null ? t.mkt_p.toFixed(1) + '\u00A2' : '\u2014') + '</span>' +
+        '<span style="color:var(--text2);">EV/Dollar:</span><span>' + (t.ev_per_dollar != null ? '$' + t.ev_per_dollar.toFixed(2) : '\u2014') + '</span>' +
+        '<span style="color:var(--text2);">Half Kelly:</span><span>' + (t.half_kelly != null ? t.half_kelly.toFixed(1) + '%' : '\u2014') + '</span>' +
+        '<span style="color:var(--text2);">Risk:</span><span>' + (t.risk || '\u2014') + '</span>' +
+        '<span style="color:var(--text2);">VWAP Entry:</span><span>' + (t.entry_price * 100).toFixed(2) + '\u00A2</span>' +
+        '<span style="color:var(--text2);">Total Depth:</span><span>$' + ((liq.total_depth_usd || 0).toFixed(0)) + '</span>' +
+        '</div>' +
+        (t.question ? '<div style="margin-top:8px;color:var(--text2);font-size:11px;">' + t.question + '</div>' : '') +
+        (t.url ? '<a href="' + t.url + '" target="_blank" style="display:inline-block;margin-top:6px;color:var(--cyan);font-size:11px;text-decoration:none;">View on Polymarket \u2192</a>' : '') +
+        '</div></div>' +
+        '</td></tr>';
+
+      return mainRow + detailRow;
     }).join('');
   }
 </script>
