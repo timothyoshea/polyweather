@@ -680,6 +680,7 @@ class TradeSignal:
             "model_count": fc.get("model_count", 0),
             "ensemble_count": fc.get("ensemble_count", 0),
             "model_values": fc.get("model_values", {}),
+            "model_weights": fc.get("model_weights", {}),
             "question": self.question,
             "token_id": self.token_id,
             "condition_id": self.condition_id,
