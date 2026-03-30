@@ -135,17 +135,28 @@ def compute_combined_forecast(det_models, ensemble_members, city=None):
         result["ensemble_std"] = None
         result["ensemble_count"] = 0
 
-    # Deterministic model statistics
+    # Deterministic model statistics — region-weighted
     if has_det:
         vals = list(det_models.values())
         arr_d = np.array(vals)
-        result["multi_model_mean"] = float(np.mean(arr_d))
+
+        # Compute weighted mean using regional accuracy weights
+        region = CITY_REGION.get(city, "default") if city else "default"
+        weights_map = REGIONAL_MODEL_WEIGHTS.get(region, REGIONAL_MODEL_WEIGHTS["default"])
+        model_names = list(det_models.keys())
+        model_vals = np.array([det_models[m] for m in model_names])
+        raw_weights = np.array([weights_map.get(m, 0.1) for m in model_names])
+        norm_weights = raw_weights / raw_weights.sum()  # normalize to sum to 1
+
+        result["multi_model_mean"] = float(np.average(model_vals, weights=norm_weights))
         result["multi_model_std"] = float(np.std(arr_d, ddof=1)) if len(vals) > 1 else 1.5
         result["multi_model_spread"] = float(np.max(arr_d) - np.min(arr_d))
         result["multi_model_min"] = float(np.min(arr_d))
         result["multi_model_max"] = float(np.max(arr_d))
         result["model_count"] = len(vals)
         result["model_values"] = dict(det_models)
+        result["model_weights"] = {m: round(float(w), 3) for m, w in zip(model_names, norm_weights)}
+        result["region"] = region
     else:
         result["multi_model_mean"] = None
         result["multi_model_spread"] = None
