@@ -1928,6 +1928,7 @@
   }
 
   async function loadScanOpps(scanId) {
+    setStatus('scanning', 'Loading scan ' + scanId.slice(0,8) + '...');
     try {
       const resp = await fetch('/api/history?scan_id=' + scanId);
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
