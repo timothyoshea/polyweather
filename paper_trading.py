@@ -7,6 +7,7 @@ resolves them against actual temperatures, and computes P&L.
 import json
 import urllib.request
 import urllib.error
+import urllib.parse
 from datetime import datetime, date
 import re
 
