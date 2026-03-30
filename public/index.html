@@ -2242,6 +2242,58 @@
       return mainRow + detailRow;
     }).join('');
   }
+  // Convert a paper_trade row into the format renderCard() expects
+  function tradeToOpp(t) {
+    const fd = t.forecast_details || {};
+    const liq = t.liquidity || {};
+    return {
+      ...t,
+      city_tier: fd.city_tier || 2,
+      horizon_days: fd.horizon_days || 1,
+      combined_forecast: fd.combined_forecast || t.forecast_c,
+      ensemble_mean: fd.ensemble_mean,
+      ensemble_std: fd.ensemble_std,
+      ensemble_min: fd.ensemble_min,
+      ensemble_max: fd.ensemble_max,
+      multi_model_spread: fd.multi_model_spread,
+      eff_std: fd.eff_std,
+      forecast_f: t.forecast_c != null ? (t.forecast_c * 9/5 + 32) : null,
+      my_p: t.my_p || 0,
+      mkt_p: t.mkt_p || 0,
+      edge: t.edge || 0,
+      ev_per_dollar: t.ev_per_dollar || 0,
+      hk: t.half_kelly || 0,
+      confidence: t.confidence || 0,
+      model_values: t.model_values || {},
+      liquidity: liq,
+    };
+  }
+
+  function showTradeSnapshot(idx) {
+    const t = _currentTrades[idx];
+    if (!t) return;
+    const opp = tradeToOpp(t);
+    const cardHtml = renderCard(opp);
+    const modal = document.getElementById('snapshot-modal');
+    document.getElementById('snapshot-modal-body').innerHTML = cardHtml;
+    modal.style.display = 'flex';
+  }
+
+  function closeSnapshotModal() {
+    document.getElementById('snapshot-modal').style.display = 'none';
+    document.getElementById('snapshot-modal-body').innerHTML = '';
+  }
+
+  // Store current trades for snapshot access
+  var _currentTrades = [];
 </script>
+
+<!-- Snapshot Modal -->
+<div id="snapshot-modal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.8);backdrop-filter:blur(4px);justify-content:center;align-items:flex-start;padding:24px;overflow-y:auto;" onclick="if(event.target===this)closeSnapshotModal();">
+  <div style="max-width:900px;width:100%;position:relative;">
+    <button onclick="closeSnapshotModal()" style="position:sticky;top:0;float:right;background:var(--card);border:1px solid var(--card-border);color:var(--text);width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:18px;z-index:1000;display:flex;align-items:center;justify-content:center;">×</button>
+    <div id="snapshot-modal-body"></div>
+  </div>
+</div>
 </body>
 </html>
