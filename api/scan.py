@@ -17,11 +17,11 @@ from http.server import BaseHTTPRequestHandler
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Force scanner into JSON/non-interactive mode
-sys.argv = ["scanner.py", "--json", "--tomorrow"]
+sys.argv = ["scanner.py", "--json"]
 
 import config
 config.JSON_OUT = True
-config.TOMORROW = True
+config.TOMORROW = False  # scan all dates (tomorrow through 5 days out)
 config.DEBUG = False
 
 from scanner import scan
