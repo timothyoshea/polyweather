@@ -1975,7 +1975,7 @@
     }
   }
 
-  function updateSummaryCards(s) {
+  function updateSummaryCards(s, trades) {
     document.getElementById('ts-total').textContent = s.total_trades || 0;
     const wr = document.getElementById('ts-winrate');
     wr.textContent = s.win_rate != null ? s.win_rate.toFixed(1) + '%' : '\u2014';
@@ -1993,6 +1993,40 @@
 
     document.getElementById('ts-open').textContent = s.open || 0;
     document.getElementById('ts-open').style.color = 'var(--cyan)';
+
+    // Estimated return & avg probability from all trades
+    const estEl = document.getElementById('ts-estreturn');
+    const probEl = document.getElementById('ts-avgprob');
+    if (trades && trades.length > 0) {
+      // Estimated return: weighted avg of (payout/cost - 1) using model probability
+      // For each trade: if model says my_p% chance of winning, expected return = my_p * (shares/cost) - 1
+      let totalWeight = 0, weightedReturn = 0, probSum = 0, probCount = 0;
+      trades.forEach(function(t) {
+        if (t.total_cost_usd > 0 && t.my_p != null) {
+          const prob = t.my_p / 100; // my_p is in percentage
+          const payoutIfWin = t.total_shares * 1.0;
+          const expectedPayout = prob * payoutIfWin;
+          const expectedReturn = (expectedPayout - t.total_cost_usd) / t.total_cost_usd;
+          weightedReturn += expectedReturn * t.total_cost_usd;
+          totalWeight += t.total_cost_usd;
+          probSum += t.my_p;
+          probCount++;
+        }
+      });
+      if (totalWeight > 0) {
+        const avgEstReturn = (weightedReturn / totalWeight) * 100;
+        estEl.textContent = (avgEstReturn >= 0 ? '+' : '') + avgEstReturn.toFixed(1) + '%';
+        estEl.style.color = avgEstReturn >= 0 ? 'var(--green)' : 'var(--red)';
+      }
+      if (probCount > 0) {
+        const avgProb = probSum / probCount;
+        probEl.textContent = avgProb.toFixed(1) + '%';
+        probEl.style.color = avgProb >= 70 ? 'var(--green)' : avgProb >= 50 ? 'var(--amber)' : 'var(--text)';
+      }
+    } else {
+      estEl.textContent = '\u2014';
+      probEl.textContent = '\u2014';
+    }
   }
 
   function renderBreakdowns(s) {
