@@ -37,7 +37,7 @@ def fetch_deterministic_forecasts(lat, lng, timezone):
     """
     models_str = ",".join(DETERMINISTIC_MODELS)
     try:
-        r = requests.get("https://api.open-meteo.com/v1/forecast", params={
+        r = requests.get(_FORECAST_BASE, params={
             "latitude": lat,
             "longitude": lng,
             "daily": "temperature_2m_max",
