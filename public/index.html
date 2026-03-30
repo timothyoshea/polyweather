@@ -2127,8 +2127,10 @@
     const tbody = document.getElementById('trade-table-body');
     if (!trades || !trades.length) {
       tbody.innerHTML = '<tr><td colspan="15" style="text-align:center;color:var(--text2);padding:40px;">No trades found. Trades will appear after the next scan.</td></tr>';
+      _currentTrades = [];
       return;
     }
+    _currentTrades = trades;
 
     tbody.innerHTML = trades.map(function(t, idx) {
       const statusBadge = {
