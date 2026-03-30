@@ -18,6 +18,10 @@
     {
       "path": "/api/scan?mode=all",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/resolve",
+      "schedule": "0 */2 * * *"
     }
   ]
 }
