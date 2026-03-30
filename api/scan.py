@@ -116,11 +116,14 @@ def run_scan_and_save(mode="all"):
         supabase_insert("opportunities", opp_rows)
 
         # Open paper trades (best-effort, don't break scan on failure)
+        paper_trade_error = None
+        paper_trade_count = 0
         try:
             from paper_trading import open_paper_trades
-            open_paper_trades(opps, scan_id, SUPABASE_URL, SUPABASE_SERVICE_KEY)
+            paper_trade_count = open_paper_trades(opps, scan_id, SUPABASE_URL, SUPABASE_SERVICE_KEY)
         except Exception as e:
-            print(f"[WARN] Paper trading error: {e}")
+            import traceback
+            paper_trade_error = f"{e}\n{traceback.format_exc()}"
 
     return {
         "scan_id": scan_id,
@@ -129,6 +132,8 @@ def run_scan_and_save(mode="all"):
         "sure_bets": sure_bets,
         "edge_bets": edge_bets,
         "safe_no_bets": safe_no_bets,
+        "paper_trades_opened": paper_trade_count,
+        "paper_trade_error": paper_trade_error,
     }
 
 
