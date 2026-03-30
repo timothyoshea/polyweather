@@ -1086,20 +1086,31 @@
     setStatus('scanning', 'Scanning markets…');
     showLoading();
 
-    const triggerUrl = `/api/scan?mode=${currentMode}&force=true`;
-    const pollUrl = `/api/scan?mode=${currentMode}&force=false`;
-
     try {
-      let data = await fetchWithPoll(triggerUrl, pollUrl);
-      allData = data;
-      allOpps = data.opportunities || [];
-      populateCityFilter();
-      updateStats();
-      applyFilters();
-      const ts = new Date(data.timestamp);
-      setStatus('done', `Last scanned: ${ts.toLocaleTimeString()}`);
-      // Refresh log if panel is open
-      if (document.getElementById('log-panel').classList.contains('open')) fetchLog();
+      // Trigger scan — Vercel serverless function runs scanner + saves to Supabase
+      const resp = await fetch(`/api/scan?mode=${currentMode}`);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const result = await resp.json();
+
+      if (result.error) throw new Error(result.error);
+
+      // Scan complete — now load the full opportunities from Supabase
+      if (result.scan_id) {
+        const oppsResp = await fetch(`/api/history?scan_id=${result.scan_id}`);
+        const opps = await oppsResp.json();
+        allOpps = opps;
+        allData = {
+          total: result.total,
+          sure_bets: result.sure_bets,
+          edge_bets: result.edge_bets,
+          safe_no_bets: result.safe_no_bets,
+          scan_duration_seconds: result.duration_seconds,
+        };
+        populateCityFilter();
+        updateStats();
+        applyFilters();
+        setStatus('done', `Scanned: ${new Date().toLocaleTimeString()} (${result.duration_seconds}s)`);
+      }
     } catch (err) {
       showError(err.message || 'Scan failed');
       setStatus('error', 'Scan failed');
@@ -1107,61 +1118,6 @@
       btn.disabled = false;
       btn.textContent = 'Scan Now';
     }
-  }
-
-  async function fetchWithPoll(triggerUrl, pollUrl) {
-    // First request triggers the scan with force=true
-    const firstResp = await fetch(triggerUrl);
-    if (!firstResp.ok) throw new Error(`HTTP ${firstResp.status}`);
-    const firstData = await firstResp.json();
-    if (firstData.status !== 'scanning') return firstData; // already had results
-
-    // Now poll with force=false so we don't re-trigger
-    const maxPolls = 60;
-    let polls = 0;
-    while (polls < maxPolls) {
-      await sleep(2000);
-      polls++;
-      const resp = await fetch(pollUrl);
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const data = await resp.json();
-      if (data.status === 'scanning') {
-        updateProgress(data);
-        continue;
-      }
-      return data;
-    }
-    throw new Error('Scan timed out — try again.');
-  }
-
-  function updateProgress(data) {
-    const el = document.getElementById('scan-progress');
-    if (!el) return;
-    const done = data.progress_done || 0;
-    const total = data.progress_total || 30;
-    const city = data.progress_city || '';
-    const phase = data.progress_phase || 'starting';
-    const pct = total > 0 ? Math.round(done / total * 100) : 0;
-
-    let msg = '';
-    if (phase === 'starting') {
-      msg = 'Fetching Polymarket events…';
-    } else if (phase === 'fetching') {
-      msg = `Fetching forecasts: ${done}/${total} cities (${city})`;
-    } else if (phase === 'analyzing') {
-      msg = 'Analyzing trade opportunities…';
-    }
-
-    el.innerHTML = `
-      <div style="margin-top:16px; width: 300px; max-width: 80%;">
-        <div style="display:flex; justify-content:space-between; font-size:13px; color:var(--text2); margin-bottom:6px;">
-          <span>${msg}</span>
-          <span style="font-family:var(--mono)">${pct}%</span>
-        </div>
-        <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden;">
-          <div style="height:100%; width:${pct}%; background:var(--cyan); border-radius:3px; transition:width 0.3s;"></div>
-        </div>
-      </div>`;
   }
 
   function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
