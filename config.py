@@ -156,6 +156,8 @@ CITY_GEO = {
     # ── Other (inferred) ──
     "Moscow":       ( 55.9726,  37.4146, "Europe/Moscow",     "UUEE"),  # Sheremetyevo
     "Cape Town":    (-33.9649,  18.6017, "Africa/Johannesburg","FACT"), # Cape Town Intl
+    "Istanbul":     ( 40.9769,  28.8146, "Europe/Istanbul",   "LTFM"),  # Istanbul Airport
+    "Mexico City":  ( 19.4361, -99.0719, "America/Mexico_City","MMMX"), # Benito Juarez
 }
 
 CITY_NORMALIZE = {
