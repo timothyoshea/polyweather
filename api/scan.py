@@ -47,8 +47,10 @@ def supabase_insert(table, rows):
         return json.loads(resp.read().decode("utf-8"))
 
 
-def run_scan_and_save():
+def run_scan_and_save(mode="all"):
     """Run the scanner and persist results to Supabase."""
+    # Set mode per-request (module-level config is shared across warm invocations)
+    config.TOMORROW = (mode == "tomorrow")
     t0 = time.time()
     opps = scan()
     duration = round(time.time() - t0, 1)
