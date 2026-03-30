@@ -68,7 +68,7 @@ def parse_event_title(title):
             dprint(f"SKIP out of range {parsed.date()}: {title[:60]}")
             return None
         date_key = parsed.strftime("%Y-%m-%d")
-        if TOMORROW and date_key != TOMORROW_STR:
+        if config.TOMORROW and date_key != TOMORROW_STR:
             dprint(f"SKIP not tomorrow ({date_key}): {title[:60]}")
             return None
         return city, date_key
