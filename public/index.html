@@ -1930,18 +1930,22 @@
   async function loadScanOpps(scanId) {
     try {
       const resp = await fetch('/api/history?scan_id=' + scanId);
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
       const rawOpps = await resp.json();
+      if (!Array.isArray(rawOpps)) throw new Error('Expected array, got: ' + typeof rawOpps);
       allOpps = normalizeOpps(rawOpps);
       allData = { total: allOpps.length, sure_bets: allOpps.filter(o=>o.bet_type==='sure').length, edge_bets: allOpps.filter(o=>o.bet_type==='edge').length, safe_no_bets: allOpps.filter(o=>o.bet_type==='safe_no').length, scan_duration_seconds: 0 };
       populateCityFilter();
       updateStats();
       applyFilters();
-      setStatus('done', 'Viewing historical scan');
+      setStatus('done', 'Viewing historical scan (' + allOpps.length + ' opps)');
       // Close history panel
       document.getElementById('history-panel').classList.remove('open');
       document.getElementById('history-btn').classList.remove('active');
     } catch (e) {
+      console.error('loadScanOpps error:', e);
       showError('Failed to load scan: ' + e.message);
+      setStatus('error', 'Load failed: ' + e.message);
     }
   }
 
