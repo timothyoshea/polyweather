@@ -2255,6 +2255,16 @@
         '<td>' + t.total_shares.toFixed(0) + '</td>' +
         '<td>' + (t.edge ? t.edge.toFixed(1) + 'pp' : '\u2014') + '</td>' +
         '<td>' + (t.confidence || '\u2014') + '</td>' +
+        '<td>' + (t.my_p != null ? '<span style="color:var(--cyan)">' + t.my_p.toFixed(1) + '%</span>' : '\u2014') + '</td>' +
+        '<td>' + (function() {
+          if (t.my_p != null && t.total_cost_usd > 0 && t.total_shares > 0) {
+            var prob = t.my_p / 100;
+            var estRet = ((prob * t.total_shares - t.total_cost_usd) / t.total_cost_usd * 100);
+            var color = estRet >= 0 ? 'var(--green)' : 'var(--red)';
+            return '<span style="color:' + color + '">' + (estRet >= 0 ? '+' : '') + estRet.toFixed(1) + '%</span>';
+          }
+          return '\u2014';
+        })() + '</td>' +
         '<td>' + statusBadge + '</td>' +
         '<td>' + actualStr + '</td>' +
         '<td>' + pnlStr + '</td>' +
