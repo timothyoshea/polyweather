@@ -1,0 +1,19 @@
+{
+  "buildCommand": "",
+  "outputDirectory": "public",
+  "functions": {
+    "api/scan.py": {
+      "maxDuration": 120,
+      "memory": 1024
+    }
+  },
+  "rewrites": [
+    { "source": "/", "destination": "/index.html" }
+  ],
+  "crons": [
+    {
+      "path": "/api/scan",
+      "schedule": "*/10 * * * *"
+    }
+  ]
+}
