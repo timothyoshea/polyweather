@@ -223,6 +223,8 @@ ICAO_STATION_NAME = {
     "SBGR": "Sao Paulo Guarulhos Airport",
     "UUEE": "Moscow Sheremetyevo Airport",
     "FACT": "Cape Town International Airport",
+    "LTFM": "Istanbul Airport",
+    "MMMX": "Mexico City Benito Juarez Airport",
 }
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
