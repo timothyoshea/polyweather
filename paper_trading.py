@@ -154,7 +154,7 @@ def open_paper_trades(opps, scan_id, supabase_url, supabase_service_key):
                     is_new_trade = True
             except urllib.error.HTTPError as e:
                 if e.code == 409:
-                    # Trade exists — fetch it and check for new liquidity to add
+                    # Trade exists — fetch it and check for new price levels
                     city_enc = urllib.parse.quote(opp.get("city", ""))
                     date_enc = urllib.parse.quote(opp.get("date", ""))
                     band_enc = urllib.parse.quote(opp.get("band_c", ""))
@@ -170,24 +170,31 @@ def open_paper_trades(opps, scan_id, supabase_url, supabase_service_key):
                         ex = existing[0]
                         trade_id = ex.get("id")
 
-                        # Compare current book depth vs what we already hold
-                        # New liquidity = current positive-edge cost minus what we already bought
-                        prev_cost = float(ex.get("total_cost_usd", 0))
-                        prev_shares = float(ex.get("total_shares", 0))
-                        curr_cost = position["total_cost_usd"]
-                        curr_shares = position["total_shares"]
+                        # Check for genuinely NEW price levels we haven't seen before.
+                        # Compare the set of price_cents in current book vs what we hold.
+                        prev_liq = ex.get("liquidity") or {}
+                        prev_levels = prev_liq.get("book_levels") or []
+                        prev_prices = set()
+                        for lv in prev_levels:
+                            if lv.get("edge_pp", 0) > 0:
+                                prev_prices.add(round(lv.get("price_cents", 0), 1))
 
-                        # If current book has more positive-edge liquidity than our position,
-                        # someone added orders — grab the new liquidity
-                        new_cost = curr_cost - prev_cost
-                        new_shares = curr_shares - prev_shares
+                        curr_levels = (liquidity or {}).get("book_levels") or []
+                        new_cost = 0.0
+                        new_shares = 0.0
+                        for lv in curr_levels:
+                            if lv.get("edge_pp", 0) > 0:
+                                price = round(lv.get("price_cents", 0), 1)
+                                if price not in prev_prices:
+                                    new_cost += lv.get("cost_usd", 0)
+                                    new_shares += lv.get("shares", 0)
 
                         if new_cost > 1.0 and new_shares > 0:
-                            # Accumulate: add new liquidity to existing position
+                            prev_cost = float(ex.get("total_cost_usd", 0))
+                            prev_shares = float(ex.get("total_shares", 0))
                             updated_cost = round(prev_cost + new_cost, 2)
                             updated_shares = round(prev_shares + new_shares, 2)
                             updated_vwap = round(updated_cost / updated_shares, 6)
-                            updated_levels = position["num_levels"]
 
                             update_url = (
                                 f"{supabase_url}/rest/v1/paper_trades"
@@ -197,20 +204,24 @@ def open_paper_trades(opps, scan_id, supabase_url, supabase_service_key):
                                 "total_cost_usd": updated_cost,
                                 "total_shares": updated_shares,
                                 "entry_price": updated_vwap,
-                                "num_levels": updated_levels,
-                                # Update latest market state
-                                "my_p": opp.get("my_p"),
-                                "mkt_p": opp.get("mkt_p"),
-                                "edge": opp.get("edge"),
-                                "confidence": opp.get("confidence"),
-                                "ev_per_dollar": opp.get("ev_per_dollar"),
-                                "forecast_c": opp.get("forecast_c"),
+                                "num_levels": position["num_levels"],
                                 "liquidity": liquidity,
                                 "model_values": opp.get("model_values"),
                                 "forecast_details": trade_row["forecast_details"],
                             }
                             _supabase_request(update_url, update_data, headers, method="PATCH")
-                            print(f"[INFO] Added ${new_cost:.2f} new liquidity to {opp.get('city')}/{opp.get('band_c')} (total: ${updated_cost:.2f})")
+                            print(f"[INFO] New price level found: +${new_cost:.2f} to {opp.get('city')}/{opp.get('band_c')} (total: ${updated_cost:.2f})")
+
+                        # Always update latest market state
+                        update_url = f"{supabase_url}/rest/v1/paper_trades?id=eq.{trade_id}"
+                        _supabase_request(update_url, {
+                            "my_p": opp.get("my_p"),
+                            "mkt_p": opp.get("mkt_p"),
+                            "edge": opp.get("edge"),
+                            "confidence": opp.get("confidence"),
+                            "ev_per_dollar": opp.get("ev_per_dollar"),
+                            "forecast_c": opp.get("forecast_c"),
+                        }, headers, method="PATCH")
                 else:
                     raise
 
