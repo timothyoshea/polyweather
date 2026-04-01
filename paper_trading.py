@@ -420,10 +420,10 @@ def resolve_open_trades(supabase_url, supabase_service_key, city_geo):
 
     today_str = date.today().strftime("%Y-%m-%d")
 
-    # Fetch open trades with date < today
+    # Fetch all open trades (including today — Polymarket resolves same-day)
     query_url = (
         f"{supabase_url}/rest/v1/paper_trades"
-        f"?status=eq.open&date=lt.{today_str}&select=*"
+        f"?status=eq.open&date=lte.{today_str}&select=*"
     )
     trades = _supabase_get(query_url, headers)
 
