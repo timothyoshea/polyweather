@@ -954,15 +954,28 @@ function renderPatterns(resolved) {
 // ── AI Insights ────────────────────────────
 function renderAISection() {
   return `<div class="ai-section">
-    <div class="ai-section-title">&#129302; AI Insights</div>
-    <button class="ai-btn" id="ai-btn" onclick="generateAI()">Generate AI Analysis</button>
-    <div class="ai-result" id="ai-result"></div>
+    <div class="ai-top-bar">
+      <div class="ai-section-title">&#129302; AI Analysis</div>
+      <div class="ai-top-actions">
+        <button class="ai-btn" id="ai-btn" onclick="generateAI()">Generate Analysis</button>
+        <button class="ai-btn-secondary" onclick="toggleAIHistory()">History</button>
+      </div>
+    </div>
     <div class="ai-followup" style="display:none" id="ai-followup">
-      <input class="ai-input" id="ai-question" placeholder="Ask a follow-up question about your data..." onkeydown="if(event.key==='Enter')askFollowup()">
+      <input class="ai-input" id="ai-question" placeholder="Ask a follow-up question about your trades..." onkeydown="if(event.key==='Enter')askFollowup()">
       <button class="ai-btn" onclick="askFollowup()" style="padding:10px 16px;">Ask</button>
     </div>
-    <div class="ai-history" id="ai-history"></div>
+    <div class="ai-result" id="ai-result"></div>
+    <div class="ai-history" id="ai-history" style="display:none"></div>
   </div>`;
+}
+
+function toggleAIHistory() {
+  const el = document.getElementById('ai-history');
+  if (!el) return;
+  const visible = el.style.display !== 'none';
+  el.style.display = visible ? 'none' : 'block';
+  if (!visible) loadAIHistory();
 }
 
 async function loadAIHistory() {
