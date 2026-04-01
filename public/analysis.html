@@ -933,15 +933,17 @@ async function askFollowup() {
 
   try {
     const resolved = filteredTrades.filter(t => t.status === 'won' || t.status === 'lost');
+    const activeBtn = document.querySelector('.date-btn.active');
+    const dateRange = activeBtn ? activeBtn.textContent : 'All Time';
     const res = await fetch('/api/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ trades: resolved, question })
+      body: JSON.stringify({ trades: resolved, question, date_range: dateRange })
     });
     const data = await res.json();
     const answer = renderMarkdown(data.analysis || data.text || data.message || JSON.stringify(data));
-    // Replace the "Thinking..." with the answer
     result.innerHTML = result.innerHTML.replace(/<span class="spinner"><\/span> Thinking\.\.\./, '') + answer;
+    loadAIHistory();
   } catch (e) {
     result.innerHTML = result.innerHTML.replace(/<span class="spinner"><\/span> Thinking\.\.\./, '<span style="color:var(--red)">Error: ' + escHtml(e.message) + '</span>');
   }
