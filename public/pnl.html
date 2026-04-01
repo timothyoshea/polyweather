@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PolyWeather — P&L</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --card: #12121a;
+    --card-border: #1e1e2e;
+    --green: #00e676;
+    --red: #ff5252;
+    --amber: #ffc107;
+    --cyan: #4fc3f7;
+    --text: #e0e0e0;
+    --text2: #888;
+    --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* ── Header ─────────────────────────────────── */
+  .header {
+    background: linear-gradient(180deg, #101018 0%, var(--bg) 100%);
+    border-bottom: 1px solid var(--card-border);
+    padding: 16px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    white-space: nowrap;
+    text-decoration: none;
+  }
+
+  .logo-icon {
+    font-size: 26px;
+    filter: drop-shadow(0 0 6px rgba(79, 195, 247, 0.5));
+  }
+
+  .logo span {
+    background: linear-gradient(135deg, var(--cyan), var(--green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* ── Nav ─────────────────────────────────── */
+  .nav {
+    display: flex;
+    gap: 4px;
+  }
+
+  .nav a {
+    color: var(--text2);
+    text-decoration: none;
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+  }
+
+  .nav a:hover {
+    color: var(--text);
+    border-color: #444;
+  }
+
+  .nav a.active {
+    background: rgba(79, 195, 247, 0.15);
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+
+  /* ── Layout ─────────────────────────────────── */
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  .section-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-title .icon { font-size: 18px; }
+
+  .section { margin-bottom: 32px; }
+
+  /* ── Summary Cards ─────────────────────────── */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .stat-card .label {
+    font-size: 11px;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  .stat-card .value {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 600;
+  }
+
+  .stat-card .sub {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 4px;
+  }
+
+  /* ── Charts ─────────────────────────────────── */
+  .chart-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+
+  .chart-card canvas {
+    width: 100% !important;
+    max-height: 300px;
+  }
+
+  /* ── Tables ─────────────────────────────────── */
+  .table-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .table-card .table-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--card-border);
+  }
+
+  .table-card .table-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  th {
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text2);
+    border-bottom: 1px solid var(--card-border);
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  th:hover { color: var(--cyan); }
+
+  td {
+    padding: 9px 14px;
+    border-bottom: 1px solid rgba(30, 30, 46, 0.5);
+    font-family: var(--mono);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  tr:hover { background: rgba(79, 195, 247, 0.03); }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    font-family: var(--mono);
+  }
+
+  .badge.won {
+    background: rgba(0, 230, 118, 0.15);
+    color: var(--green);
+  }
+
+  .badge.lost {
+    background: rgba(255, 82, 82, 0.15);
+    color: var(--red);
+  }
+
+  .pos { color: var(--green); }
+  .neg { color: var(--red); }
+
+  .trades-scroll {
+    max-height: 500px;
+    overflow-y: auto;
+  }
+
+  .trades-scroll::-webkit-scrollbar { width: 6px; }
+  .trades-scroll::-webkit-scrollbar-track { background: var(--card); }
+  .trades-scroll::-webkit-scrollbar-thumb { background: var(--card-border); border-radius: 3px; }
+
+  /* ── Loading ─────────────────────────────────── */
+  .loading {
+    text-align: center;
+    padding: 60px;
+    color: var(--text2);
+    font-size: 14px;
+  }
+
+  .loading .spinner {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--card-border);
+    border-top-color: var(--cyan);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 12px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Responsive ─────────────────────────────── */
+  @media (max-width: 768px) {
+    .chart-row { grid-template-columns: 1fr; }
+    .summary-grid { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+    .container { padding: 16px; }
+    .header { padding: 12px 16px; }
+    .header-top { gap: 12px; }
+    .table-card { overflow-x: auto; }
+  }
+
+  /* ── Sort indicator ──────────────────────────── */
+  th .sort-arrow { font-size: 10px; margin-left: 4px; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-top">
+    <a href="/" class="logo">
+      <span class="logo-icon">🌤️</span>
+      <span>PolyWeather</span>
+    </a>
+    <nav class="nav">
+      <a href="/">Scanner</a>
+      <a href="/pnl.html" class="active">P&amp;L</a>
+      <a href="/analysis.html">Analysis</a>
+    </nav>
+  </div>
+</div>
+
+<!-- Content -->
+<div class="container" id="app">
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div>Loading trades...</div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+const fmt = (n, d=2) => n == null ? '—' : Number(n).toFixed(d);
+const fmtUsd = n => n == null ? '—' : '$' + Number(n).toFixed(2);
+const fmtPct = n => n == null ? '—' : Number(n).toFixed(1) + '%';
+const clr = n => n >= 0 ? 'pos' : 'neg';
+
+async function loadTrades() {
+  try {
+    const [wonRes, lostRes] = await Promise.all([
+      fetch('/api/trades?status=won&limit=1000'),
+      fetch('/api/trades?status=lost&limit=1000')
+    ]);
+    const won = await wonRes.json();
+    const lost = await lostRes.json();
+    const trades = [...(won.trades || won), ...(lost.trades || lost)];
+    trades.sort((a, b) => new Date(a.resolved_at || a.created_at) - new Date(b.resolved_at || b.created_at));
+    return trades;
+  } catch (e) {
+    console.error('Failed to load trades:', e);
+    return [];
+  }
+}
+
+function computeStats(trades) {
+  const won = trades.filter(t => t.status === 'won');
+  const lost = trades.filter(t => t.status === 'lost');
+  const totalInvested = trades.reduce((s, t) => s + (Number(t.total_cost_usd) || 0), 0);
+  const totalPayout = trades.reduce((s, t) => s + (Number(t.payout_usd) || 0), 0);
+  const totalProfit = trades.reduce((s, t) => s + (Number(t.profit_usd) || 0), 0);
+  const roi = totalInvested > 0 ? (totalProfit / totalInvested) * 100 : 0;
+  const winRate = trades.length > 0 ? (won.length / trades.length) * 100 : 0;
+  return { total: trades.length, won: won.length, lost: lost.length, winRate, totalInvested, totalPayout, totalProfit, roi };
+}
+
+function groupByDate(trades) {
+  const map = {};
+  trades.forEach(t => {
+    const d = (t.resolved_at || t.created_at || '').slice(0, 10);
+    if (!d) return;
+    if (!map[d]) map[d] = 0;
+    map[d] += Number(t.profit_usd) || 0;
+  });
+  const dates = Object.keys(map).sort();
+  return { dates, daily: dates.map(d => map[d]) };
+}
+
+function groupBy(trades, key) {
+  const map = {};
+  trades.forEach(t => {
+    const k = t[key] || 'unknown';
+    if (!map[k]) map[k] = { count: 0, won: 0, lost: 0, invested: 0, profit: 0 };
+    map[k].count++;
+    if (t.status === 'won') map[k].won++;
+    else map[k].lost++;
+    map[k].invested += Number(t.total_cost_usd) || 0;
+    map[k].profit += Number(t.profit_usd) || 0;
+  });
+  return Object.entries(map).map(([k, v]) => ({
+    key: k, ...v,
+    winRate: v.count > 0 ? (v.won / v.count) * 100 : 0,
+    roi: v.invested > 0 ? (v.profit / v.invested) * 100 : 0
+  }));
+}
+
+function render(trades) {
+  const stats = computeStats(trades);
+  const { dates, daily } = groupByDate(trades);
+  const cumulative = [];
+  let cum = 0;
+  daily.forEach(d => { cum += d; cumulative.push(cum); });
+
+  const byType = groupBy(trades, 'bet_type');
+  const byCity = groupBy(trades, 'city').sort((a, b) => b.profit - a.profit);
+
+  const app = $('#app');
+  app.innerHTML = '';
+
+  // ── Summary Cards ──
+  const summaryHTML = `
+    <div class="summary-grid">
+      <div class="stat-card">
+        <div class="label">Total Trades</div>
+        <div class="value">${stats.total}</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Won / Lost</div>
+        <div class="value"><span class="pos">${stats.won}</span> / <span class="neg">${stats.lost}</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Win Rate</div>
+        <div class="value">${fmtPct(stats.winRate)}</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Total Invested</div>
+        <div class="value">${fmtUsd(stats.totalInvested)}</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Total Payout</div>
+        <div class="value">${fmtUsd(stats.totalPayout)}</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Total Profit</div>
+        <div class="value ${clr(stats.totalProfit)}">${fmtUsd(stats.totalProfit)}</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">ROI</div>
+        <div class="value ${clr(stats.roi)}">${fmtPct(stats.roi)}</div>
+      </div>
+    </div>
+  `;
+  app.insertAdjacentHTML('beforeend', summaryHTML);
+
+  // ── Charts ──
+  app.insertAdjacentHTML('beforeend', `
+    <div class="chart-row">
+      <div class="chart-card">
+        <div class="section-title"><span class="icon">📈</span> Cumulative P&amp;L</div>
+        <canvas id="cumChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="section-title"><span class="icon">📊</span> Daily P&amp;L</div>
+        <canvas id="dailyChart"></canvas>
+      </div>
+    </div>
+  `);
+
+  const chartDefaults = {
+    color: '#888',
+    borderColor: '#1e1e2e',
+    font: { family: "'Inter', sans-serif" }
+  };
+
+  // Cumulative chart
+  new Chart($('#cumChart'), {
+    type: 'line',
+    data: {
+      labels: dates,
+      datasets: [{
+        label: 'Cumulative Profit ($)',
+        data: cumulative,
+        borderColor: '#00e676',
+        backgroundColor: 'rgba(0, 230, 118, 0.08)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 2,
+        pointHoverRadius: 5,
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => '$' + ctx.parsed.y.toFixed(2) } }
+      },
+      scales: {
+        x: { ticks: { color: '#888', maxTicksLimit: 12, font: { size: 10 } }, grid: { color: 'rgba(30,30,46,0.5)' } },
+        y: { ticks: { color: '#888', callback: v => '$' + v.toFixed(0), font: { size: 10 } }, grid: { color: 'rgba(30,30,46,0.5)' } }
+      }
+    }
+  });
+
+  // Daily bar chart
+  new Chart($('#dailyChart'), {
+    type: 'bar',
+    data: {
+      labels: dates,
+      datasets: [{
+        label: 'Daily Profit ($)',
+        data: daily,
+        backgroundColor: daily.map(d => d >= 0 ? 'rgba(0, 230, 118, 0.6)' : 'rgba(255, 82, 82, 0.6)'),
+        borderColor: daily.map(d => d >= 0 ? '#00e676' : '#ff5252'),
+        borderWidth: 1,
+        borderRadius: 3
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => '$' + ctx.parsed.y.toFixed(2) } }
+      },
+      scales: {
+        x: { ticks: { color: '#888', maxTicksLimit: 12, font: { size: 10 } }, grid: { color: 'rgba(30,30,46,0.5)' } },
+        y: { ticks: { color: '#888', callback: v => '$' + v.toFixed(0), font: { size: 10 } }, grid: { color: 'rgba(30,30,46,0.5)' } }
+      }
+    }
+  });
+
+  // ── Breakdown by Bet Type ──
+  app.insertAdjacentHTML('beforeend', `
+    <div class="section">
+      <div class="section-title"><span class="icon">🎯</span> Breakdown by Bet Type</div>
+      <div class="table-card">
+        <table>
+          <thead><tr>
+            <th>Type</th><th>Count</th><th>Won</th><th>Lost</th><th>Win Rate</th><th>Invested</th><th>Profit</th><th>ROI</th>
+          </tr></thead>
+          <tbody>
+            ${byType.map(r => `<tr>
+              <td style="font-family:var(--sans);font-weight:500">${r.key}</td>
+              <td>${r.count}</td>
+              <td class="pos">${r.won}</td>
+              <td class="neg">${r.lost}</td>
+              <td>${fmtPct(r.winRate)}</td>
+              <td>${fmtUsd(r.invested)}</td>
+              <td class="${clr(r.profit)}">${fmtUsd(r.profit)}</td>
+              <td class="${clr(r.roi)}">${fmtPct(r.roi)}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `);
+
+  // ── Breakdown by City ──
+  app.insertAdjacentHTML('beforeend', `
+    <div class="section">
+      <div class="section-title"><span class="icon">🏙️</span> Breakdown by City</div>
+      <div class="table-card">
+        <table>
+          <thead><tr>
+            <th>City</th><th>Count</th><th>Won</th><th>Lost</th><th>Win Rate</th><th>Profit</th><th>ROI</th>
+          </tr></thead>
+          <tbody>
+            ${byCity.map(r => `<tr>
+              <td style="font-family:var(--sans);font-weight:500">${r.key}</td>
+              <td>${r.count}</td>
+              <td class="pos">${r.won}</td>
+              <td class="neg">${r.lost}</td>
+              <td>${fmtPct(r.winRate)}</td>
+              <td class="${clr(r.profit)}">${fmtUsd(r.profit)}</td>
+              <td class="${clr(r.roi)}">${fmtPct(r.roi)}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `);
+
+  // ── Closed Trades Table ──
+  let sortCol = null;
+  let sortAsc = true;
+  let sortedTrades = [...trades];
+
+  function renderTradesTable() {
+    const tbody = $('#trades-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = sortedTrades.map(t => {
+      const band = t.band_f ? `${t.band_f}°F` : (t.band_c ? `${t.band_c}°C` : '—');
+      const dir = t.band_type || '';
+      const date = (t.resolved_at || t.created_at || '').slice(0, 10);
+      const profit = Number(t.profit_usd) || 0;
+      const roi = Number(t.roi_pct) || 0;
+      return `<tr>
+        <td><span class="badge ${t.status}">${t.status.toUpperCase()}</span></td>
+        <td style="font-family:var(--sans)">${t.city || '—'}</td>
+        <td>${date}</td>
+        <td>${band} ${dir}</td>
+        <td>${t.side || '—'}</td>
+        <td>${t.bet_type || '—'}</td>
+        <td>${fmt(t.entry_price)}</td>
+        <td>${fmtUsd(t.total_cost_usd)}</td>
+        <td>${fmtUsd(t.payout_usd)}</td>
+        <td class="${clr(profit)}">${fmtUsd(profit)}</td>
+        <td class="${clr(roi)}">${fmtPct(roi)}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  app.insertAdjacentHTML('beforeend', `
+    <div class="section">
+      <div class="section-title"><span class="icon">📋</span> Closed Trades</div>
+      <div class="table-card">
+        <div class="trades-scroll">
+          <table id="trades-table">
+            <thead><tr>
+              <th data-key="status">Status</th>
+              <th data-key="city">City</th>
+              <th data-key="date">Date</th>
+              <th data-key="band">Band</th>
+              <th data-key="side">Side</th>
+              <th data-key="bet_type">Type</th>
+              <th data-key="entry_price">Entry</th>
+              <th data-key="total_cost_usd">Cost</th>
+              <th data-key="payout_usd">Payout</th>
+              <th data-key="profit_usd">Profit</th>
+              <th data-key="roi_pct">ROI</th>
+            </tr></thead>
+            <tbody id="trades-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `);
+
+  renderTradesTable();
+
+  // Sorting
+  $$('#trades-table th').forEach(th => {
+    th.addEventListener('click', () => {
+      const key = th.dataset.key;
+      if (!key) return;
+      if (sortCol === key) { sortAsc = !sortAsc; }
+      else { sortCol = key; sortAsc = true; }
+
+      // Update sort arrows
+      $$('#trades-table th .sort-arrow').forEach(el => el.remove());
+      th.insertAdjacentHTML('beforeend', `<span class="sort-arrow">${sortAsc ? '▲' : '▼'}</span>`);
+
+      const getVal = (t) => {
+        if (key === 'date') return t.resolved_at || t.created_at || '';
+        if (key === 'band') return t.band_f || t.band_c || 0;
+        const v = t[key];
+        return typeof v === 'string' ? v.toLowerCase() : (Number(v) || 0);
+      };
+
+      sortedTrades.sort((a, b) => {
+        let va = getVal(a), vb = getVal(b);
+        if (va < vb) return sortAsc ? -1 : 1;
+        if (va > vb) return sortAsc ? 1 : -1;
+        return 0;
+      });
+
+      renderTradesTable();
+    });
+  });
+}
+
+// ── Init ──
+loadTrades().then(trades => {
+  if (trades.length === 0) {
+    $('#app').innerHTML = '<div class="loading">No closed trades found.</div>';
+    return;
+  }
+  render(trades);
+});
+</script>
+</body>
+</html>
