@@ -849,28 +849,65 @@ function renderPatterns(resolved) {
   patterns.sort((a, b) => b.score - a.score);
   const top = patterns.slice(0, 10);
 
-  if (top.length === 0) {
-    return `<div class="patterns-section">
-      <h2 class="section-title">Best Performing Patterns</h2>
-      <div class="empty-state">Not enough resolved trades to identify patterns (need 3+ per group with positive win rate).</div>
+  // Also find worst performing: 3+ trades, worst ROI
+  const allWithEnough = [];
+  dimensions.forEach(dim => {
+    const groups = {};
+    resolved.forEach(t => {
+      const key = dim.fn(t);
+      if (!groups[key]) groups[key] = { count: 0, won: 0, invested: 0, profit: 0 };
+      const g = groups[key];
+      g.count++;
+      if (t.status === 'won') g.won++;
+      g.invested += (t.total_cost_usd || 0);
+      g.profit += (t.profit_usd || 0);
+    });
+    Object.entries(groups).forEach(([value, g]) => {
+      if (g.count < 3) return;
+      const wr = g.won / g.count * 100;
+      const roi = g.invested > 0 ? g.profit / g.invested * 100 : 0;
+      allWithEnough.push({ desc: `${dim.label}: ${value}`, count: g.count, wr, profit: g.profit, roi });
+    });
+  });
+  const worst = allWithEnough.filter(p => p.roi < 0).sort((a, b) => a.roi - b.roi).slice(0, 10);
+
+  function patternCard(p, i, rankColor) {
+    return `<div class="pattern-card">
+      <div class="pattern-rank" style="color:${rankColor}">#${i + 1}</div>
+      <div class="pattern-desc">${escHtml(p.desc)}</div>
+      <div class="pattern-stats">
+        <div><div class="pattern-stat-label">Trades</div><div>${p.count}</div></div>
+        <div><div class="pattern-stat-label">Win Rate</div><div class="${wrClass(p.wr)}">${p.wr.toFixed(1)}%</div></div>
+        <div><div class="pattern-stat-label">Profit</div><div class="${p.profit >= 0 ? 'profit-pos' : 'profit-neg'}">${p.profit >= 0 ? '+' : ''}$${p.profit.toFixed(2)}</div></div>
+        <div><div class="pattern-stat-label">ROI</div><div class="${p.roi >= 0 ? 'profit-pos' : 'profit-neg'}">${p.roi.toFixed(1)}%</div></div>
+      </div>
     </div>`;
   }
 
-  const cards = top.map((p, i) => `<div class="pattern-card">
-    <div class="pattern-rank">#${i + 1}</div>
-    <div class="pattern-desc">${escHtml(p.desc)}</div>
-    <div class="pattern-stats">
-      <div><div class="pattern-stat-label">Trades</div><div>${p.count}</div></div>
-      <div><div class="pattern-stat-label">Win Rate</div><div class="${wrClass(p.wr)}">${p.wr.toFixed(1)}%</div></div>
-      <div><div class="pattern-stat-label">Profit</div><div class="${p.profit >= 0 ? 'profit-pos' : 'profit-neg'}">${p.profit >= 0 ? '+' : ''}$${p.profit.toFixed(2)}</div></div>
-      <div><div class="pattern-stat-label">ROI</div><div class="${p.roi >= 0 ? 'profit-pos' : 'profit-neg'}">${p.roi.toFixed(1)}%</div></div>
-    </div>
-  </div>`).join('');
+  let result = '';
 
-  return `<div class="patterns-section">
-    <h2 class="section-title">Best Performing Patterns</h2>
-    ${cards}
-  </div>`;
+  if (top.length > 0) {
+    result += `<div class="patterns-section">
+      <h2 class="section-title" style="color:var(--green)">Winners — Best Performing Patterns</h2>
+      ${top.map((p, i) => patternCard(p, i, 'var(--green)')).join('')}
+    </div>`;
+  }
+
+  if (worst.length > 0) {
+    result += `<div class="patterns-section">
+      <h2 class="section-title" style="color:var(--red)">Losers — Worst Performing Patterns</h2>
+      ${worst.map((p, i) => patternCard(p, i, 'var(--red)')).join('')}
+    </div>`;
+  }
+
+  if (!result) {
+    result = `<div class="patterns-section">
+      <h2 class="section-title">Patterns</h2>
+      <div class="empty-state">Not enough resolved trades to identify patterns (need 3+ per group).</div>
+    </div>`;
+  }
+
+  return result;
 }
 
 // ── AI Insights ────────────────────────────
