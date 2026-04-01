@@ -347,21 +347,21 @@ def determine_outcome(actual_temp_c, band_c, band_type, side):
         return "won" if not yes_wins else "lost"
 
 
-def check_polymarket_resolution(condition_id):
+def check_polymarket_resolution(market_slug):
     """Check if a Polymarket market has resolved via the Gamma API.
 
     Args:
-        condition_id: The market condition ID stored in the trade.
+        market_slug: The market slug stored in the trade (e.g. "highest-temperature-in-paris-on-april-1-2026-12c").
 
     Returns:
         "YES" if YES outcome won, "NO" if NO outcome won, or None if not yet resolved.
     """
-    if not condition_id:
+    if not market_slug:
         return None
 
-    url = f"https://gamma-api.polymarket.com/markets?condition_id={condition_id}"
+    url = f"https://gamma-api.polymarket.com/markets?slug={urllib.parse.quote(market_slug)}"
     try:
-        req = urllib.request.Request(url)
+        req = urllib.request.Request(url, headers={"User-Agent": "PolyWeather/1.0"})
         with urllib.request.urlopen(req, timeout=15) as resp:
             data = json.loads(resp.read().decode("utf-8"))
 
@@ -392,7 +392,7 @@ def check_polymarket_resolution(condition_id):
                 return "NO"
 
     except Exception as e:
-        print(f"[WARN] Polymarket resolution check error for {condition_id}: {e}")
+        print(f"[WARN] Polymarket resolution check error for {market_slug}: {e}")
 
     return None
 
