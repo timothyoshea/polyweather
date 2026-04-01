@@ -340,20 +340,37 @@
 
   /* ── AI Insights ───────────────────────────── */
   .ai-section {
-    background: var(--card);
-    border: 1px solid var(--card-border);
-    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(124,77,255,0.06), rgba(79,195,247,0.06));
+    border: 1px solid rgba(124,77,255,0.25);
+    border-radius: 12px;
     padding: 24px;
     margin-bottom: 32px;
   }
 
-  .ai-section-title {
-    font-size: 16px;
-    font-weight: 600;
+  .ai-top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
     margin-bottom: 16px;
+  }
+
+  .ai-section-title {
+    font-size: 18px;
+    font-weight: 700;
     display: flex;
     align-items: center;
     gap: 8px;
+    background: linear-gradient(135deg, #b388ff, var(--cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .ai-top-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
 
   .ai-btn {
@@ -374,26 +391,50 @@
   .ai-btn:active { transform: translateY(0); }
   .ai-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 
+  .ai-btn-secondary {
+    background: none;
+    border: 1px solid rgba(124,77,255,0.4);
+    color: #b388ff;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .ai-btn-secondary:hover { border-color: #b388ff; background: rgba(124,77,255,0.1); }
+
   .ai-result {
     margin-top: 20px;
-    padding: 20px;
-    background: rgba(0,0,0,0.3);
-    border: 1px solid var(--card-border);
-    border-radius: 8px;
+    padding: 28px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(124,77,255,0.15);
+    border-radius: 10px;
     font-size: 14px;
-    line-height: 1.7;
+    line-height: 1.8;
     display: none;
-    white-space: pre-wrap;
+    color: var(--text);
   }
 
-  .ai-result h1, .ai-result h2, .ai-result h3 { color: var(--cyan); margin: 16px 0 8px; }
-  .ai-result h1 { font-size: 18px; }
-  .ai-result h2 { font-size: 16px; }
-  .ai-result h3 { font-size: 14px; }
-  .ai-result strong { color: var(--text); }
-  .ai-result ul, .ai-result ol { padding-left: 20px; margin: 8px 0; }
-  .ai-result li { margin: 4px 0; }
-  .ai-result code { font-family: var(--mono); background: rgba(79,195,247,0.1); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+  .ai-result h1 { color: #b388ff; font-size: 20px; margin: 24px 0 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(124,77,255,0.2); }
+  .ai-result h2 { color: var(--cyan); font-size: 17px; margin: 20px 0 10px; }
+  .ai-result h3 { color: #90caf9; font-size: 15px; margin: 16px 0 8px; }
+  .ai-result h1:first-child, .ai-result h2:first-child, .ai-result h3:first-child { margin-top: 0; }
+  .ai-result p { margin: 8px 0; }
+  .ai-result strong { color: #fff; }
+  .ai-result em { color: var(--amber); font-style: normal; }
+  .ai-result ul, .ai-result ol { padding-left: 24px; margin: 10px 0; }
+  .ai-result li { margin: 6px 0; line-height: 1.7; }
+  .ai-result li::marker { color: var(--cyan); }
+  .ai-result code { font-family: var(--mono); background: rgba(79,195,247,0.12); color: var(--cyan); padding: 2px 7px; border-radius: 4px; font-size: 13px; }
+  .ai-result pre { background: rgba(0,0,0,0.5); border: 1px solid var(--card-border); border-radius: 6px; padding: 14px; margin: 12px 0; overflow-x: auto; }
+  .ai-result pre code { background: none; padding: 0; color: var(--text); }
+  .ai-result blockquote { border-left: 3px solid var(--cyan); padding-left: 16px; margin: 12px 0; color: var(--text2); font-style: italic; }
+  .ai-result table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+  .ai-result table th { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--card-border); color: var(--cyan); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .ai-result table td { padding: 6px 12px; border-bottom: 1px solid rgba(30,30,46,0.5); font-family: var(--mono); font-size: 12px; }
+  .ai-result hr { border: none; border-top: 1px solid rgba(124,77,255,0.2); margin: 20px 0; }
 
   .ai-history { margin-top: 24px; }
   .ai-history-title {
