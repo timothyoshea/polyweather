@@ -952,12 +952,29 @@ function renderPatterns(resolved) {
 }
 
 // ── AI Insights ────────────────────────────
+function getDateLabel() {
+  const activeBtn = document.querySelector('.date-btn.active');
+  return activeBtn ? activeBtn.textContent.trim() : 'All Time';
+}
+
+function updateAIButton() {
+  const btn = document.getElementById('ai-btn');
+  if (btn && !btn.disabled) {
+    btn.textContent = `Analyze: ${getDateLabel()}`;
+  }
+}
+
 function renderAISection() {
+  const label = currentRange === 'all' ? 'All Time' :
+    currentRange === 'today' ? 'Today' :
+    currentRange === 'yesterday' ? 'Yesterday' :
+    currentRange === '7d' ? 'Last 7 Days' :
+    currentRange === '30d' ? 'Last 30 Days' : 'Custom Range';
   return `<div class="ai-section">
     <div class="ai-top-bar">
       <div class="ai-section-title">&#129302; AI Analysis</div>
       <div class="ai-top-actions">
-        <button class="ai-btn" id="ai-btn" onclick="generateAI()">Generate Analysis</button>
+        <button class="ai-btn" id="ai-btn" onclick="generateAI()">Analyze: ${label}</button>
         <button class="ai-btn-secondary" onclick="toggleAIHistory()">History</button>
       </div>
     </div>
