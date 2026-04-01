@@ -164,14 +164,21 @@ class handler(BaseHTTPRequestHandler):
             trades = body.get("trades", [])
             question = body.get("question", None)
             date_range = body.get("date_range", None)
+            breakdowns = body.get("breakdowns", None)
 
             if not trades:
                 self._respond(400, {"error": "No trade data provided"})
                 return
 
+            # Only include closed trades
+            closed_trades = [t for t in trades if t.get("status") in ("won", "lost")]
+            if not closed_trades:
+                self._respond(400, {"error": "No closed trades to analyze"})
+                return
+
             # Slim down trade data to reduce token usage
             slim_trades = []
-            for t in trades:
+            for t in closed_trades:
                 slim_trades.append({
                     "city": t.get("city"),
                     "date": t.get("date"),
@@ -194,7 +201,7 @@ class handler(BaseHTTPRequestHandler):
                     "forecast_c": t.get("forecast_c"),
                 })
 
-            analysis = call_claude(slim_trades, question)
+            analysis = call_claude(slim_trades, question, breakdowns, date_range)
 
             # Save to history
             save_analysis(
