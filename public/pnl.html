@@ -389,7 +389,7 @@ const clr = n => n >= 0 ? 'pos' : 'neg';
 
 let allTrades = [];
 let currentRange = 'all';
-let _sortedTrades = [];
+let __sortedTrades = [];
 let _visibleCount = 50;
 let _sortCol = null;
 let _sortAsc = true;
@@ -713,7 +713,7 @@ function render(trades) {
   `);
 
   // ── Closed Trades Table with infinite scroll ──
-  _sortedTrades = [...trades];
+  __sortedTrades = [...trades];
   _visibleCount = _PAGE_SIZE;
 
   function renderTradeRow(t) {
@@ -744,10 +744,10 @@ function render(trades) {
     const counter = $('#trades-counter');
     const loadMore = $('#load-more');
     if (!tbody) return;
-    const showing = sortedTrades.slice(0, visibleCount);
+    const showing = _sortedTrades.slice(0, visibleCount);
     tbody.innerHTML = showing.map(renderTradeRow).join('');
-    if (counter) counter.textContent = `Showing ${showing.length} of ${sortedTrades.length}`;
-    if (loadMore) loadMore.style.display = visibleCount >= sortedTrades.length ? 'none' : 'block';
+    if (counter) counter.textContent = `Showing ${showing.length} of ${_sortedTrades.length}`;
+    if (loadMore) loadMore.style.display = visibleCount >= _sortedTrades.length ? 'none' : 'block';
   }
 
   app.insertAdjacentHTML('beforeend', `
@@ -784,7 +784,7 @@ function render(trades) {
   const scrollEl = $('#trades-scroll');
   if (scrollEl) {
     scrollEl.addEventListener('scroll', () => {
-      if (visibleCount >= sortedTrades.length) return;
+      if (visibleCount >= _sortedTrades.length) return;
       if (scrollEl.scrollTop + scrollEl.clientHeight >= scrollEl.scrollHeight - 40) {
         loadMoreTrades();
       }
@@ -810,7 +810,7 @@ function render(trades) {
         return typeof v === 'string' ? v.toLowerCase() : (Number(v) || 0);
       };
 
-      sortedTrades.sort((a, b) => {
+      _sortedTrades.sort((a, b) => {
         let va = getVal(a), vb = getVal(b);
         if (va < vb) return sortAsc ? -1 : 1;
         if (va > vb) return sortAsc ? 1 : -1;
@@ -827,7 +827,7 @@ function loadMoreTrades() {
   const tbody = $('#trades-tbody');
   const counter = $('#trades-counter');
   const loadMore = $('#load-more');
-  // Access sortedTrades from the render closure isn't possible, so re-query
+  // Access _sortedTrades from the render closure isn't possible, so re-query
   // Instead we'll use a global
   // This is handled inline via the scroll event above
 }
