@@ -395,6 +395,36 @@
   .ai-result li { margin: 4px 0; }
   .ai-result code { font-family: var(--mono); background: rgba(79,195,247,0.1); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
 
+  .ai-history { margin-top: 24px; }
+  .ai-history-title {
+    font-size: 14px; font-weight: 600; color: var(--text2);
+    margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+  }
+  .ai-history-item {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 8px; padding: 16px; margin-bottom: 12px; cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .ai-history-item:hover { border-color: var(--cyan); }
+  .ai-history-item.expanded .ai-history-body { display: block; }
+  .ai-history-meta {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 12px; color: var(--text2); flex-wrap: wrap; gap: 8px;
+  }
+  .ai-history-meta .date { font-family: var(--mono); }
+  .ai-history-meta .trades { color: var(--cyan); }
+  .ai-history-meta .question { color: var(--text); font-weight: 500; }
+  .ai-history-body {
+    display: none; margin-top: 12px; padding-top: 12px;
+    border-top: 1px solid var(--card-border);
+    font-size: 13px; line-height: 1.7; color: var(--text2);
+  }
+  .ai-history-body h1, .ai-history-body h2, .ai-history-body h3 { color: var(--cyan); margin: 12px 0 6px; }
+  .ai-history-body h1 { font-size: 16px; } .ai-history-body h2 { font-size: 14px; } .ai-history-body h3 { font-size: 13px; }
+  .ai-history-body strong { color: var(--text); }
+  .ai-history-body ul, .ai-history-body ol { padding-left: 20px; margin: 6px 0; }
+  .ai-history-body code { font-family: var(--mono); background: rgba(79,195,247,0.1); padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+
   .ai-followup {
     display: flex;
     gap: 8px;
