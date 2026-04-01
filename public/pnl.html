@@ -294,6 +294,50 @@
 
   /* ── Sort indicator ──────────────────────────── */
   th .sort-arrow { font-size: 10px; margin-left: 4px; }
+
+  /* ── Date Picker Bar ──────────────────────────── */
+  .date-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--card-border);
+    background: rgba(18,18,26,0.8);
+    flex-wrap: wrap;
+    position: sticky;
+    top: 60px;
+    z-index: 90;
+    backdrop-filter: blur(8px);
+  }
+  .date-btn {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    color: var(--text2);
+    padding: 5px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+  .date-btn.active {
+    background: rgba(79,195,247,0.15);
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+  .date-btn:hover:not(.active) { border-color: #444; color: var(--text); }
+  .date-input {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    color: var(--text);
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .date-input::-webkit-calendar-picker-indicator { filter: invert(0.7); }
+  .date-sep { color: var(--text2); font-size: 12px; }
 </style>
 </head>
 <body>
