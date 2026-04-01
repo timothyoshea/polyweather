@@ -2,14 +2,66 @@
 Vercel Python serverless function — AI-powered trade analysis using Claude API.
 
 POST /api/analyze — sends trade data to Claude for pattern analysis
+GET  /api/analyze — returns history of past analyses
 """
 import os
 import json
 import urllib.request
 import urllib.error
+from datetime import datetime
 from http.server import BaseHTTPRequestHandler
+from urllib.parse import urlparse, parse_qs
 
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
+SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "").strip()
+
+
+def save_analysis(question, analysis, trade_count, date_range=None):
+    """Save an AI analysis to Supabase for history."""
+    if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
+        return
+    try:
+        url = f"{SUPABASE_URL}/rest/v1/ai_analyses"
+        headers = {
+            "apikey": SUPABASE_SERVICE_KEY,
+            "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
+            "Content-Type": "application/json",
+            "Prefer": "return=representation",
+        }
+        row = {
+            "question": question,
+            "analysis": analysis,
+            "trade_count": trade_count,
+            "date_range": date_range,
+            "created_at": datetime.utcnow().isoformat() + "Z",
+        }
+        data = json.dumps([row]).encode("utf-8")
+        req = urllib.request.Request(url, data=data, headers=headers, method="POST")
+        urllib.request.urlopen(req, timeout=10)
+    except Exception as e:
+        print(f"[WARN] Failed to save analysis: {e}")
+
+
+def get_analysis_history(limit=20):
+    """Fetch past AI analyses from Supabase."""
+    if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
+        return []
+    try:
+        url = (
+            f"{SUPABASE_URL}/rest/v1/ai_analyses"
+            f"?select=*&order=created_at.desc&limit={limit}"
+        )
+        headers = {
+            "apikey": SUPABASE_SERVICE_KEY,
+            "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
+        }
+        req = urllib.request.Request(url, headers=headers, method="GET")
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except Exception as e:
+        print(f"[WARN] Failed to fetch analysis history: {e}")
+        return []
 
 
 def call_claude(trades_json, user_question=None):
