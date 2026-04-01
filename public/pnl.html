@@ -783,8 +783,9 @@ function render(trades) {
       th.insertAdjacentHTML('beforeend', `<span class="sort-arrow">${sortAsc ? '▲' : '▼'}</span>`);
 
       const getVal = (t) => {
-        if (key === 'date') return t.resolved_at || t.created_at || '';
-        if (key === 'band') return t.band_f || t.band_c || 0;
+        if (key === 'date') return t.date || '';
+        if (key === 'resolved_at') return (t.resolved_at || '').slice(0, 10);
+        if (key === 'band') return t.band_c || '';
         const v = t[key];
         return typeof v === 'string' ? v.toLowerCase() : (Number(v) || 0);
       };
