@@ -138,12 +138,18 @@ class handler(BaseHTTPRequestHandler):
                 self._respond(200, data)
                 return
 
-            # List trades with optional status filter
+            # List trades with optional status/date filters
             status = params.get("status", [None])[0]
             limit = int(params.get("limit", ["100"])[0])
+            from_date = params.get("from", [None])[0]
+            to_date = params.get("to", [None])[0]
             query = "paper_trades?select=*&order=created_at.desc"
             if status:
                 query += f"&status=eq.{status}"
+            if from_date:
+                query += f"&date=gte.{from_date}"
+            if to_date:
+                query += f"&date=lte.{to_date}"
             query += f"&limit={limit}"
 
             data = supabase_query(query)
