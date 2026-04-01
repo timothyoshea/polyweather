@@ -804,6 +804,7 @@ function render(trades) {
 
 // ── Init ──
 loadTrades().then(trades => {
+  allTrades = trades;
   if (trades.length === 0) {
     $('#app').innerHTML = '<div class="loading">No closed trades found.</div>';
     return;
