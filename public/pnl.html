@@ -708,11 +708,8 @@ function render(trades) {
   `);
 
   // ── Closed Trades Table with infinite scroll ──
-  const PAGE_SIZE = 50;
-  let sortCol = null;
-  let sortAsc = true;
-  let sortedTrades = [...trades];
-  let visibleCount = PAGE_SIZE;
+  _sortedTrades = [...trades];
+  _visibleCount = _PAGE_SIZE;
 
   function renderTradeRow(t) {
     const band = t.band_c || '—';
