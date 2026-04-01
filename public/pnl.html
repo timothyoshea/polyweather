@@ -448,15 +448,13 @@ function rerender() {
 
 async function loadTrades() {
   try {
-    const [wonRes, lostRes] = await Promise.all([
-      fetch('/api/trades?status=won&limit=1000'),
-      fetch('/api/trades?status=lost&limit=1000')
-    ]);
-    const won = await wonRes.json();
-    const lost = await lostRes.json();
-    const trades = [...(won.trades || won), ...(lost.trades || lost)];
-    trades.sort((a, b) => new Date(a.date || a.created_at) - new Date(b.date || b.created_at));
-    return trades;
+    const res = await fetch('/api/trades?limit=2000');
+    const data = await res.json();
+    const all = data.trades || data;
+    // Only include closed trades (won or lost), exclude open
+    const closed = all.filter(t => t.status === 'won' || t.status === 'lost');
+    closed.sort((a, b) => new Date(a.date || a.created_at) - new Date(b.date || b.created_at));
+    return closed;
   } catch (e) {
     console.error('Failed to load trades:', e);
     return [];
