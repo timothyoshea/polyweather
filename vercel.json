@@ -8,7 +8,9 @@
     }
   },
   "rewrites": [
-    { "source": "/", "destination": "/index.html" }
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/pnl", "destination": "/pnl.html" },
+    { "source": "/analysis", "destination": "/analysis.html" }
   ],
   "crons": [
     {
