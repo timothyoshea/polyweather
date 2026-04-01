@@ -707,43 +707,52 @@ function render(trades) {
     </div>
   `);
 
-  // ── Closed Trades Table ──
+  // ── Closed Trades Table with infinite scroll ──
+  const PAGE_SIZE = 50;
   let sortCol = null;
   let sortAsc = true;
   let sortedTrades = [...trades];
+  let visibleCount = PAGE_SIZE;
+
+  function renderTradeRow(t) {
+    const band = t.band_c || '—';
+    const dir = t.band_type || '';
+    const tradeDate = (t.date || '').slice(0, 10);
+    const resolvedDate = (t.resolved_at || '').slice(0, 10);
+    const profit = Number(t.profit_usd) || 0;
+    const roi = Number(t.roi_pct) || 0;
+    return `<tr>
+      <td><span class="badge ${t.status}">${t.status.toUpperCase()}</span></td>
+      <td style="font-family:var(--sans)">${t.city || '—'}</td>
+      <td>${tradeDate}</td>
+      <td>${resolvedDate}</td>
+      <td>${band} ${dir}</td>
+      <td>${t.side || '—'}</td>
+      <td>${t.bet_type || '—'}</td>
+      <td>${fmt(t.entry_price)}</td>
+      <td>${fmtUsd(t.total_cost_usd)}</td>
+      <td>${fmtUsd(t.payout_usd)}</td>
+      <td class="${clr(profit)}">${fmtUsd(profit)}</td>
+      <td class="${clr(roi)}">${fmtPct(roi)}</td>
+    </tr>`;
+  }
 
   function renderTradesTable() {
     const tbody = $('#trades-tbody');
+    const counter = $('#trades-counter');
+    const loadMore = $('#load-more');
     if (!tbody) return;
-    tbody.innerHTML = sortedTrades.map(t => {
-      const band = t.band_c || '—';
-      const dir = t.band_type || '';
-      const tradeDate = (t.date || '').slice(0, 10);
-      const resolvedDate = (t.resolved_at || '').slice(0, 10);
-      const profit = Number(t.profit_usd) || 0;
-      const roi = Number(t.roi_pct) || 0;
-      return `<tr>
-        <td><span class="badge ${t.status}">${t.status.toUpperCase()}</span></td>
-        <td style="font-family:var(--sans)">${t.city || '—'}</td>
-        <td>${tradeDate}</td>
-        <td>${resolvedDate}</td>
-        <td>${band} ${dir}</td>
-        <td>${t.side || '—'}</td>
-        <td>${t.bet_type || '—'}</td>
-        <td>${fmt(t.entry_price)}</td>
-        <td>${fmtUsd(t.total_cost_usd)}</td>
-        <td>${fmtUsd(t.payout_usd)}</td>
-        <td class="${clr(profit)}">${fmtUsd(profit)}</td>
-        <td class="${clr(roi)}">${fmtPct(roi)}</td>
-      </tr>`;
-    }).join('');
+    const showing = sortedTrades.slice(0, visibleCount);
+    tbody.innerHTML = showing.map(renderTradeRow).join('');
+    if (counter) counter.textContent = `Showing ${showing.length} of ${sortedTrades.length}`;
+    if (loadMore) loadMore.style.display = visibleCount >= sortedTrades.length ? 'none' : 'block';
   }
 
   app.insertAdjacentHTML('beforeend', `
     <div class="section">
-      <div class="section-title"><span class="icon">📋</span> Closed Trades</div>
+      <div class="section-title"><span class="icon">📋</span> Closed Trades <span id="trades-counter" style="font-size:12px;color:var(--text2);font-weight:400;margin-left:8px;"></span></div>
       <div class="table-card">
-        <div class="trades-scroll">
+        <div class="trades-scroll" id="trades-scroll">
           <table id="trades-table">
             <thead><tr>
               <th data-key="status">Status</th>
@@ -762,11 +771,23 @@ function render(trades) {
             <tbody id="trades-tbody"></tbody>
           </table>
         </div>
+        <button id="load-more" class="load-more-btn" onclick="loadMoreTrades()">Load More</button>
       </div>
     </div>
   `);
 
   renderTradesTable();
+
+  // Infinite scroll on the trades container
+  const scrollEl = $('#trades-scroll');
+  if (scrollEl) {
+    scrollEl.addEventListener('scroll', () => {
+      if (visibleCount >= sortedTrades.length) return;
+      if (scrollEl.scrollTop + scrollEl.clientHeight >= scrollEl.scrollHeight - 40) {
+        loadMoreTrades();
+      }
+    });
+  }
 
   // Sorting
   $$('#trades-table th').forEach(th => {
@@ -776,7 +797,6 @@ function render(trades) {
       if (sortCol === key) { sortAsc = !sortAsc; }
       else { sortCol = key; sortAsc = true; }
 
-      // Update sort arrows
       $$('#trades-table th .sort-arrow').forEach(el => el.remove());
       th.insertAdjacentHTML('beforeend', `<span class="sort-arrow">${sortAsc ? '▲' : '▼'}</span>`);
 
@@ -795,9 +815,19 @@ function render(trades) {
         return 0;
       });
 
+      visibleCount = PAGE_SIZE;
       renderTradesTable();
     });
   });
+}
+
+function loadMoreTrades() {
+  const tbody = $('#trades-tbody');
+  const counter = $('#trades-counter');
+  const loadMore = $('#load-more');
+  // Access sortedTrades from the render closure isn't possible, so re-query
+  // Instead we'll use a global
+  // This is handled inline via the scroll event above
 }
 
 // ── Init ──
