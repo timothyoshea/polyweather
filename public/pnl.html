@@ -778,11 +778,11 @@ function render(trades) {
     th.addEventListener('click', () => {
       const key = th.dataset.key;
       if (!key) return;
-      if (_sortCol === key) { _sortAsc = !_sortAsc; }
-      else { _sortCol = key; _sortAsc = true; }
+      if (gSortCol === key) { gSortAsc = !gSortAsc; }
+      else { gSortCol = key; gSortAsc = true; }
 
       $$('#trades-table th .sort-arrow').forEach(el => el.remove());
-      th.insertAdjacentHTML('beforeend', `<span class="sort-arrow">${_sortAsc ? '▲' : '▼'}</span>`);
+      th.insertAdjacentHTML('beforeend', `<span class="sort-arrow">${gSortAsc ? '▲' : '▼'}</span>`);
 
       const getVal = (t) => {
         if (key === 'date') return t.date || '';
