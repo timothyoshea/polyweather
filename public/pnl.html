@@ -387,6 +387,65 @@ const fmtUsd = n => n == null ? '—' : '$' + Number(n).toFixed(2);
 const fmtPct = n => n == null ? '—' : Number(n).toFixed(1) + '%';
 const clr = n => n >= 0 ? 'pos' : 'neg';
 
+let allTrades = [];
+let currentRange = 'all';
+
+function toDateStr(d) {
+  return d.toISOString().slice(0, 10);
+}
+
+function setRange(range) {
+  currentRange = range;
+  $$('.date-btn').forEach(b => b.classList.toggle('active', b.dataset.range === range));
+  rerender();
+}
+
+function getDateRange() {
+  const today = new Date();
+  const todayStr = toDateStr(today);
+  switch (currentRange) {
+    case 'today': return [todayStr, todayStr];
+    case 'yesterday': {
+      const y = new Date(today); y.setDate(y.getDate() - 1);
+      return [toDateStr(y), toDateStr(y)];
+    }
+    case '7d': {
+      const d = new Date(today); d.setDate(d.getDate() - 7);
+      return [toDateStr(d), todayStr];
+    }
+    case '30d': {
+      const d = new Date(today); d.setDate(d.getDate() - 30);
+      return [toDateStr(d), todayStr];
+    }
+    case 'custom': {
+      const from = $('#date-from').value || '2000-01-01';
+      const to = $('#date-to').value || '2099-12-31';
+      return [from, to];
+    }
+    default: return [null, null];
+  }
+}
+
+function filterByDate(trades) {
+  const [from, to] = getDateRange();
+  if (!from && !to) return trades;
+  return trades.filter(t => {
+    const d = (t.date || '').slice(0, 10);
+    if (from && d < from) return false;
+    if (to && d > to) return false;
+    return true;
+  });
+}
+
+function rerender() {
+  const filtered = filterByDate(allTrades);
+  if (filtered.length === 0) {
+    $('#app').innerHTML = '<div class="loading">No closed trades in this date range.</div>';
+    return;
+  }
+  render(filtered);
+}
+
 async function loadTrades() {
   try {
     const [wonRes, lostRes] = await Promise.all([
@@ -396,12 +455,34 @@ async function loadTrades() {
     const won = await wonRes.json();
     const lost = await lostRes.json();
     const trades = [...(won.trades || won), ...(lost.trades || lost)];
-    trades.sort((a, b) => new Date(a.resolved_at || a.created_at) - new Date(b.resolved_at || b.created_at));
+    trades.sort((a, b) => new Date(a.date || a.created_at) - new Date(b.date || b.created_at));
     return trades;
   } catch (e) {
     console.error('Failed to load trades:', e);
     return [];
   }
+}
+
+function computeMaxCapitalDeployed(trades) {
+  // Build timeline events: +cost when trade opens, -cost when trade resolves
+  const events = [];
+  trades.forEach(t => {
+    const cost = Number(t.total_cost_usd) || 0;
+    if (cost <= 0) return;
+    const openTime = t.created_at || t.date || '';
+    const closeTime = t.resolved_at || '';
+    if (openTime) events.push({ time: openTime, delta: cost });
+    if (closeTime) events.push({ time: closeTime, delta: -cost });
+  });
+  events.sort((a, b) => a.time.localeCompare(b.time));
+
+  let current = 0;
+  let max = 0;
+  events.forEach(e => {
+    current += e.delta;
+    if (current > max) max = current;
+  });
+  return max;
 }
 
 function computeStats(trades) {
@@ -412,7 +493,8 @@ function computeStats(trades) {
   const totalProfit = trades.reduce((s, t) => s + (Number(t.profit_usd) || 0), 0);
   const roi = totalInvested > 0 ? (totalProfit / totalInvested) * 100 : 0;
   const winRate = trades.length > 0 ? (won.length / trades.length) * 100 : 0;
-  return { total: trades.length, won: won.length, lost: lost.length, winRate, totalInvested, totalPayout, totalProfit, roi };
+  const maxCapital = computeMaxCapitalDeployed(trades);
+  return { total: trades.length, won: won.length, lost: lost.length, winRate, totalInvested, totalPayout, totalProfit, roi, maxCapital };
 }
 
 function groupByDate(trades) {
