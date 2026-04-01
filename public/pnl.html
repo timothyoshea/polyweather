@@ -792,14 +792,14 @@ function render(trades) {
         return typeof v === 'string' ? v.toLowerCase() : (Number(v) || 0);
       };
 
-      _sortedTrades.sort((a, b) => {
+      gSortedTrades.sort((a, b) => {
         let va = getVal(a), vb = getVal(b);
-        if (va < vb) return _sortAsc ? -1 : 1;
-        if (va > vb) return _sortAsc ? 1 : -1;
+        if (va < vb) return gSortAsc ? -1 : 1;
+        if (va > vb) return gSortAsc ? 1 : -1;
         return 0;
       });
 
-      _visibleCount = PAGE_SIZE;
+      gVisibleCount = G_PAGE_SIZE;
       renderTradesTable();
     });
   });
