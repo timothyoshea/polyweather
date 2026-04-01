@@ -736,42 +736,37 @@ function render(trades) {
     <div class="section">
       <div class="section-title"><span class="icon">📋</span> Closed Trades <span id="trades-counter" style="font-size:12px;color:var(--text2);font-weight:400;margin-left:8px;"></span></div>
       <div class="table-card">
-        <div class="trades-scroll" id="trades-scroll">
-          <table id="trades-table">
-            <thead><tr>
-              <th data-key="status">Status</th>
-              <th data-key="city">City</th>
-              <th data-key="date">Trade Date</th>
-              <th data-key="resolved_at">Resolved</th>
-              <th data-key="band">Band</th>
-              <th data-key="side">Side</th>
-              <th data-key="bet_type">Type</th>
-              <th data-key="entry_price">Entry</th>
-              <th data-key="total_cost_usd">Cost</th>
-              <th data-key="payout_usd">Payout</th>
-              <th data-key="profit_usd">Profit</th>
-              <th data-key="roi_pct">ROI</th>
-            </tr></thead>
-            <tbody id="trades-tbody"></tbody>
-          </table>
-        </div>
-        <button id="load-more" class="load-more-btn" onclick="loadMoreTrades()">Load More</button>
+        <table id="trades-table">
+          <thead><tr>
+            <th data-key="status">Status</th>
+            <th data-key="city">City</th>
+            <th data-key="date">Trade Date</th>
+            <th data-key="resolved_at">Resolved</th>
+            <th data-key="band">Band</th>
+            <th data-key="side">Side</th>
+            <th data-key="bet_type">Type</th>
+            <th data-key="entry_price">Entry</th>
+            <th data-key="total_cost_usd">Cost</th>
+            <th data-key="payout_usd">Payout</th>
+            <th data-key="profit_usd">Profit</th>
+            <th data-key="roi_pct">ROI</th>
+          </tr></thead>
+          <tbody id="trades-tbody"></tbody>
+        </table>
       </div>
     </div>
   `);
 
   renderTradesTable();
 
-  // Infinite scroll on the trades container
-  const scrollEl = $('#trades-scroll');
-  if (scrollEl) {
-    scrollEl.addEventListener('scroll', () => {
-      if (gVisibleCount >= gSortedTrades.length) return;
-      if (scrollEl.scrollTop + scrollEl.clientHeight >= scrollEl.scrollHeight - 40) {
-        loadMoreTrades();
-      }
-    });
-  }
+  // Infinite scroll on window
+  window.addEventListener('scroll', () => {
+    if (gVisibleCount >= gSortedTrades.length) return;
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
+      gVisibleCount += G_PAGE_SIZE;
+      renderTradesTable();
+    }
+  });
 
   // Sorting
   $$('#trades-table th').forEach(th => {
@@ -831,17 +826,10 @@ function renderTradeRow(t) {
 function renderTradesTable() {
   const tbody = $('#trades-tbody');
   const counter = $('#trades-counter');
-  const loadMore = $('#load-more');
   if (!tbody) return;
   const showing = gSortedTrades.slice(0, gVisibleCount);
   tbody.innerHTML = showing.map(renderTradeRow).join('');
   if (counter) counter.textContent = `Showing ${showing.length} of ${gSortedTrades.length}`;
-  if (loadMore) loadMore.style.display = gVisibleCount >= gSortedTrades.length ? 'none' : 'block';
-}
-
-function loadMoreTrades() {
-  gVisibleCount += G_PAGE_SIZE;
-  renderTradesTable();
 }
 
 // ── Init ──
