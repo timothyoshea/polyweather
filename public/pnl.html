@@ -833,14 +833,14 @@ function renderTradesTable() {
   const counter = $('#trades-counter');
   const loadMore = $('#load-more');
   if (!tbody) return;
-  const showing = _sortedTrades.slice(0, _visibleCount);
+  const showing = gSortedTrades.slice(0, gVisibleCount);
   tbody.innerHTML = showing.map(renderTradeRow).join('');
-  if (counter) counter.textContent = `Showing ${showing.length} of ${_sortedTrades.length}`;
-  if (loadMore) loadMore.style.display = _visibleCount >= _sortedTrades.length ? 'none' : 'block';
+  if (counter) counter.textContent = `Showing ${showing.length} of ${gSortedTrades.length}`;
+  if (loadMore) loadMore.style.display = gVisibleCount >= gSortedTrades.length ? 'none' : 'block';
 }
 
 function loadMoreTrades() {
-  _visibleCount += _PAGE_SIZE;
+  gVisibleCount += G_PAGE_SIZE;
   renderTradesTable();
 }
 
