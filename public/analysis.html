@@ -794,6 +794,7 @@ function priceBucket(price) {
 function renderPatterns(resolved) {
   const dimensions = [
     { label: 'City', fn: t => t.city || 'Unknown' },
+    { label: 'City', fn: t => t.city || 'Unknown' },
     { label: 'Bet Type', fn: t => t.bet_type || 'Unknown' },
     { label: 'Side', fn: t => t.side || 'Unknown' },
     { label: 'Band Type', fn: t => t.band_type || 'Unknown' },
@@ -803,6 +804,14 @@ function renderPatterns(resolved) {
     { label: 'Trade Size', fn: t => sizeBucket(t.total_cost_usd) },
     { label: 'Days Before', fn: t => daysBucket(t.created_at, t.date) },
     { label: 'Entry Price', fn: t => priceBucket(t.entry_price) },
+    // Cross-dimensional
+    { label: 'Bet Type + Side', fn: t => `${t.bet_type || '?'} / ${t.side || '?'}` },
+    { label: 'Side + Entry Price', fn: t => `${t.side || '?'} / ${priceBucket(t.entry_price)}` },
+    { label: 'Bet Type + Edge', fn: t => `${t.bet_type || '?'} / ${edgeBucket(t.edge)}` },
+    { label: 'City + Side', fn: t => `${t.city || '?'} / ${t.side || '?'}` },
+    { label: 'Side + Confidence', fn: t => `${t.side || '?'} / ${confBucket(t.confidence)}` },
+    { label: 'City + Bet Type', fn: t => `${t.city || '?'} / ${t.bet_type || '?'}` },
+    { label: 'Edge + Entry Price', fn: t => `${edgeBucket(t.edge)} / ${priceBucket(t.entry_price)}` },
   ];
 
   const patterns = [];
