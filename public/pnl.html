@@ -729,8 +729,8 @@ function render(trades) {
   `);
 
   // ── Closed Trades Table with infinite scroll ──
-  __sortedTrades = [...trades];
-  __visibleCount = _PAGE_SIZE;
+  gSortedTrades = [...trades];
+  gVisibleCount = G_PAGE_SIZE;
 
   app.insertAdjacentHTML('beforeend', `
     <div class="section">
