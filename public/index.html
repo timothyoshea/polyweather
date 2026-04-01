@@ -1190,60 +1190,6 @@
 </div><!-- end scanner-section -->
 
 <div id="trading-section" style="display:none;">
-  <!-- Summary Stats -->
-  <div class="trading-summary">
-    <div class="trading-stat-card">
-      <div class="trading-stat-label">Total Trades</div>
-      <div class="trading-stat-value" id="ts-total">&mdash;</div>
-    </div>
-    <div class="trading-stat-card">
-      <div class="trading-stat-label">Win Rate</div>
-      <div class="trading-stat-value" id="ts-winrate">&mdash;</div>
-    </div>
-    <div class="trading-stat-card">
-      <div class="trading-stat-label">Total P&amp;L</div>
-      <div class="trading-stat-value" id="ts-pnl">&mdash;</div>
-    </div>
-    <div class="trading-stat-card">
-      <div class="trading-stat-label">ROI</div>
-      <div class="trading-stat-value" id="ts-roi">&mdash;</div>
-    </div>
-    <div class="trading-stat-card">
-      <div class="trading-stat-label">Open</div>
-      <div class="trading-stat-value" id="ts-open">&mdash;</div>
-    </div>
-    <div class="trading-stat-card">
-      <div class="trading-stat-label">Est. Return</div>
-      <div class="trading-stat-value" id="ts-estreturn">&mdash;</div>
-    </div>
-    <div class="trading-stat-card">
-      <div class="trading-stat-label">Avg Probability</div>
-      <div class="trading-stat-value" id="ts-avgprob">&mdash;</div>
-    </div>
-  </div>
-
-  <!-- P&L Chart -->
-  <div class="pnl-chart-wrap">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <h3 style="color:var(--text);font-size:15px;font-weight:600;">Cumulative P&amp;L</h3>
-      <button class="toggle-btn" onclick="loadTradingDashboard()">Refresh</button>
-    </div>
-    <canvas id="pnl-chart" height="200"></canvas>
-    <div id="pnl-empty" style="display:none;text-align:center;color:var(--text2);padding:40px;font-size:14px;">No resolved trades yet. P&amp;L chart will appear once trades start resolving.</div>
-  </div>
-
-  <!-- Breakdown Cards -->
-  <div class="breakdown-row">
-    <div class="breakdown-card">
-      <h4>By Bet Type</h4>
-      <div id="breakdown-type"></div>
-    </div>
-    <div class="breakdown-card">
-      <h4>By City (Top 10)</h4>
-      <div id="breakdown-city"></div>
-    </div>
-  </div>
-
   <!-- Trade Filters -->
   <div class="filters-bar">
     <span class="filter-label">Status</span>
