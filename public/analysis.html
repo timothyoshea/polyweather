@@ -625,6 +625,7 @@ function render() {
 
   let html = '';
   html += renderSummary(resolved);
+  html += renderAISection();
   html += '<h2 class="section-title">Breakdowns</h2>';
   html += '<div class="breakdown-grid">';
   html += renderBreakdownPanel('By City', resolved, t => t.city || 'Unknown');
