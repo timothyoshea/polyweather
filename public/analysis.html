@@ -859,7 +859,36 @@ function renderAISection() {
       <input class="ai-input" id="ai-question" placeholder="Ask a follow-up question about your data..." onkeydown="if(event.key==='Enter')askFollowup()">
       <button class="ai-btn" onclick="askFollowup()" style="padding:10px 16px;">Ask</button>
     </div>
+    <div class="ai-history" id="ai-history"></div>
   </div>`;
+}
+
+async function loadAIHistory() {
+  const container = document.getElementById('ai-history');
+  if (!container) return;
+  try {
+    const res = await fetch('/api/analyze?limit=20');
+    const history = await res.json();
+    if (!Array.isArray(history) || history.length === 0) {
+      container.innerHTML = '';
+      return;
+    }
+    container.innerHTML = '<div class="ai-history-title">Past Analyses</div>' +
+      history.map(h => {
+        const date = new Date(h.created_at).toLocaleString();
+        const question = escHtml(h.question || 'Full analysis');
+        const range = h.date_range ? escHtml(h.date_range) : 'All time';
+        return `<div class="ai-history-item" onclick="this.classList.toggle('expanded')">
+          <div class="ai-history-meta">
+            <span class="question">${question}</span>
+            <span><span class="trades">${h.trade_count || '?'} trades</span> · ${range} · <span class="date">${date}</span></span>
+          </div>
+          <div class="ai-history-body">${renderMarkdown(h.analysis || '')}</div>
+        </div>`;
+      }).join('');
+  } catch (e) {
+    console.warn('Failed to load AI history:', e);
+  }
 }
 
 async function generateAI() {
