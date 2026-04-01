@@ -389,6 +389,11 @@ const clr = n => n >= 0 ? 'pos' : 'neg';
 
 let allTrades = [];
 let currentRange = 'all';
+let _sortedTrades = [];
+let _visibleCount = 50;
+let _sortCol = null;
+let _sortAsc = true;
+const _PAGE_SIZE = 50;
 
 function toDateStr(d) {
   return d.toISOString().slice(0, 10);
