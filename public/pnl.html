@@ -716,40 +716,6 @@ function render(trades) {
   __sortedTrades = [...trades];
   __visibleCount = _PAGE_SIZE;
 
-  function renderTradeRow(t) {
-    const band = t.band_c || '—';
-    const dir = t.band_type || '';
-    const tradeDate = (t.date || '').slice(0, 10);
-    const resolvedDate = (t.resolved_at || '').slice(0, 10);
-    const profit = Number(t.profit_usd) || 0;
-    const roi = Number(t.roi_pct) || 0;
-    return `<tr>
-      <td><span class="badge ${t.status}">${t.status.toUpperCase()}</span></td>
-      <td style="font-family:var(--sans)">${t.city || '—'}</td>
-      <td>${tradeDate}</td>
-      <td>${resolvedDate}</td>
-      <td>${band} ${dir}</td>
-      <td>${t.side || '—'}</td>
-      <td>${t.bet_type || '—'}</td>
-      <td>${fmt(t.entry_price)}</td>
-      <td>${fmtUsd(t.total_cost_usd)}</td>
-      <td>${fmtUsd(t.payout_usd)}</td>
-      <td class="${clr(profit)}">${fmtUsd(profit)}</td>
-      <td class="${clr(roi)}">${fmtPct(roi)}</td>
-    </tr>`;
-  }
-
-  function renderTradesTable() {
-    const tbody = $('#trades-tbody');
-    const counter = $('#trades-counter');
-    const loadMore = $('#load-more');
-    if (!tbody) return;
-    const showing = _sortedTrades.slice(0, _visibleCount);
-    tbody.innerHTML = showing.map(renderTradeRow).join('');
-    if (counter) counter.textContent = `Showing ${showing.length} of ${_sortedTrades.length}`;
-    if (loadMore) loadMore.style.display = _visibleCount >= _sortedTrades.length ? 'none' : 'block';
-  }
-
   app.insertAdjacentHTML('beforeend', `
     <div class="section">
       <div class="section-title"><span class="icon">📋</span> Closed Trades <span id="trades-counter" style="font-size:12px;color:var(--text2);font-weight:400;margin-left:8px;"></span></div>
