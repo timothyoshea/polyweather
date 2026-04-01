@@ -824,12 +824,8 @@ function render(trades) {
 }
 
 function loadMoreTrades() {
-  const tbody = $('#trades-tbody');
-  const counter = $('#trades-counter');
-  const loadMore = $('#load-more');
-  // Access _sortedTrades from the render closure isn't possible, so re-query
-  // Instead we'll use a global
-  // This is handled inline via the scroll event above
+  _visibleCount += _PAGE_SIZE;
+  renderTradesTable();
 }
 
 // ── Init ──
