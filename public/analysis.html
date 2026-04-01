@@ -638,6 +638,20 @@ function render() {
   html += renderBreakdownPanel('By Days Before Event', resolved, t => daysBucket(t.created_at, t.date));
   html += renderBreakdownPanel('By Entry Price', resolved, t => priceBucket(t.entry_price));
   html += '</div>';
+
+  // Cross-analysis: multi-dimensional groupings
+  html += '<h2 class="section-title">Cross Analysis</h2>';
+  html += '<div class="breakdown-grid">';
+  html += renderBreakdownPanel('Bet Type + Side', resolved, t => `${t.bet_type || '?'} / ${t.side || '?'}`);
+  html += renderBreakdownPanel('Side + Entry Price', resolved, t => `${t.side || '?'} / ${priceBucket(t.entry_price)}`);
+  html += renderBreakdownPanel('Bet Type + Edge', resolved, t => `${t.bet_type || '?'} / ${edgeBucket(t.edge)}`);
+  html += renderBreakdownPanel('City + Side', resolved, t => `${t.city || '?'} / ${t.side || '?'}`);
+  html += renderBreakdownPanel('Side + Confidence', resolved, t => `${t.side || '?'} / ${confBucket(t.confidence)}`);
+  html += renderBreakdownPanel('Bet Type + Trade Size', resolved, t => `${t.bet_type || '?'} / ${sizeBucket(t.total_cost_usd)}`);
+  html += renderBreakdownPanel('City + Bet Type', resolved, t => `${t.city || '?'} / ${t.bet_type || '?'}`);
+  html += renderBreakdownPanel('Edge + Entry Price', resolved, t => `${edgeBucket(t.edge)} / ${priceBucket(t.entry_price)}`);
+  html += '</div>';
+
   html += renderPatterns(resolved);
   html += renderAISection();
 
