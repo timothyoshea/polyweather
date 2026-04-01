@@ -357,6 +357,19 @@
   </div>
 </div>
 
+<!-- Date Picker Bar -->
+<div class="date-bar">
+  <button class="date-btn" data-range="today" onclick="setRange('today')">Today</button>
+  <button class="date-btn" data-range="yesterday" onclick="setRange('yesterday')">Yesterday</button>
+  <button class="date-btn" data-range="7d" onclick="setRange('7d')">Last 7 Days</button>
+  <button class="date-btn" data-range="30d" onclick="setRange('30d')">Last 30 Days</button>
+  <button class="date-btn active" data-range="all" onclick="setRange('all')">All Time</button>
+  <span class="date-sep">|</span>
+  <input type="date" class="date-input" id="date-from" onchange="setRange('custom')">
+  <span class="date-sep">to</span>
+  <input type="date" class="date-input" id="date-to" onchange="setRange('custom')">
+</div>
+
 <!-- Content -->
 <div class="container" id="app">
   <div class="loading" id="loading">
