@@ -111,6 +111,16 @@ Format your response in markdown with clear sections."""
 
 
 class handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        """Return history of past AI analyses."""
+        try:
+            params = parse_qs(urlparse(self.path).query)
+            limit = int(params.get("limit", ["20"])[0])
+            history = get_analysis_history(limit)
+            self._respond(200, history)
+        except Exception as e:
+            self._respond(500, {"error": str(e)})
+
     def do_POST(self):
         try:
             if not ANTHROPIC_API_KEY:
@@ -122,6 +132,7 @@ class handler(BaseHTTPRequestHandler):
 
             trades = body.get("trades", [])
             question = body.get("question", None)
+            date_range = body.get("date_range", None)
 
             if not trades:
                 self._respond(400, {"error": "No trade data provided"})
@@ -153,6 +164,15 @@ class handler(BaseHTTPRequestHandler):
                 })
 
             analysis = call_claude(slim_trades, question)
+
+            # Save to history
+            save_analysis(
+                question=question or "Full analysis",
+                analysis=analysis,
+                trade_count=len(slim_trades),
+                date_range=date_range,
+            )
+
             self._respond(200, {"analysis": analysis})
 
         except Exception as e:
@@ -161,7 +181,7 @@ class handler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(200)
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()
 
