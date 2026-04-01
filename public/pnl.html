@@ -718,15 +718,17 @@ function render(trades) {
     const tbody = $('#trades-tbody');
     if (!tbody) return;
     tbody.innerHTML = sortedTrades.map(t => {
-      const band = t.band_f ? `${t.band_f}°F` : (t.band_c ? `${t.band_c}°C` : '—');
+      const band = t.band_c || '—';
       const dir = t.band_type || '';
-      const date = (t.resolved_at || t.created_at || '').slice(0, 10);
+      const tradeDate = (t.date || '').slice(0, 10);
+      const resolvedDate = (t.resolved_at || '').slice(0, 10);
       const profit = Number(t.profit_usd) || 0;
       const roi = Number(t.roi_pct) || 0;
       return `<tr>
         <td><span class="badge ${t.status}">${t.status.toUpperCase()}</span></td>
         <td style="font-family:var(--sans)">${t.city || '—'}</td>
-        <td>${date}</td>
+        <td>${tradeDate}</td>
+        <td>${resolvedDate}</td>
         <td>${band} ${dir}</td>
         <td>${t.side || '—'}</td>
         <td>${t.bet_type || '—'}</td>
