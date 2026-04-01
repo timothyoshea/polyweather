@@ -440,18 +440,18 @@ def resolve_open_trades(supabase_url, supabase_service_key, city_geo):
 
     for trade in trades:
         try:
-            condition_id = trade.get("condition_id", "")
+            market_slug = trade.get("market_slug", "")
             side = trade.get("side", "").upper()
 
-            if not condition_id or not side:
+            if not market_slug or not side:
                 skipped += 1
                 continue
 
             # Check cache first, then Polymarket API
-            if condition_id not in resolution_cache:
-                resolution_cache[condition_id] = check_polymarket_resolution(condition_id)
+            if market_slug not in resolution_cache:
+                resolution_cache[market_slug] = check_polymarket_resolution(market_slug)
 
-            winning_side = resolution_cache[condition_id]
+            winning_side = resolution_cache[market_slug]
             if winning_side is None:
                 skipped += 1
                 continue
