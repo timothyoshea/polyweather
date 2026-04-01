@@ -1023,24 +1023,65 @@ async function loadAIHistory() {
   }
 }
 
+function buildBreakdowns(resolved) {
+  function groupBy(trades, label, fn) {
+    const groups = {};
+    trades.forEach(t => {
+      const key = fn(t);
+      if (!groups[key]) groups[key] = { count: 0, won: 0, lost: 0, invested: 0, profit: 0 };
+      const g = groups[key];
+      g.count++;
+      if (t.status === 'won') g.won++;
+      else g.lost++;
+      g.invested += (t.total_cost_usd || 0);
+      g.profit += (t.profit_usd || 0);
+    });
+    return Object.entries(groups).map(([k, v]) => ({
+      group: k,
+      count: v.count,
+      won: v.won,
+      lost: v.lost,
+      win_rate: v.count > 0 ? Math.round(v.won / v.count * 100) : 0,
+      invested: Math.round(v.invested * 100) / 100,
+      profit: Math.round(v.profit * 100) / 100,
+      roi: v.invested > 0 ? Math.round(v.profit / v.invested * 10000) / 100 : 0,
+    })).sort((a, b) => b.profit - a.profit);
+  }
+
+  return {
+    by_bet_type: groupBy(resolved, 'Bet Type', t => t.bet_type || '?'),
+    by_side: groupBy(resolved, 'Side', t => t.side || '?'),
+    by_city: groupBy(resolved, 'City', t => t.city || '?'),
+    by_edge: groupBy(resolved, 'Edge Bucket', t => edgeBucket(t.edge)),
+    by_entry_price: groupBy(resolved, 'Entry Price', t => priceBucket(t.entry_price)),
+    by_confidence: groupBy(resolved, 'Confidence', t => confBucket(t.confidence)),
+    by_trade_size: groupBy(resolved, 'Trade Size', t => sizeBucket(t.total_cost_usd)),
+    by_risk: groupBy(resolved, 'Risk', t => t.risk || '?'),
+    by_band_type: groupBy(resolved, 'Band Type', t => t.band_type || '?'),
+    cross_bet_type_side: groupBy(resolved, 'Bet Type + Side', t => `${t.bet_type || '?'} / ${t.side || '?'}`),
+    cross_side_entry_price: groupBy(resolved, 'Side + Entry Price', t => `${t.side || '?'} / ${priceBucket(t.entry_price)}`),
+    cross_city_side: groupBy(resolved, 'City + Side', t => `${t.city || '?'} / ${t.side || '?'}`),
+  };
+}
+
 async function generateAI() {
   const btn = document.getElementById('ai-btn');
   const result = document.getElementById('ai-result');
   const followup = document.getElementById('ai-followup');
+  const dateRange = getDateLabel();
 
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>Analyzing...';
+  btn.innerHTML = '<span class="spinner"></span> Analyzing ' + dateRange + '...';
   result.style.display = 'block';
-  result.innerHTML = '<span class="spinner"></span> Generating analysis...';
+  result.innerHTML = '<span class="spinner"></span> Generating analysis for <strong>' + dateRange + '</strong>...';
 
   try {
     const resolved = filteredTrades.filter(t => t.status === 'won' || t.status === 'lost');
-    const activeBtn = document.querySelector('.date-btn.active');
-    const dateRange = activeBtn ? activeBtn.textContent : 'All Time';
+    const breakdowns = buildBreakdowns(resolved);
     const res = await fetch('/api/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ trades: resolved, date_range: dateRange })
+      body: JSON.stringify({ trades: resolved, date_range: dateRange, breakdowns })
     });
     const data = await res.json();
     result.innerHTML = renderMarkdown(data.analysis || data.text || data.message || JSON.stringify(data));
@@ -1051,7 +1092,7 @@ async function generateAI() {
   }
 
   btn.disabled = false;
-  btn.textContent = 'Generate AI Analysis';
+  btn.textContent = `Analyze: ${dateRange}`;
 }
 
 async function askFollowup() {
