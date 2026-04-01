@@ -391,7 +391,7 @@ let allTrades = [];
 let currentRange = 'all';
 let __sortedTrades = [];
 let __visibleCount = 50;
-let _sortCol = null;
+let __sortCol = null;
 let _sortAsc = true;
 const _PAGE_SIZE = 50;
 
@@ -796,8 +796,8 @@ function render(trades) {
     th.addEventListener('click', () => {
       const key = th.dataset.key;
       if (!key) return;
-      if (sortCol === key) { sortAsc = !sortAsc; }
-      else { sortCol = key; sortAsc = true; }
+      if (_sortCol === key) { sortAsc = !sortAsc; }
+      else { _sortCol = key; sortAsc = true; }
 
       $$('#trades-table th .sort-arrow').forEach(el => el.remove());
       th.insertAdjacentHTML('beforeend', `<span class="sort-arrow">${sortAsc ? '▲' : '▼'}</span>`);
