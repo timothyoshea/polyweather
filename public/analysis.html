@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PolyWeather — Results Analysis</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --card: #12121a;
+    --card-border: #1e1e2e;
+    --green: #00e676;
+    --red: #ff5252;
+    --amber: #ffc107;
+    --cyan: #4fc3f7;
+    --text: #e0e0e0;
+    --text2: #888;
+    --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* ── Header / Nav ─────────────────────────── */
+  .header {
+    background: linear-gradient(180deg, #101018 0%, var(--bg) 100%);
+    border-bottom: 1px solid var(--card-border);
+    padding: 16px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1400px;
+    margin: 0 auto;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    white-space: nowrap;
+    text-decoration: none;
+  }
+
+  .logo-icon {
+    font-size: 26px;
+    filter: drop-shadow(0 0 6px rgba(79, 195, 247, 0.5));
+  }
+
+  .logo span {
+    background: linear-gradient(135deg, var(--cyan), var(--green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .nav-tabs { display: flex; gap: 4px; }
+
+  .nav-tab {
+    background: none;
+    border: 1px solid var(--card-border);
+    color: var(--text2);
+    padding: 6px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .nav-tab.active { background: var(--cyan); color: #000; border-color: var(--cyan); }
+  .nav-tab:hover:not(.active) { color: var(--text); border-color: var(--text2); }
+
+  /* ── Date Range Bar ────────────────────────── */
+  .date-bar {
+    background: rgba(18, 18, 26, 0.95);
+    border-bottom: 1px solid var(--card-border);
+    padding: 12px 24px;
+    position: sticky;
+    top: 58px;
+    z-index: 99;
+    backdrop-filter: blur(12px);
+  }
+
+  .date-bar-inner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 1400px;
+    margin: 0 auto;
+    flex-wrap: wrap;
+  }
+
+  .date-btn {
+    background: none;
+    border: 1px solid var(--card-border);
+    color: var(--text2);
+    padding: 5px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+
+  .date-btn.active {
+    background: rgba(79, 195, 247, 0.15);
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+
+  .date-btn:hover:not(.active) { border-color: #444; color: var(--text); }
+
+  .date-input {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    color: var(--text);
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-family: var(--sans);
+    font-size: 12px;
+  }
+
+  .date-input::-webkit-calendar-picker-indicator { filter: invert(0.7); }
+
+  .date-sep { color: var(--text2); font-size: 12px; }
+
+  /* ── Main Content ──────────────────────────── */
+  .main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  /* ── Summary Stats ─────────────────────────── */
+  .summary-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .summary-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .summary-label {
+    font-size: 11px;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+
+  .summary-value {
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  /* ── Breakdown Panels ──────────────────────── */
+  .section-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+
+  .breakdown-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+  }
+
+  .panel-header:hover { background: rgba(255,255,255,0.03); }
+
+  .panel-title {
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-arrow {
+    transition: transform 0.25s;
+    color: var(--text2);
+    font-size: 12px;
+  }
+
+  .panel.collapsed .panel-arrow { transform: rotate(-90deg); }
+  .panel.collapsed .panel-body { display: none; }
+
+  .panel-body { padding: 0 18px 14px; }
+
+  .breakdown-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .breakdown-table th {
+    text-align: left;
+    color: var(--text2);
+    font-weight: 500;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--card-border);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .breakdown-table td {
+    padding: 7px 8px;
+    border-bottom: 1px solid rgba(30,30,46,0.5);
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  .breakdown-table td:first-child {
+    font-family: var(--sans);
+    font-weight: 500;
+  }
+
+  .breakdown-table tr:last-child td { border-bottom: none; }
+
+  .bar-cell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .mini-bar {
+    height: 14px;
+    border-radius: 3px;
+    min-width: 2px;
+    transition: width 0.3s;
+  }
+
+  .profit-pos { color: var(--green); }
+  .profit-neg { color: var(--red); }
+  .wr-high { color: var(--green); }
+  .wr-mid { color: var(--amber); }
+  .wr-low { color: var(--red); }
+
+  /* ── Best Patterns ─────────────────────────── */
+  .patterns-section { margin-bottom: 32px; }
+
+  .pattern-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .pattern-desc {
+    font-size: 14px;
+    font-weight: 500;
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .pattern-stats {
+    display: flex;
+    gap: 20px;
+    font-family: var(--mono);
+    font-size: 12px;
+    flex-wrap: wrap;
+  }
+
+  .pattern-stat-label {
+    color: var(--text2);
+    font-family: var(--sans);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .pattern-rank {
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--cyan);
+    min-width: 30px;
+  }
+
+  /* ── AI Insights ───────────────────────────── */
+  .ai-section {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 32px;
+  }
+
+  .ai-section-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .ai-btn {
+    background: linear-gradient(135deg, #7c4dff, var(--cyan));
+    color: #fff;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+
+  .ai-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(124, 77, 255, 0.35); }
+  .ai-btn:active { transform: translateY(0); }
+  .ai-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  .ai-result {
+    margin-top: 20px;
+    padding: 20px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.7;
+    display: none;
+    white-space: pre-wrap;
+  }
+
+  .ai-result h1, .ai-result h2, .ai-result h3 { color: var(--cyan); margin: 16px 0 8px; }
+  .ai-result h1 { font-size: 18px; }
+  .ai-result h2 { font-size: 16px; }
+  .ai-result h3 { font-size: 14px; }
+  .ai-result strong { color: var(--text); }
+  .ai-result ul, .ai-result ol { padding-left: 20px; margin: 8px 0; }
+  .ai-result li { margin: 4px 0; }
+  .ai-result code { font-family: var(--mono); background: rgba(79,195,247,0.1); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+
+  .ai-followup {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .ai-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--card-border);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .ai-input:focus { border-color: var(--cyan); }
+  .ai-input::placeholder { color: var(--text2); }
+
+  .spinner {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: var(--cyan);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Loading / Empty ───────────────────────── */
+  .loading-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text2);
+    font-size: 14px;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text2);
+    font-size: 13px;
+  }
+
+  /* ── Responsive ────────────────────────────── */
+  @media (max-width: 900px) {
+    .breakdown-grid { grid-template-columns: 1fr; }
+    .summary-row { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); }
+    .main { padding: 16px; }
+    .header { padding: 12px 16px; }
+    .date-bar { padding: 10px 16px; }
+  }
+
+  @media (max-width: 500px) {
+    .summary-row { grid-template-columns: repeat(2, 1fr); }
+    .pattern-card { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────── -->
+<div class="header">
+  <div class="header-inner">
+    <a href="/" class="logo">
+      <span class="logo-icon">🌤</span>
+      <span>PolyWeather</span>
+    </a>
+    <div class="nav-tabs">
+      <a href="/" class="nav-tab">Scanner</a>
+      <a href="/pnl.html" class="nav-tab">P&L</a>
+      <a href="/analysis.html" class="nav-tab active">Analysis</a>
+    </div>
+  </div>
+</div>
+
+<!-- ── Date Range Bar ─────────────────────── -->
+<div class="date-bar">
+  <div class="date-bar-inner">
+    <button class="date-btn" data-range="today">Today</button>
+    <button class="date-btn" data-range="yesterday">Yesterday</button>
+    <button class="date-btn" data-range="7d">Last 7 Days</button>
+    <button class="date-btn" data-range="30d">Last 30 Days</button>
+    <button class="date-btn active" data-range="all">All Time</button>
+    <span class="date-sep">|</span>
+    <input type="date" class="date-input" id="date-from" title="From date">
+    <span class="date-sep">to</span>
+    <input type="date" class="date-input" id="date-to" title="To date">
+  </div>
+</div>
+
+<!-- ── Main ────────────────────────────────── -->
+<div class="main" id="app">
+  <div class="loading-state" id="loading">Loading trades...</div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────
+let allTrades = [];
+let filteredTrades = [];
+let currentRange = 'all';
+
+// ── Init ───────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const res = await fetch('/api/trades?limit=1000');
+    const data = await res.json();
+    allTrades = data.trades || data || [];
+    applyFilter();
+  } catch (e) {
+    document.getElementById('loading').textContent = 'Failed to load trades: ' + e.message;
+  }
+});
+
+// ── Date Range ─────────────────────────────
+document.querySelectorAll('.date-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentRange = btn.dataset.range;
+    document.getElementById('date-from').value = '';
+    document.getElementById('date-to').value = '';
+    applyFilter();
+  });
+});
+
+document.getElementById('date-from').addEventListener('change', onCustomDate);
+document.getElementById('date-to').addEventListener('change', onCustomDate);
+
+function onCustomDate() {
+  const from = document.getElementById('date-from').value;
+  const to = document.getElementById('date-to').value;
+  if (from || to) {
+    document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
+    currentRange = 'custom';
+    applyFilter();
+  }
+}
+
+function getDateRange() {
+  const today = new Date();
+  const fmt = d => d.toISOString().slice(0, 10);
+
+  if (currentRange === 'custom') {
+    return {
+      from: document.getElementById('date-from').value || '2000-01-01',
+      to: document.getElementById('date-to').value || '2099-12-31'
+    };
+  }
+
+  switch (currentRange) {
+    case 'today': return { from: fmt(today), to: fmt(today) };
+    case 'yesterday': {
+      const y = new Date(today);
+      y.setDate(y.getDate() - 1);
+      return { from: fmt(y), to: fmt(y) };
+    }
+    case '7d': {
+      const d = new Date(today);
+      d.setDate(d.getDate() - 7);
+      return { from: fmt(d), to: fmt(today) };
+    }
+    case '30d': {
+      const d = new Date(today);
+      d.setDate(d.getDate() - 30);
+      return { from: fmt(d), to: fmt(today) };
+    }
+    default: return { from: '2000-01-01', to: '2099-12-31' };
+  }
+}
+
+function applyFilter() {
+  const { from, to } = getDateRange();
+  filteredTrades = allTrades.filter(t => {
+    const d = (t.date || '').slice(0, 10);
+    return d >= from && d <= to;
+  });
+  render();
+}
+
+// ── Render ─────────────────────────────────
+function render() {
+  const app = document.getElementById('app');
+  const resolved = filteredTrades.filter(t => t.status === 'won' || t.status === 'lost');
+
+  if (allTrades.length === 0) {
+    app.innerHTML = '<div class="empty-state">No trades found.</div>';
+    return;
+  }
+
+  let html = '';
+  html += renderSummary(resolved);
+  html += '<h2 class="section-title">Breakdowns</h2>';
+  html += '<div class="breakdown-grid">';
+  html += renderBreakdownPanel('By City', resolved, t => t.city || 'Unknown');
+  html += renderBreakdownPanel('By Bet Type', resolved, t => t.bet_type || 'Unknown');
+  html += renderBreakdownPanel('By Side', resolved, t => t.side || 'Unknown');
+  html += renderBreakdownPanel('By Band Type', resolved, t => t.band_type || 'Unknown');
+  html += renderBreakdownPanel('By Risk Level', resolved, t => t.risk || 'Unknown');
+  html += renderBreakdownPanel('By Edge Bucket', resolved, t => edgeBucket(t.edge));
+  html += renderBreakdownPanel('By Confidence', resolved, t => confBucket(t.confidence));
+  html += renderBreakdownPanel('By Trade Size', resolved, t => sizeBucket(t.total_cost_usd));
+  html += renderBreakdownPanel('By Days Before Event', resolved, t => daysBucket(t.created_at, t.date));
+  html += renderBreakdownPanel('By Entry Price', resolved, t => priceBucket(t.entry_price));
+  html += '</div>';
+  html += renderPatterns(resolved);
+  html += renderAISection();
+
+  app.innerHTML = html;
+
+  // Attach panel toggle handlers
+  document.querySelectorAll('.panel-header').forEach(h => {
+    h.addEventListener('click', () => {
+      h.closest('.panel').classList.toggle('collapsed');
+    });
+  });
+}
+
+// ── Summary ────────────────────────────────
+function renderSummary(resolved) {
+  const won = resolved.filter(t => t.status === 'won').length;
+  const lost = resolved.filter(t => t.status === 'lost').length;
+  const total = resolved.length;
+  const wr = total > 0 ? (won / total * 100) : 0;
+  const invested = resolved.reduce((s, t) => s + (t.total_cost_usd || 0), 0);
+  const profit = resolved.reduce((s, t) => s + (t.profit_usd || 0), 0);
+  const roi = invested > 0 ? (profit / invested * 100) : 0;
+
+  return `<div class="summary-row">
+    <div class="summary-card"><div class="summary-label">Trades</div><div class="summary-value">${total}</div></div>
+    <div class="summary-card"><div class="summary-label">Won</div><div class="summary-value profit-pos">${won}</div></div>
+    <div class="summary-card"><div class="summary-label">Lost</div><div class="summary-value profit-neg">${lost}</div></div>
+    <div class="summary-card"><div class="summary-label">Win Rate</div><div class="summary-value ${wrClass(wr)}">${wr.toFixed(1)}%</div></div>
+    <div class="summary-card"><div class="summary-label">Invested</div><div class="summary-value">$${invested.toFixed(2)}</div></div>
+    <div class="summary-card"><div class="summary-label">Profit</div><div class="summary-value ${profit >= 0 ? 'profit-pos' : 'profit-neg'}">${profit >= 0 ? '+' : ''}$${profit.toFixed(2)}</div></div>
+    <div class="summary-card"><div class="summary-label">ROI</div><div class="summary-value ${roi >= 0 ? 'profit-pos' : 'profit-neg'}">${roi.toFixed(1)}%</div></div>
+  </div>`;
+}
+
+// ── Breakdown Panel ────────────────────────
+function renderBreakdownPanel(title, resolved, groupFn) {
+  const groups = {};
+  resolved.forEach(t => {
+    const key = groupFn(t);
+    if (!groups[key]) groups[key] = { count: 0, won: 0, lost: 0, invested: 0, profit: 0 };
+    const g = groups[key];
+    g.count++;
+    if (t.status === 'won') g.won++;
+    else g.lost++;
+    g.invested += (t.total_cost_usd || 0);
+    g.profit += (t.profit_usd || 0);
+  });
+
+  const rows = Object.entries(groups)
+    .map(([key, g]) => ({ key, ...g, wr: g.count > 0 ? g.won / g.count * 100 : 0, roi: g.invested > 0 ? g.profit / g.invested * 100 : 0 }))
+    .sort((a, b) => b.profit - a.profit);
+
+  const maxAbsProfit = Math.max(...rows.map(r => Math.abs(r.profit)), 1);
+
+  let tableRows = rows.map(r => {
+    const barW = Math.abs(r.profit) / maxAbsProfit * 100;
+    const barColor = r.profit >= 0 ? 'var(--green)' : 'var(--red)';
+    return `<tr>
+      <td>${escHtml(r.key)}</td>
+      <td>${r.count}</td>
+      <td>${r.won}</td>
+      <td>${r.lost}</td>
+      <td class="${wrClass(r.wr)}">${r.wr.toFixed(1)}%</td>
+      <td>$${r.invested.toFixed(2)}</td>
+      <td><div class="bar-cell"><span class="${r.profit >= 0 ? 'profit-pos' : 'profit-neg'}">${r.profit >= 0 ? '+' : ''}$${r.profit.toFixed(2)}</span><div class="mini-bar" style="width:${barW}%;background:${barColor}"></div></div></td>
+      <td class="${r.roi >= 0 ? 'profit-pos' : 'profit-neg'}">${r.roi.toFixed(1)}%</td>
+    </tr>`;
+  }).join('');
+
+  if (rows.length === 0) {
+    tableRows = '<tr><td colspan="8" style="text-align:center;color:var(--text2);padding:16px;">No data</td></tr>';
+  }
+
+  return `<div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">${title}</div>
+      <span class="panel-arrow">&#9660;</span>
+    </div>
+    <div class="panel-body">
+      <table class="breakdown-table">
+        <thead><tr><th>Group</th><th>Count</th><th>Won</th><th>Lost</th><th>Win %</th><th>Invested</th><th>Profit</th><th>ROI</th></tr></thead>
+        <tbody>${tableRows}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+// ── Bucket Functions ───────────────────────
+function edgeBucket(edge) {
+  const e = parseFloat(edge);
+  if (isNaN(e)) return 'Unknown';
+  if (e < 5) return '0-5pp';
+  if (e < 10) return '5-10pp';
+  if (e < 20) return '10-20pp';
+  return '20pp+';
+}
+
+function confBucket(conf) {
+  const c = parseFloat(conf);
+  if (isNaN(c)) return 'Unknown';
+  if (c < 40) return '0-40';
+  if (c < 60) return '40-60';
+  if (c < 80) return '60-80';
+  return '80-100';
+}
+
+function sizeBucket(cost) {
+  const c = parseFloat(cost);
+  if (isNaN(c)) return 'Unknown';
+  if (c < 50) return '<$50';
+  if (c < 200) return '$50-200';
+  if (c < 1000) return '$200-1000';
+  return '$1000+';
+}
+
+function daysBucket(createdAt, eventDate) {
+  if (!createdAt || !eventDate) return 'Unknown';
+  const created = new Date(createdAt);
+  const event = new Date(eventDate);
+  const diffMs = event - created;
+  const days = diffMs / (1000 * 60 * 60 * 24);
+  if (days < 1) return '0-1d';
+  if (days < 2) return '1-2d';
+  if (days < 3) return '2-3d';
+  return '3d+';
+}
+
+function priceBucket(price) {
+  const p = parseFloat(price);
+  if (isNaN(p)) return 'Unknown';
+  // price may be 0-1 or 0-100; normalize
+  const cents = p > 1 ? p : p * 100;
+  if (cents < 20) return '<20\u00A2';
+  if (cents < 50) return '20-50\u00A2';
+  if (cents < 80) return '50-80\u00A2';
+  return '80\u00A2+';
+}
+
+// ── Best Patterns ──────────────────────────
+function renderPatterns(resolved) {
+  const dimensions = [
+    { label: 'City', fn: t => t.city || 'Unknown' },
+    { label: 'Bet Type', fn: t => t.bet_type || 'Unknown' },
+    { label: 'Side', fn: t => t.side || 'Unknown' },
+    { label: 'Band Type', fn: t => t.band_type || 'Unknown' },
+    { label: 'Risk', fn: t => t.risk || 'Unknown' },
+    { label: 'Edge', fn: t => edgeBucket(t.edge) },
+    { label: 'Confidence', fn: t => confBucket(t.confidence) },
+    { label: 'Trade Size', fn: t => sizeBucket(t.total_cost_usd) },
+    { label: 'Days Before', fn: t => daysBucket(t.created_at, t.date) },
+    { label: 'Entry Price', fn: t => priceBucket(t.entry_price) },
+  ];
+
+  const patterns = [];
+
+  dimensions.forEach(dim => {
+    const groups = {};
+    resolved.forEach(t => {
+      const key = dim.fn(t);
+      if (!groups[key]) groups[key] = { count: 0, won: 0, invested: 0, profit: 0 };
+      const g = groups[key];
+      g.count++;
+      if (t.status === 'won') g.won++;
+      g.invested += (t.total_cost_usd || 0);
+      g.profit += (t.profit_usd || 0);
+    });
+
+    Object.entries(groups).forEach(([value, g]) => {
+      if (g.count < 3) return;
+      const wr = g.won / g.count;
+      if (wr <= 0) return;
+      const roi = g.invested > 0 ? g.profit / g.invested * 100 : 0;
+      const score = wr * Math.sqrt(g.count) * Math.max(roi, 0);
+      if (score <= 0) return;
+      patterns.push({
+        desc: `${dim.label}: ${value}`,
+        count: g.count,
+        wr: wr * 100,
+        profit: g.profit,
+        roi,
+        score
+      });
+    });
+  });
+
+  patterns.sort((a, b) => b.score - a.score);
+  const top = patterns.slice(0, 10);
+
+  if (top.length === 0) {
+    return `<div class="patterns-section">
+      <h2 class="section-title">Best Performing Patterns</h2>
+      <div class="empty-state">Not enough resolved trades to identify patterns (need 3+ per group with positive win rate).</div>
+    </div>`;
+  }
+
+  const cards = top.map((p, i) => `<div class="pattern-card">
+    <div class="pattern-rank">#${i + 1}</div>
+    <div class="pattern-desc">${escHtml(p.desc)}</div>
+    <div class="pattern-stats">
+      <div><div class="pattern-stat-label">Trades</div><div>${p.count}</div></div>
+      <div><div class="pattern-stat-label">Win Rate</div><div class="${wrClass(p.wr)}">${p.wr.toFixed(1)}%</div></div>
+      <div><div class="pattern-stat-label">Profit</div><div class="${p.profit >= 0 ? 'profit-pos' : 'profit-neg'}">${p.profit >= 0 ? '+' : ''}$${p.profit.toFixed(2)}</div></div>
+      <div><div class="pattern-stat-label">ROI</div><div class="${p.roi >= 0 ? 'profit-pos' : 'profit-neg'}">${p.roi.toFixed(1)}%</div></div>
+    </div>
+  </div>`).join('');
+
+  return `<div class="patterns-section">
+    <h2 class="section-title">Best Performing Patterns</h2>
+    ${cards}
+  </div>`;
+}
+
+// ── AI Insights ────────────────────────────
+function renderAISection() {
+  return `<div class="ai-section">
+    <div class="ai-section-title">&#129302; AI Insights</div>
+    <button class="ai-btn" id="ai-btn" onclick="generateAI()">Generate AI Analysis</button>
+    <div class="ai-result" id="ai-result"></div>
+    <div class="ai-followup" style="display:none" id="ai-followup">
+      <input class="ai-input" id="ai-question" placeholder="Ask a follow-up question about your data..." onkeydown="if(event.key==='Enter')askFollowup()">
+      <button class="ai-btn" onclick="askFollowup()" style="padding:10px 16px;">Ask</button>
+    </div>
+  </div>`;
+}
+
+async function generateAI() {
+  const btn = document.getElementById('ai-btn');
+  const result = document.getElementById('ai-result');
+  const followup = document.getElementById('ai-followup');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Analyzing...';
+  result.style.display = 'block';
+  result.innerHTML = '<span class="spinner"></span> Generating analysis...';
+
+  try {
+    const resolved = filteredTrades.filter(t => t.status === 'won' || t.status === 'lost');
+    const res = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ trades: resolved })
+    });
+    const data = await res.json();
+    result.innerHTML = renderMarkdown(data.analysis || data.text || data.message || JSON.stringify(data));
+    followup.style.display = 'flex';
+  } catch (e) {
+    result.innerHTML = '<span style="color:var(--red)">Error: ' + escHtml(e.message) + '</span>';
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Generate AI Analysis';
+}
+
+async function askFollowup() {
+  const input = document.getElementById('ai-question');
+  const result = document.getElementById('ai-result');
+  const question = input.value.trim();
+  if (!question) return;
+
+  input.value = '';
+  result.innerHTML += '<hr style="border-color:var(--card-border);margin:16px 0"><span class="spinner"></span> Thinking...';
+
+  try {
+    const resolved = filteredTrades.filter(t => t.status === 'won' || t.status === 'lost');
+    const res = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ trades: resolved, question })
+    });
+    const data = await res.json();
+    const answer = renderMarkdown(data.analysis || data.text || data.message || JSON.stringify(data));
+    // Replace the "Thinking..." with the answer
+    result.innerHTML = result.innerHTML.replace(/<span class="spinner"><\/span> Thinking\.\.\./, '') + answer;
+  } catch (e) {
+    result.innerHTML = result.innerHTML.replace(/<span class="spinner"><\/span> Thinking\.\.\./, '<span style="color:var(--red)">Error: ' + escHtml(e.message) + '</span>');
+  }
+}
+
+// ── Helpers ────────────────────────────────
+function wrClass(wr) {
+  if (wr >= 60) return 'wr-high';
+  if (wr >= 40) return 'wr-mid';
+  return 'wr-low';
+}
+
+function escHtml(s) {
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+function renderMarkdown(text) {
+  // Simple markdown-to-HTML
+  return text
+    .replace(/### (.+)/g, '<h3>$1</h3>')
+    .replace(/## (.+)/g, '<h2>$1</h2>')
+    .replace(/# (.+)/g, '<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`(.+?)`/g, '<code>$1</code>')
+    .replace(/^- (.+)/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
+    .replace(/(<\/ul>\s*<ul>)/g, '')
+    .replace(/\n\n/g, '<br><br>')
+    .replace(/\n/g, '<br>');
+}
+</script>
+</body>
+</html>
