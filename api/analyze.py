@@ -64,26 +64,57 @@ def get_analysis_history(limit=20):
         return []
 
 
-def call_claude(trades_json, user_question=None):
+def call_claude(trades_json, user_question=None, breakdowns=None, date_range=None):
     """Send trade data to Claude API for analysis."""
-    system_prompt = """You are an expert quantitative trading analyst reviewing paper trading results
-from a weather prediction market (Polymarket). Analyze the trade data provided and give actionable insights.
+    system_prompt = """You are an expert quantitative trading analyst reviewing paper trading results from a weather prediction market (Polymarket). These are weather temperature bets — the system forecasts temperatures using weather models and bets when it finds edges against market prices.
 
-Focus on:
-1. Which patterns (city, bet type, side, edge range, confidence, trade size) are most profitable
-2. Which patterns are losing money and should be avoided
-3. Specific recommendations to improve the trading strategy
-4. Any surprising correlations or edge cases
-5. Risk assessment and position sizing observations
+Your job is to provide CLEAR, ACTIONABLE analysis. Structure your response with these sections:
 
-Be specific with numbers. Reference actual cities, bet types, and metrics. Keep it concise but thorough.
-Format your response in markdown with clear sections."""
+## DO — What to Keep Doing
+Specific strategies, cities, bet types, and conditions that are working. Back everything with numbers.
 
-    user_content = f"Here are my paper trading results ({len(trades_json)} trades):\n\n```json\n{json.dumps(trades_json, indent=2)}\n```"
+## DON'T — What to Stop Doing
+Specific strategies, cities, bet types, and conditions that are losing money. Be blunt about what to cut.
+
+## Key Insights
+Surprising patterns, correlations, or edge cases found in the data. Multi-dimensional patterns matter most (e.g., "safe_no + NO side + 80¢+ entry = 100% win rate").
+
+## Position Sizing
+Are trades too large/small? Which categories deserve bigger/smaller positions? What's the risk profile?
+
+## Recommendations
+Ranked list of the top 3-5 concrete changes to make, with expected impact.
+
+Rules:
+- Only analyze CLOSED trades (won/lost). Never include open trades.
+- Be specific with numbers — cite actual cities, bet types, win rates, profits, ROI.
+- Use markdown tables when comparing categories.
+- Keep it concise but thorough. No fluff.
+- Bold the most important numbers and conclusions."""
+
+    period_note = f" (time period: {date_range})" if date_range else ""
+    user_content = f"Here are my paper trading results — {len(trades_json)} closed trades{period_note}:\n\n"
+
+    # Add breakdowns summary first (more useful than raw trades)
+    if breakdowns:
+        user_content += "## Performance Breakdowns\n\n"
+        for label, data in breakdowns.items():
+            nice_label = label.replace("_", " ").replace("by ", "By ").replace("cross ", "Cross: ").title()
+            user_content += f"### {nice_label}\n"
+            if isinstance(data, list) and data:
+                user_content += "| Group | Count | Won | Lost | Win% | Invested | Profit | ROI |\n"
+                user_content += "|-------|-------|-----|------|------|----------|--------|-----|\n"
+                for row in data:
+                    user_content += f"| {row.get('group','')} | {row.get('count',0)} | {row.get('won',0)} | {row.get('lost',0)} | {row.get('win_rate',0)}% | ${row.get('invested',0)} | ${row.get('profit',0)} | {row.get('roi',0)}% |\n"
+            user_content += "\n"
+
+    # Add raw trades
+    user_content += f"## Raw Trade Data ({len(trades_json)} trades)\n\n```json\n{json.dumps(trades_json, indent=1)}\n```"
+
     if user_question:
-        user_content += f"\n\nSpecific question: {user_question}"
+        user_content += f"\n\n## Specific Question\n{user_question}"
     else:
-        user_content += "\n\nPlease analyze these results and identify the most important patterns, what's working, what's not, and what I should change."
+        user_content += "\n\nAnalyze these results. Focus on what's working vs what's not, and give me clear DO and DON'T instructions."
 
     body = json.dumps({
         "model": "claude-sonnet-4-20250514",
