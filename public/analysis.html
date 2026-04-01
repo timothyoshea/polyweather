@@ -1078,19 +1078,130 @@ function escHtml(s) {
 }
 
 function renderMarkdown(text) {
-  // Simple markdown-to-HTML
+  if (!text) return '';
+
+  // Pre-process: protect code blocks
+  const codeBlocks = [];
+  text = text.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+    codeBlocks.push(`<pre><code>${escHtml(code.trim())}</code></pre>`);
+    return `__CODE_BLOCK_${codeBlocks.length - 1}__`;
+  });
+
+  // Tables
+  text = text.replace(/^(\|.+\|)\n(\|[-| :]+\|)\n((?:\|.+\|\n?)+)/gm, (_, header, sep, body) => {
+    const ths = header.split('|').filter(c => c.trim()).map(c => `<th>${c.trim()}</th>`).join('');
+    const rows = body.trim().split('\n').map(row => {
+      const tds = row.split('|').filter(c => c.trim()).map(c => `<td>${c.trim()}</td>`).join('');
+      return `<tr>${tds}</tr>`;
+    }).join('');
+    return `<table><thead><tr>${ths}</tr></thead><tbody>${rows}</tbody></table>`;
+  });
+
+  // Process line by line
+  const lines = text.split('\n');
+  let html = '';
+  let inList = false;
+  let listType = '';
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
+
+    // Code block placeholder
+    const cbMatch = line.match(/^__CODE_BLOCK_(\d+)__$/);
+    if (cbMatch) {
+      if (inList) { html += `</${listType}>`; inList = false; }
+      html += codeBlocks[parseInt(cbMatch[1])];
+      continue;
+    }
+
+    // Headers
+    if (line.match(/^### /)) {
+      if (inList) { html += `</${listType}>`; inList = false; }
+      html += `<h3>${inlineFormat(line.slice(4))}</h3>`;
+      continue;
+    }
+    if (line.match(/^## /)) {
+      if (inList) { html += `</${listType}>`; inList = false; }
+      html += `<h2>${inlineFormat(line.slice(3))}</h2>`;
+      continue;
+    }
+    if (line.match(/^# /)) {
+      if (inList) { html += `</${listType}>`; inList = false; }
+      html += `<h1>${inlineFormat(line.slice(2))}</h1>`;
+      continue;
+    }
+
+    // Horizontal rule
+    if (line.match(/^---+$/)) {
+      if (inList) { html += `</${listType}>`; inList = false; }
+      html += '<hr>';
+      continue;
+    }
+
+    // Blockquote
+    if (line.match(/^> /)) {
+      if (inList) { html += `</${listType}>`; inList = false; }
+      html += `<blockquote>${inlineFormat(line.slice(2))}</blockquote>`;
+      continue;
+    }
+
+    // Unordered list
+    if (line.match(/^[-*] /)) {
+      if (!inList || listType !== 'ul') {
+        if (inList) html += `</${listType}>`;
+        html += '<ul>';
+        inList = true;
+        listType = 'ul';
+      }
+      html += `<li>${inlineFormat(line.replace(/^[-*] /, ''))}</li>`;
+      continue;
+    }
+
+    // Ordered list
+    const olMatch = line.match(/^\d+\. (.+)/);
+    if (olMatch) {
+      if (!inList || listType !== 'ol') {
+        if (inList) html += `</${listType}>`;
+        html += '<ol>';
+        inList = true;
+        listType = 'ol';
+      }
+      html += `<li>${inlineFormat(olMatch[1])}</li>`;
+      continue;
+    }
+
+    // End list if we hit a non-list line
+    if (inList && line.trim() === '') {
+      html += `</${listType}>`;
+      inList = false;
+      continue;
+    }
+    if (inList && !line.match(/^\s/)) {
+      html += `</${listType}>`;
+      inList = false;
+    }
+
+    // Empty line = paragraph break
+    if (line.trim() === '') {
+      continue;
+    }
+
+    // Regular paragraph
+    html += `<p>${inlineFormat(line)}</p>`;
+  }
+
+  if (inList) html += `</${listType}>`;
+
+  return html;
+}
+
+function inlineFormat(text) {
   return text
-    .replace(/### (.+)/g, '<h3>$1</h3>')
-    .replace(/## (.+)/g, '<h2>$1</h2>')
-    .replace(/# (.+)/g, '<h1>$1</h1>')
+    .replace(/`(.+?)`/g, '<code>$1</code>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/`(.+?)`/g, '<code>$1</code>')
-    .replace(/^- (.+)/gm, '<li>$1</li>')
-    .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
-    .replace(/(<\/ul>\s*<ul>)/g, '')
-    .replace(/\n\n/g, '<br><br>')
-    .replace(/\n/g, '<br>');
+    .replace(/\+\$(\d)/g, '+$$$1')  // protect dollar amounts
+    .replace(/-\$(\d)/g, '-$$$1');
 }
 </script>
 </body>
