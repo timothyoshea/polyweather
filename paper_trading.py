@@ -347,10 +347,61 @@ def determine_outcome(actual_temp_c, band_c, band_type, side):
         return "won" if not yes_wins else "lost"
 
 
-def resolve_open_trades(supabase_url, supabase_service_key, city_geo):
-    """Resolve open paper trades whose date has passed.
+def check_polymarket_resolution(condition_id):
+    """Check if a Polymarket market has resolved via the Gamma API.
 
-    Fetches actual temperatures from Open-Meteo and updates trade outcomes.
+    Args:
+        condition_id: The market condition ID stored in the trade.
+
+    Returns:
+        "YES" if YES outcome won, "NO" if NO outcome won, or None if not yet resolved.
+    """
+    if not condition_id:
+        return None
+
+    url = f"https://gamma-api.polymarket.com/markets?condition_id={condition_id}"
+    try:
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+
+        markets = data if isinstance(data, list) else [data]
+        if not markets:
+            return None
+
+        market = markets[0]
+
+        # Check if market is closed/resolved
+        if not market.get("closed", False):
+            return None
+
+        # Determine winning outcome from outcomePrices
+        prices_raw = market.get("outcomePrices", "")
+        try:
+            prices = json.loads(prices_raw) if isinstance(prices_raw, str) else prices_raw
+        except (json.JSONDecodeError, TypeError):
+            prices = None
+
+        if prices and len(prices) >= 2:
+            yes_price = float(prices[0])
+            no_price = float(prices[1])
+            # Resolved markets have prices at 1.0/0.0
+            if yes_price > 0.9:
+                return "YES"
+            elif no_price > 0.9:
+                return "NO"
+
+    except Exception as e:
+        print(f"[WARN] Polymarket resolution check error for {condition_id}: {e}")
+
+    return None
+
+
+def resolve_open_trades(supabase_url, supabase_service_key, city_geo):
+    """Resolve open paper trades by checking Polymarket market resolution.
+
+    Queries the Gamma API to see if each trade's market has resolved,
+    then updates trade outcomes based on the actual Polymarket result.
 
     Args:
         supabase_url: Supabase project URL
@@ -379,65 +430,79 @@ def resolve_open_trades(supabase_url, supabase_service_key, city_geo):
     if not trades:
         return {"resolved": 0, "won": 0, "lost": 0, "skipped": 0}
 
-    # Group by (city, date)
-    groups = {}
-    for t in trades:
-        key = (t.get("city"), t.get("date"))
-        groups.setdefault(key, []).append(t)
+    # Cache resolution results by condition_id to avoid duplicate API calls
+    resolution_cache = {}
 
     resolved = 0
     won = 0
     lost = 0
     skipped = 0
 
-    for (city, date_str), group_trades in groups.items():
-        actual_temp = fetch_actual_temperature(city, date_str, city_geo)
-        if actual_temp is None:
-            skipped += len(group_trades)
-            continue
+    for trade in trades:
+        try:
+            condition_id = trade.get("condition_id", "")
+            side = trade.get("side", "").upper()
 
-        for trade in group_trades:
-            try:
-                outcome = determine_outcome(
-                    actual_temp,
-                    trade.get("band_c", ""),
-                    trade.get("band_type", ""),
-                    trade.get("side", ""),
-                )
-
-                total_cost = float(trade.get("total_cost_usd", 0))
-                total_shares = float(trade.get("total_shares", 0))
-
-                if outcome == "won":
-                    payout = total_shares * 1.0
-                    profit = payout - total_cost
-                    won += 1
-                else:
-                    payout = 0.0
-                    profit = -total_cost
-                    lost += 1
-
-                roi_pct = (profit / total_cost * 100) if total_cost > 0 else 0.0
-
-                # Update trade via PATCH
-                trade_id = trade.get("id")
-                update_url = (
-                    f"{supabase_url}/rest/v1/paper_trades"
-                    f"?id=eq.{trade_id}"
-                )
-                update_data = {
-                    "status": outcome,
-                    "resolved_at": datetime.utcnow().isoformat() + "Z",
-                    "actual_temp_c": round(actual_temp, 1),
-                    "payout_usd": round(payout, 2),
-                    "profit_usd": round(profit, 2),
-                    "roi_pct": round(roi_pct, 2),
-                }
-                _supabase_request(update_url, update_data, headers, method="PATCH")
-                resolved += 1
-
-            except Exception as e:
-                print(f"[WARN] Error resolving trade {trade.get('id')}: {e}")
+            if not condition_id or not side:
                 skipped += 1
+                continue
+
+            # Check cache first, then Polymarket API
+            if condition_id not in resolution_cache:
+                resolution_cache[condition_id] = check_polymarket_resolution(condition_id)
+
+            winning_side = resolution_cache[condition_id]
+            if winning_side is None:
+                skipped += 1
+                continue
+
+            # Determine outcome: did our side win?
+            outcome = "won" if side == winning_side else "lost"
+
+            total_cost = float(trade.get("total_cost_usd", 0))
+            total_shares = float(trade.get("total_shares", 0))
+
+            if outcome == "won":
+                payout = total_shares * 1.0
+                profit = payout - total_cost
+                won += 1
+            else:
+                payout = 0.0
+                profit = -total_cost
+                lost += 1
+
+            roi_pct = (profit / total_cost * 100) if total_cost > 0 else 0.0
+
+            # Optionally fetch actual temp for record-keeping
+            city = trade.get("city", "")
+            trade_date = trade.get("date", "")
+            actual_temp = fetch_actual_temperature(city, trade_date, city_geo)
+
+            # Update trade via PATCH
+            trade_id = trade.get("id")
+            update_url = (
+                f"{supabase_url}/rest/v1/paper_trades"
+                f"?id=eq.{trade_id}"
+            )
+            update_data = {
+                "status": outcome,
+                "resolved_at": datetime.utcnow().isoformat() + "Z",
+                "payout_usd": round(payout, 2),
+                "profit_usd": round(profit, 2),
+                "roi_pct": round(roi_pct, 2),
+            }
+            if actual_temp is not None:
+                update_data["actual_temp_c"] = round(actual_temp, 1)
+
+            _supabase_request(update_url, update_data, headers, method="PATCH")
+            resolved += 1
+
+            print(f"[RESOLVED] {city} {trade_date} {trade.get('band_c')} "
+                  f"side={side} market={winning_side} → {outcome} "
+                  f"profit=${profit:.2f}")
+
+        except Exception as e:
+            print(f"[WARN] Error resolving trade {trade.get('id')}: {e}")
+            skipped += 1
 
     return {"resolved": resolved, "won": won, "lost": lost, "skipped": skipped}
