@@ -390,7 +390,7 @@ const clr = n => n >= 0 ? 'pos' : 'neg';
 let allTrades = [];
 let currentRange = 'all';
 let __sortedTrades = [];
-let _visibleCount = 50;
+let __visibleCount = 50;
 let _sortCol = null;
 let _sortAsc = true;
 const _PAGE_SIZE = 50;
@@ -714,7 +714,7 @@ function render(trades) {
 
   // ── Closed Trades Table with infinite scroll ──
   __sortedTrades = [...trades];
-  _visibleCount = _PAGE_SIZE;
+  __visibleCount = _PAGE_SIZE;
 
   function renderTradeRow(t) {
     const band = t.band_c || '—';
@@ -744,10 +744,10 @@ function render(trades) {
     const counter = $('#trades-counter');
     const loadMore = $('#load-more');
     if (!tbody) return;
-    const showing = _sortedTrades.slice(0, visibleCount);
+    const showing = _sortedTrades.slice(0, _visibleCount);
     tbody.innerHTML = showing.map(renderTradeRow).join('');
     if (counter) counter.textContent = `Showing ${showing.length} of ${_sortedTrades.length}`;
-    if (loadMore) loadMore.style.display = visibleCount >= _sortedTrades.length ? 'none' : 'block';
+    if (loadMore) loadMore.style.display = _visibleCount >= _sortedTrades.length ? 'none' : 'block';
   }
 
   app.insertAdjacentHTML('beforeend', `
@@ -784,7 +784,7 @@ function render(trades) {
   const scrollEl = $('#trades-scroll');
   if (scrollEl) {
     scrollEl.addEventListener('scroll', () => {
-      if (visibleCount >= _sortedTrades.length) return;
+      if (_visibleCount >= _sortedTrades.length) return;
       if (scrollEl.scrollTop + scrollEl.clientHeight >= scrollEl.scrollHeight - 40) {
         loadMoreTrades();
       }
@@ -817,7 +817,7 @@ function render(trades) {
         return 0;
       });
 
-      visibleCount = PAGE_SIZE;
+      _visibleCount = PAGE_SIZE;
       renderTradesTable();
     });
   });
