@@ -541,6 +541,7 @@ function render(trades) {
   app.innerHTML = '';
 
   // ── Summary Cards ──
+  const roiOnCapital = stats.maxCapital > 0 ? (stats.totalProfit / stats.maxCapital * 100) : 0;
   const summaryHTML = `
     <div class="summary-grid">
       <div class="stat-card">
@@ -570,6 +571,11 @@ function render(trades) {
       <div class="stat-card">
         <div class="label">ROI</div>
         <div class="value ${clr(stats.roi)}">${fmtPct(stats.roi)}</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Max Capital Deployed</div>
+        <div class="value">${fmtUsd(stats.maxCapital)}</div>
+        <div class="sub">Return on capital: <span class="${clr(roiOnCapital)}">${fmtPct(roiOnCapital)}</span></div>
       </div>
     </div>
   `;
