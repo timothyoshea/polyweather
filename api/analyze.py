@@ -9,7 +9,7 @@ import urllib.request
 import urllib.error
 from http.server import BaseHTTPRequestHandler
 
-ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "").strip()
 
 
 def call_claude(trades_json, user_question=None):
