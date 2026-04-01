@@ -903,14 +903,17 @@ async function generateAI() {
 
   try {
     const resolved = filteredTrades.filter(t => t.status === 'won' || t.status === 'lost');
+    const activeBtn = document.querySelector('.date-btn.active');
+    const dateRange = activeBtn ? activeBtn.textContent : 'All Time';
     const res = await fetch('/api/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ trades: resolved })
+      body: JSON.stringify({ trades: resolved, date_range: dateRange })
     });
     const data = await res.json();
     result.innerHTML = renderMarkdown(data.analysis || data.text || data.message || JSON.stringify(data));
     followup.style.display = 'flex';
+    loadAIHistory();
   } catch (e) {
     result.innerHTML = '<span style="color:var(--red)">Error: ' + escHtml(e.message) + '</span>';
   }
