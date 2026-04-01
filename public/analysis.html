@@ -597,6 +597,7 @@ document.querySelectorAll('.date-btn').forEach(btn => {
     document.getElementById('date-from').value = '';
     document.getElementById('date-to').value = '';
     applyFilter();
+    updateAIButton();
   });
 });
 
@@ -610,6 +611,7 @@ function onCustomDate() {
     document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
     currentRange = 'custom';
     applyFilter();
+    updateAIButton();
   }
 }
 
