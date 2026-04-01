@@ -541,6 +541,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const data = await res.json();
     allTrades = data.trades || data || [];
     applyFilter();
+    loadAIHistory();
   } catch (e) {
     document.getElementById('loading').textContent = 'Failed to load trades: ' + e.message;
   }
