@@ -766,7 +766,7 @@ function render(trades) {
   const scrollEl = $('#trades-scroll');
   if (scrollEl) {
     scrollEl.addEventListener('scroll', () => {
-      if (_visibleCount >= _sortedTrades.length) return;
+      if (gVisibleCount >= gSortedTrades.length) return;
       if (scrollEl.scrollTop + scrollEl.clientHeight >= scrollEl.scrollHeight - 40) {
         loadMoreTrades();
       }
