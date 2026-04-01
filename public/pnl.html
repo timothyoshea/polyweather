@@ -392,7 +392,7 @@ let currentRange = 'all';
 let __sortedTrades = [];
 let __visibleCount = 50;
 let __sortCol = null;
-let _sortAsc = true;
+let __sortAsc = true;
 const _PAGE_SIZE = 50;
 
 function toDateStr(d) {
@@ -796,11 +796,11 @@ function render(trades) {
     th.addEventListener('click', () => {
       const key = th.dataset.key;
       if (!key) return;
-      if (_sortCol === key) { sortAsc = !sortAsc; }
-      else { _sortCol = key; sortAsc = true; }
+      if (_sortCol === key) { _sortAsc = !_sortAsc; }
+      else { _sortCol = key; _sortAsc = true; }
 
       $$('#trades-table th .sort-arrow').forEach(el => el.remove());
-      th.insertAdjacentHTML('beforeend', `<span class="sort-arrow">${sortAsc ? '▲' : '▼'}</span>`);
+      th.insertAdjacentHTML('beforeend', `<span class="sort-arrow">${_sortAsc ? '▲' : '▼'}</span>`);
 
       const getVal = (t) => {
         if (key === 'date') return t.date || '';
@@ -812,8 +812,8 @@ function render(trades) {
 
       _sortedTrades.sort((a, b) => {
         let va = getVal(a), vb = getVal(b);
-        if (va < vb) return sortAsc ? -1 : 1;
-        if (va > vb) return sortAsc ? 1 : -1;
+        if (va < vb) return _sortAsc ? -1 : 1;
+        if (va > vb) return _sortAsc ? 1 : -1;
         return 0;
       });
 
