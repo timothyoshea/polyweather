@@ -1143,10 +1143,10 @@ function renderPatterns(resolved) {
   const worst = allWithEnough.filter(p => p.roi < 0).sort((a, b) => a.roi - b.roi).slice(0, 10);
 
   function patternCard(p, i, rankColor) {
-    const sigTip = `Binomial test: ${Math.round(p.wr/100*p.count)}/${p.count} wins vs ${(baselineRate*100).toFixed(1)}% baseline → p=${p.pval.toFixed(4)}`;
+    const sigTip = `${Math.round(p.wr/100*p.count)}/${p.count} wins vs ${(baselineRate*100).toFixed(1)}% baseline — ${p.sig.title}`;
     return `<div class="pattern-card">
       <div class="pattern-rank" style="color:${rankColor}">#${i + 1}</div>
-      <div class="pattern-desc">${escHtml(p.desc)} <span class="sig-badge" style="color:${p.sig.color};cursor:help;margin-left:8px;" title="${sigTip}">${p.sig.text}</span></div>
+      <div class="pattern-desc">${escHtml(p.desc)} <span class="sig-badge" style="color:${p.sig.color};background:${p.sig.bg};cursor:help;margin-left:8px;" title="${sigTip}">${p.sig.text}</span></div>
       <div class="pattern-stats">
         <div><div class="pattern-stat-label">Trades</div><div>${p.count}</div></div>
         <div><div class="pattern-stat-label">Win Rate</div><div class="${wrClass(p.wr)}">${p.wr.toFixed(1)}%</div></div>
