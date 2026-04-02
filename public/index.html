@@ -1523,6 +1523,8 @@
         updateStats();
         applyFilters();
         setStatus('done', `Scanned: ${new Date().toLocaleTimeString()} (${result.duration_seconds}s)`);
+        // Switch to dashboard to show results
+        switchTab('dashboard');
       }
     } catch (err) {
       showError(err.message || 'Scan failed');
