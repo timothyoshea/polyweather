@@ -17,7 +17,7 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "").strip()
 
 
-def save_analysis(question, analysis, trade_count, date_range=None):
+def save_analysis(question, analysis, trade_count, date_range=None, portfolio_id=None):
     """Save an AI analysis to Supabase for history."""
     if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
         return
@@ -36,6 +36,8 @@ def save_analysis(question, analysis, trade_count, date_range=None):
             "date_range": date_range,
             "created_at": datetime.utcnow().isoformat() + "Z",
         }
+        if portfolio_id:
+            row["portfolio_id"] = portfolio_id
         data = json.dumps([row]).encode("utf-8")
         req = urllib.request.Request(url, data=data, headers=headers, method="POST")
         urllib.request.urlopen(req, timeout=10)
