@@ -1079,6 +1079,8 @@ function renderPatterns(resolved) {
     { label: 'Edge + Entry Price', fn: t => `${edgeBucket(t.edge)} / ${priceBucket(t.entry_price)}` },
   ];
 
+  const totalWon = resolved.filter(t => t.status === 'won').length;
+  const baselineRate = resolved.length > 0 ? totalWon / resolved.length : 0.5;
   const patterns = [];
 
   dimensions.forEach(dim => {
@@ -1098,6 +1100,7 @@ function renderPatterns(resolved) {
       const wr = g.won / g.count;
       if (wr <= 0) return;
       const roi = g.invested > 0 ? g.profit / g.invested * 100 : 0;
+      const pval = binomialPValue(g.won, g.count, baselineRate);
       const score = wr * Math.sqrt(g.count) * Math.max(roi, 0);
       if (score <= 0) return;
       patterns.push({
@@ -1106,7 +1109,9 @@ function renderPatterns(resolved) {
         wr: wr * 100,
         profit: g.profit,
         roi,
-        score
+        score,
+        pval,
+        sig: sigLabel(pval)
       });
     });
   });
@@ -1131,15 +1136,17 @@ function renderPatterns(resolved) {
       if (g.count < 3) return;
       const wr = g.won / g.count * 100;
       const roi = g.invested > 0 ? g.profit / g.invested * 100 : 0;
-      allWithEnough.push({ desc: `${dim.label}: ${value}`, count: g.count, wr, profit: g.profit, roi });
+      const pval = binomialPValue(g.won, g.count, baselineRate);
+      allWithEnough.push({ desc: `${dim.label}: ${value}`, count: g.count, wr, profit: g.profit, roi, pval, sig: sigLabel(pval) });
     });
   });
   const worst = allWithEnough.filter(p => p.roi < 0).sort((a, b) => a.roi - b.roi).slice(0, 10);
 
   function patternCard(p, i, rankColor) {
+    const sigTip = `Binomial test: ${Math.round(p.wr/100*p.count)}/${p.count} wins vs ${(baselineRate*100).toFixed(1)}% baseline → p=${p.pval.toFixed(4)}`;
     return `<div class="pattern-card">
       <div class="pattern-rank" style="color:${rankColor}">#${i + 1}</div>
-      <div class="pattern-desc">${escHtml(p.desc)}</div>
+      <div class="pattern-desc">${escHtml(p.desc)} <span class="sig-badge" style="color:${p.sig.color};cursor:help;margin-left:8px;" title="${sigTip}">${p.sig.text}</span></div>
       <div class="pattern-stats">
         <div><div class="pattern-stat-label">Trades</div><div>${p.count}</div></div>
         <div><div class="pattern-stat-label">Win Rate</div><div class="${wrClass(p.wr)}">${p.wr.toFixed(1)}%</div></div>
