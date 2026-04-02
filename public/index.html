@@ -2522,7 +2522,9 @@
 
   // ── Init: Load portfolios on page load ──────
   loadPortfolios();
-  switchTab('dashboard');
+  const initTab = localStorage.getItem('pw-tab') || 'dashboard';
+  localStorage.removeItem('pw-tab');
+  switchTab(initTab);
 </script>
 
 <!-- Snapshot Modal -->
