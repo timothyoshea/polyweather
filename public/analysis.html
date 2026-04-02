@@ -790,23 +790,39 @@ function render() {
 
   let html = '';
   html += renderSummary(resolved);
+  html += renderCharts(resolved);
   html += renderAISection();
   html += '<h2 class="section-title">Breakdowns</h2>';
+  html += `<div class="breakdown-tabs">
+    <button class="breakdown-tab active" onclick="showBreakdownTab('market')">By Market</button>
+    <button class="breakdown-tab" onclick="showBreakdownTab('strategy')">By Strategy</button>
+    <button class="breakdown-tab" onclick="showBreakdownTab('timing')">By Timing</button>
+    <button class="breakdown-tab" onclick="showBreakdownTab('cross')">Cross Analysis</button>
+  </div>`;
+
+  html += '<div class="breakdown-group" data-tab="market">';
   html += '<div class="breakdown-grid">';
   html += renderBreakdownPanel('By City', resolved, t => t.city || 'Unknown');
-  html += renderBreakdownPanel('By Bet Type', resolved, t => t.bet_type || 'Unknown');
-  html += renderBreakdownPanel('By Side', resolved, t => t.side || 'Unknown');
   html += renderBreakdownPanel('By Band Type', resolved, t => t.band_type || 'Unknown');
   html += renderBreakdownPanel('By Risk Level', resolved, t => t.risk || 'Unknown');
-  html += renderBreakdownPanel('By Edge Bucket', resolved, t => edgeBucket(t.edge));
-  html += renderBreakdownPanel('By Confidence', resolved, t => confBucket(t.confidence));
-  html += renderBreakdownPanel('By Trade Size', resolved, t => sizeBucket(t.total_cost_usd));
-  html += renderBreakdownPanel('By Days Before Event', resolved, t => daysBucket(t.created_at, t.date));
-  html += renderBreakdownPanel('By Entry Price', resolved, t => priceBucket(t.entry_price));
-  html += '</div>';
+  html += '</div></div>';
 
-  // Cross-analysis: multi-dimensional groupings
-  html += '<h2 class="section-title">Cross Analysis</h2>';
+  html += '<div class="breakdown-group" data-tab="strategy" style="display:none">';
+  html += '<div class="breakdown-grid">';
+  html += renderBreakdownPanel('By Bet Type', resolved, t => t.bet_type || 'Unknown');
+  html += renderBreakdownPanel('By Side', resolved, t => t.side || 'Unknown');
+  html += renderBreakdownPanel('By Edge Bucket', resolved, t => edgeBucket(t.edge));
+  html += renderBreakdownPanel('By Entry Price', resolved, t => priceBucket(t.entry_price));
+  html += renderBreakdownPanel('By Trade Size', resolved, t => sizeBucket(t.total_cost_usd));
+  html += '</div></div>';
+
+  html += '<div class="breakdown-group" data-tab="timing" style="display:none">';
+  html += '<div class="breakdown-grid">';
+  html += renderBreakdownPanel('By Days Before Event', resolved, t => daysBucket(t.created_at, t.date));
+  html += renderBreakdownPanel('By Confidence', resolved, t => confBucket(t.confidence));
+  html += '</div></div>';
+
+  html += '<div class="breakdown-group" data-tab="cross" style="display:none">';
   html += '<div class="breakdown-grid">';
   html += renderBreakdownPanel('Bet Type + Side', resolved, t => `${t.bet_type || '?'} / ${t.side || '?'}`);
   html += renderBreakdownPanel('Side + Entry Price', resolved, t => `${t.side || '?'} / ${priceBucket(t.entry_price)}`);
@@ -816,7 +832,7 @@ function render() {
   html += renderBreakdownPanel('Bet Type + Trade Size', resolved, t => `${t.bet_type || '?'} / ${sizeBucket(t.total_cost_usd)}`);
   html += renderBreakdownPanel('City + Bet Type', resolved, t => `${t.city || '?'} / ${t.bet_type || '?'}`);
   html += renderBreakdownPanel('Edge + Entry Price', resolved, t => `${edgeBucket(t.edge)} / ${priceBucket(t.entry_price)}`);
-  html += '</div>';
+  html += '</div></div>';
 
   html += renderPatterns(resolved);
 
