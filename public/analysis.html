@@ -607,8 +607,34 @@ let portfolioMap = {};
 
 // ── Init ───────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
+  await loadPortfolios();
+  await loadTrades();
+});
+
+async function loadPortfolios() {
   try {
-    const res = await fetch('/api/trades?limit=1000');
+    const res = await fetch('/api/portfolios');
+    const data = await res.json();
+    const portfolios = data.portfolios || data || [];
+    const sel = document.getElementById('portfolio-select');
+    sel.innerHTML = '<option value="">All Portfolios</option>';
+    portfolios.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.name || p.id;
+      sel.appendChild(opt);
+      portfolioMap[p.id] = p.name || p.id;
+    });
+  } catch (e) {
+    console.error('Failed to load portfolios:', e);
+  }
+}
+
+async function loadTrades() {
+  try {
+    let url = '/api/trades?limit=1000';
+    if (currentPortfolioId) url += '&portfolio_id=' + encodeURIComponent(currentPortfolioId);
+    const res = await fetch(url);
     const data = await res.json();
     allTrades = data.trades || data || [];
     applyFilter();
@@ -616,7 +642,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   } catch (e) {
     document.getElementById('loading').textContent = 'Failed to load trades: ' + e.message;
   }
-});
+}
+
+function onPortfolioChange() {
+  currentPortfolioId = document.getElementById('portfolio-select').value;
+  loadTrades();
+}
 
 // ── Date Range ─────────────────────────────
 document.querySelectorAll('.date-btn').forEach(btn => {
