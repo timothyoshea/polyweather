@@ -298,6 +298,24 @@
 
   .filter-select:focus { border-color: var(--cyan); }
 
+  /* ── Filter Chips ──────────────────────────── */
+  .filter-chips { display: flex; gap: 6px; padding: 8px 24px; flex-wrap: wrap; }
+  .chip { background: rgba(79,195,247,0.12); border: 1px solid rgba(79,195,247,0.3); color: var(--cyan); padding: 3px 10px; border-radius: 12px; font-size: 11px; display: flex; align-items: center; gap: 6px; }
+  .chip button { background: none; border: none; color: var(--cyan); cursor: pointer; font-size: 14px; padding: 0; line-height: 1; }
+
+  /* ── Compact Card Mode ─────────────────────── */
+  .trade-card.compact { padding: 12px 16px; max-width: 480px; }
+  .trade-card.compact .forecast-row,
+  .trade-card.compact .price-box,
+  .trade-card.compact .prob-compare,
+  .trade-card.compact .model-toggle,
+  .trade-card.compact .model-values,
+  .trade-card.compact .size-ladder,
+  .trade-card.compact .the-bet,
+  .trade-card.compact .card-date { display: none !important; }
+  .trade-card.compact .cta-btn { font-size: 12px; padding: 8px 14px; font-weight: 600; }
+  .cards-grid.compact { flex-direction: row; flex-wrap: wrap; }
+
   /* ── Main Content ───────────────────────────── */
   .main {
     max-width: 1200px;
