@@ -875,6 +875,10 @@ function renderSummary(resolved) {
 
 // ── Breakdown Panel ────────────────────────
 function renderBreakdownPanel(title, resolved, groupFn) {
+  // Compute baseline win rate for significance testing
+  const totalWon = resolved.filter(t => t.status === 'won').length;
+  const baselineRate = resolved.length > 0 ? totalWon / resolved.length : 0.5;
+
   const groups = {};
   resolved.forEach(t => {
     const key = groupFn(t);
@@ -888,7 +892,13 @@ function renderBreakdownPanel(title, resolved, groupFn) {
   });
 
   const rows = Object.entries(groups)
-    .map(([key, g]) => ({ key, ...g, wr: g.count > 0 ? g.won / g.count * 100 : 0, roi: g.invested > 0 ? g.profit / g.invested * 100 : 0 }))
+    .map(([key, g]) => {
+      const wr = g.count > 0 ? g.won / g.count * 100 : 0;
+      const roi = g.invested > 0 ? g.profit / g.invested * 100 : 0;
+      const pval = binomialPValue(g.won, g.count, baselineRate);
+      const sig = sigLabel(pval);
+      return { key, ...g, wr, roi, pval, sig };
+    })
     .sort((a, b) => b.profit - a.profit);
 
   const maxAbsProfit = Math.max(...rows.map(r => Math.abs(r.profit)), 1);
@@ -896,6 +906,7 @@ function renderBreakdownPanel(title, resolved, groupFn) {
   let tableRows = rows.map(r => {
     const barW = Math.abs(r.profit) / maxAbsProfit * 100;
     const barColor = r.profit >= 0 ? 'var(--green)' : 'var(--red)';
+    const sigTip = `Binomial test: ${r.won}/${r.count} wins vs ${(baselineRate*100).toFixed(1)}% baseline → p=${r.pval.toFixed(4)}. ${r.sig.title}`;
     return `<tr>
       <td>${escHtml(r.key)}</td>
       <td>${r.count}</td>
@@ -905,12 +916,15 @@ function renderBreakdownPanel(title, resolved, groupFn) {
       <td>$${r.invested.toFixed(2)}</td>
       <td><div class="bar-cell"><span class="${r.profit >= 0 ? 'profit-pos' : 'profit-neg'}">${r.profit >= 0 ? '+' : ''}$${r.profit.toFixed(2)}</span><div class="mini-bar" style="width:${barW}%;background:${barColor}"></div></div></td>
       <td class="${r.roi >= 0 ? 'profit-pos' : 'profit-neg'}">${r.roi.toFixed(1)}%</td>
+      <td><span class="sig-badge" style="color:${r.sig.color};cursor:help;" title="${sigTip}">${r.sig.text}</span></td>
     </tr>`;
   }).join('');
 
   if (rows.length === 0) {
-    tableRows = '<tr><td colspan="8" style="text-align:center;color:var(--text2);padding:16px;">No data</td></tr>';
+    tableRows = '<tr><td colspan="9" style="text-align:center;color:var(--text2);padding:16px;">No data</td></tr>';
   }
+
+  const sigTooltip = 'Binomial significance tests whether this group\'s win rate is statistically different from the overall baseline. *** p<0.01, ** p<0.05, * p<0.10, n.s. = not significant.';
 
   return `<div class="panel">
     <div class="panel-header">
@@ -919,7 +933,7 @@ function renderBreakdownPanel(title, resolved, groupFn) {
     </div>
     <div class="panel-body">
       <table class="breakdown-table">
-        <thead><tr><th>Group</th><th>Count</th><th>Won</th><th>Lost</th><th>Win %</th><th>Invested</th><th>Profit</th><th>ROI</th></tr></thead>
+        <thead><tr><th>Group</th><th>Count</th><th>Won</th><th>Lost</th><th>Win %</th><th>Invested</th><th>Profit</th><th>ROI</th><th><span style="cursor:help;" title="${sigTooltip}">Sig.</span></th></tr></thead>
         <tbody>${tableRows}</tbody>
       </table>
     </div>
