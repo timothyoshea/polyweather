@@ -918,7 +918,7 @@ function renderBreakdownPanel(title, resolved, groupFn) {
       <td>$${r.invested.toFixed(2)}</td>
       <td><div class="bar-cell"><span class="${r.profit >= 0 ? 'profit-pos' : 'profit-neg'}">${r.profit >= 0 ? '+' : ''}$${r.profit.toFixed(2)}</span><div class="mini-bar" style="width:${barW}%;background:${barColor}"></div></div></td>
       <td class="${r.roi >= 0 ? 'profit-pos' : 'profit-neg'}">${r.roi.toFixed(1)}%</td>
-      <td><span class="sig-badge" style="color:${r.sig.color};cursor:help;" title="${sigTip}">${r.sig.text}</span></td>
+      <td><span class="sig-badge" style="color:${r.sig.color};background:${r.sig.bg};cursor:help;" title="${sigTip}">${r.sig.text}</span></td>
     </tr>`;
   }).join('');
 
