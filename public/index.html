@@ -1128,26 +1128,29 @@
 <body>
 <script src="/strategy-editor.js"></script>
 
-<!-- ── Header ──────────────────────────────────── -->
-<header class="header">
-  <div class="header-top">
-    <div class="logo">
-      <span class="logo-icon">⛈</span>
-      <span>PolyWeather</span>
-    </div>
-    <div class="nav-tabs">
-      <button class="nav-tab active" onclick="switchTab('dashboard')">Dashboard</button>
-      <a class="nav-tab" href="/pnl.html" style="text-decoration:none;">P&L</a>
-      <a class="nav-tab" href="/analysis.html" style="text-decoration:none;">Analysis</a>
-      <button class="nav-tab" onclick="switchTab('settings')">Settings</button>
-    </div>
-    <div class="controls">
-      <select class="filter-select" id="portfolio-select" onchange="switchPortfolio()">
-        <option value="">Loading...</option>
-      </select>
-    </div>
+<!-- ── Sidebar ─────────────────────────────────── -->
+<nav class="sidebar">
+  <a href="/" class="sidebar-logo">
+    <span class="logo-icon">⛈</span>
+    <span>PolyWeather</span>
+  </a>
+  <div class="sidebar-portfolio">
+    <select class="filter-select" id="portfolio-select" onchange="switchPortfolio()">
+      <option value="">Loading...</option>
+    </select>
   </div>
-</header>
+  <div class="sidebar-nav">
+    <button class="sidebar-link active" onclick="switchTab('dashboard')">Dashboard</button>
+    <a class="sidebar-link" href="/pnl.html">P&amp;L</a>
+    <a class="sidebar-link" href="/analysis.html">Analysis</a>
+  </div>
+</nav>
+
+<!-- ── Main Content ────────────────────────────── -->
+<div class="main-content">
+<div class="top-bar">
+  <button class="top-bar-settings-btn" onclick="switchTab('settings')">Settings</button>
+</div>
 
 <!-- ── Settings Section ─────────────────────────── -->
 <div id="settings-section" style="display:none;">
