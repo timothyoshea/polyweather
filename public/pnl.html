@@ -494,9 +494,51 @@ function rerender() {
   render(filtered);
 }
 
+async function loadPortfolios() {
+  try {
+    const res = await fetch('/api/portfolios');
+    const data = await res.json();
+    const portfolios = data.portfolios || data || [];
+    const sel = $('#portfolio-select');
+    // Clear existing options beyond the default
+    sel.innerHTML = '<option value="">All Portfolios</option>';
+    portfolios.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.name;
+      sel.appendChild(opt);
+    });
+  } catch (e) {
+    console.error('Failed to load portfolios:', e);
+  }
+}
+
+function onPortfolioChange() {
+  const sel = $('#portfolio-select');
+  currentPortfolioId = sel.value;
+  // Update page title subtitle
+  const subtitle = $('#portfolio-subtitle');
+  if (subtitle) {
+    subtitle.textContent = sel.value ? sel.options[sel.selectedIndex].text : '';
+    subtitle.style.display = sel.value ? 'block' : 'none';
+  }
+  // Reload all data
+  $('#app').innerHTML = '<div class="loading"><div class="spinner"></div><div>Loading trades...</div></div>';
+  loadTrades().then(trades => {
+    allTrades = trades;
+    if (trades.length === 0) {
+      $('#app').innerHTML = '<div class="loading">No closed trades found.</div>';
+      return;
+    }
+    rerender();
+  });
+}
+
 async function loadTrades() {
   try {
-    const res = await fetch('/api/trades?limit=2000');
+    let url = '/api/trades?limit=2000';
+    if (currentPortfolioId) url += '&portfolio_id=' + encodeURIComponent(currentPortfolioId);
+    const res = await fetch(url);
     const data = await res.json();
     const all = data.trades || data;
     // Only include closed trades (won or lost), exclude open
