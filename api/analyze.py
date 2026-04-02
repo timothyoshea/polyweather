@@ -106,6 +106,12 @@ Rules:
     period_note = f" (time period: {date_range})" if date_range else ""
     user_content = f"Here are my paper trading results — {len(trades_json)} closed trades{period_note}:\n\n"
 
+    # Add overall stats for baseline
+    total = len(trades_json)
+    won = sum(1 for t in trades_json if t.get("status") == "won")
+    baseline_wr = round(won / total * 100, 1) if total > 0 else 0
+    user_content += f"**Overall baseline: {won}/{total} wins = {baseline_wr}% win rate** (use this as the null hypothesis for binomial significance tests)\n\n"
+
     # Add breakdowns summary first (more useful than raw trades)
     if breakdowns:
         user_content += "## Performance Breakdowns\n\n"
