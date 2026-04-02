@@ -638,9 +638,12 @@ async function loadPortfolios() {
 }
 
 async function loadTrades() {
+  if (!currentPortfolioId) {
+    document.getElementById('app').innerHTML = '<div class="empty-state">Select a portfolio to view analysis</div>';
+    return;
+  }
   try {
-    let url = '/api/trades?limit=1000';
-    if (currentPortfolioId) url += '&portfolio_id=' + encodeURIComponent(currentPortfolioId);
+    let url = '/api/trades?limit=1000&portfolio_id=' + encodeURIComponent(currentPortfolioId);
     const res = await fetch(url);
     const data = await res.json();
     allTrades = data.trades || data || [];
