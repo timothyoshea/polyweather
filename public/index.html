@@ -2105,11 +2105,14 @@
 
   // ── Tab Switching ─────────────────────────────
   function switchTab(tab) {
-    document.getElementById('scanner-section').style.display = tab === 'scanner' ? '' : 'none';
-    document.getElementById('trading-section').style.display = tab === 'trading' ? '' : 'none';
+    document.getElementById('scanner-section').style.display = tab === 'dashboard' ? '' : 'none';
+    document.getElementById('dashboard-section').style.display = tab === 'dashboard' ? '' : 'none';
+    document.getElementById('settings-section').style.display = tab === 'settings' ? '' : 'none';
     document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-    document.querySelector('.nav-tab[onclick*="' + tab + '"]').classList.add('active');
-    if (tab === 'trading' && !tradingLoaded) loadTradingDashboard();
+    const activeTab = document.querySelector('.nav-tab[onclick*="' + tab + '"]');
+    if (activeTab) activeTab.classList.add('active');
+    if (tab === 'dashboard' && !tradingLoaded) loadTradingDashboard();
+    if (tab === 'settings') updateSettingsPortfolioInfo();
   }
 
   // ── Paper Trading Dashboard ───────────────────
