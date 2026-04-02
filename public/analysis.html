@@ -858,7 +858,11 @@ function renderSummary(resolved) {
   const profit = resolved.reduce((s, t) => s + (t.profit_usd || 0), 0);
   const roi = invested > 0 ? (profit / invested * 100) : 0;
 
-  return `<div class="summary-row">
+  return `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <div></div>
+    <button class="export-btn" onclick="exportCSV()">Export CSV</button>
+  </div>
+  <div class="summary-row">
     <div class="summary-card"><div class="summary-label">Trades</div><div class="summary-value">${total}</div></div>
     <div class="summary-card"><div class="summary-label">Won</div><div class="summary-value profit-pos">${won}</div></div>
     <div class="summary-card"><div class="summary-label">Lost</div><div class="summary-value profit-neg">${lost}</div></div>
