@@ -608,26 +608,28 @@
 </head>
 <body>
 
-<!-- ── Header ──────────────────────────────── -->
-<div class="header">
-  <div class="header-inner">
-    <a href="/" class="logo">
-      <span class="logo-icon">🌤</span>
-      <span>PolyWeather</span>
-    </a>
-    <div class="nav-tabs">
-      <a href="/" class="nav-tab">Dashboard</a>
-      <a href="/pnl.html" class="nav-tab">P&L</a>
-      <a href="/analysis.html" class="nav-tab active">Analysis</a>
-      <a href="/" class="nav-tab" onclick="localStorage.setItem('pw-tab','settings')" style="margin-left:12px;font-size:11px;color:var(--text2);border-color:var(--card-border);">Settings</a>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <span class="portfolio-label">Portfolio:</span>
-      <select class="portfolio-select" id="portfolio-select" onchange="onPortfolioChange()">
-        <option value="" disabled selected>Select a portfolio...</option>
-      </select>
-    </div>
+<!-- ── Sidebar ─────────────────────────────────── -->
+<nav class="sidebar">
+  <a href="/" class="sidebar-logo">
+    <span class="logo-icon">🌤</span>
+    <span>PolyWeather</span>
+  </a>
+  <div class="sidebar-portfolio">
+    <select class="portfolio-select" id="portfolio-select" onchange="onPortfolioChange()">
+      <option value="" disabled selected>Select a portfolio...</option>
+    </select>
   </div>
+  <div class="sidebar-nav">
+    <a class="sidebar-link" href="/">Dashboard</a>
+    <a class="sidebar-link" href="/pnl.html">P&amp;L</a>
+    <a class="sidebar-link active" href="/analysis.html">Analysis</a>
+  </div>
+</nav>
+
+<!-- ── Main Content ────────────────────────────── -->
+<div class="main-content">
+<div class="top-bar">
+  <a class="top-bar-settings-btn" href="/" onclick="localStorage.setItem('pw-tab','settings')">Settings</a>
 </div>
 
 <!-- ── Date Range Bar ─────────────────────── -->
