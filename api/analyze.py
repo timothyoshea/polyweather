@@ -150,7 +150,8 @@ class handler(BaseHTTPRequestHandler):
         try:
             params = parse_qs(urlparse(self.path).query)
             limit = int(params.get("limit", ["20"])[0])
-            history = get_analysis_history(limit)
+            portfolio_id = params.get("portfolio_id", [None])[0]
+            history = get_analysis_history(limit, portfolio_id)
             self._respond(200, history)
         except Exception as e:
             self._respond(500, {"error": str(e)})
