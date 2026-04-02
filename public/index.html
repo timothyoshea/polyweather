@@ -1129,25 +1129,37 @@
       <a class="nav-tab" href="/analysis.html" style="text-decoration:none;">Analysis</a>
     </div>
     <div class="controls">
-      <div class="control-group">
-        <button class="toggle-btn active" id="btn-tomorrow" onclick="setMode('tomorrow')">Tomorrow</button>
-        <button class="toggle-btn" id="btn-all" onclick="setMode('all')">All Days</button>
-      </div>
-      <label class="checkbox-label">
-        <input type="checkbox" id="chk-tier1" onchange="applyFilters()"> Tier 1 Only
-      </label>
-      <button class="scan-btn" id="scan-btn" onclick="scan()">
-        Scan Now
-      </button>
-      <button class="log-btn" id="log-btn" onclick="toggleLog()">
-        Scan Log
-      </button>
-      <button class="log-btn" id="history-btn" onclick="toggleHistory()">
-        History
-      </button>
+      <select class="filter-select" id="portfolio-select" onchange="switchPortfolio()">
+        <option value="">Loading...</option>
+      </select>
+      <button class="log-btn" id="rules-btn" onclick="toggleRules()">Rules</button>
+      <button class="log-btn" id="scanner-tools-btn" onclick="toggleScannerTools()">Scanner</button>
     </div>
   </div>
+  <div class="scanner-tools-panel" id="scanner-tools-panel">
+    <div class="control-group">
+      <button class="toggle-btn active" id="btn-tomorrow" onclick="setMode('tomorrow')">Tomorrow</button>
+      <button class="toggle-btn" id="btn-all" onclick="setMode('all')">All Days</button>
+    </div>
+    <label class="checkbox-label">
+      <input type="checkbox" id="chk-tier1" onchange="applyFilters()"> Tier 1 Only
+    </label>
+    <button class="scan-btn" id="scan-btn" onclick="scan()">Scan Now</button>
+    <button class="log-btn" id="log-btn" onclick="toggleLog()">Scan Log</button>
+    <button class="log-btn" id="history-btn" onclick="toggleHistory()">History</button>
+  </div>
 </header>
+
+<!-- ── Rules Panel ──────────────────────────────── -->
+<div class="rules-panel" id="rules-panel">
+  <div class="log-header">
+    <span class="log-title">Portfolio Strategy Rules</span>
+    <button class="log-copy-btn" onclick="document.getElementById('rules-panel').classList.remove('open')">Close</button>
+  </div>
+  <div class="rules-grid" id="rules-grid">
+    <span style="color:var(--text2);font-size:13px;">Select a portfolio to view rules.</span>
+  </div>
+</div>
 
 <div class="log-panel" id="log-panel">
   <div class="log-header">
