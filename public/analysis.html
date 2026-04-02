@@ -1122,6 +1122,12 @@ function timeBucket(createdAt) {
   return '18-24 (Evening)';
 }
 
+function hourBucket(createdAt) {
+  if (!createdAt) return 'Unknown';
+  const h = new Date(createdAt).getUTCHours();
+  return String(h).padStart(2, '0') + ':00';
+}
+
 function priceBucket(price) {
   const p = parseFloat(price);
   if (isNaN(p)) return 'Unknown';
