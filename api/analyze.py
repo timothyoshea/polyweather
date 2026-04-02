@@ -205,6 +205,8 @@ class handler(BaseHTTPRequestHandler):
                     "forecast_c": t.get("forecast_c"),
                 })
 
+            portfolio_id = body.get("portfolio_id", None)
+
             analysis = call_claude(slim_trades, question, breakdowns, date_range)
 
             # Save to history
@@ -213,6 +215,7 @@ class handler(BaseHTTPRequestHandler):
                 analysis=analysis,
                 trade_count=len(slim_trades),
                 date_range=date_range,
+                portfolio_id=portfolio_id,
             )
 
             self._respond(200, {"analysis": analysis})
