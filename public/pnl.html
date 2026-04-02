@@ -483,11 +483,14 @@ function rerender() {
   render(filtered);
 }
 
+let pnlAllPortfolios = [];
+
 async function loadPortfolios() {
   try {
     const res = await fetch('/api/portfolios');
     const data = await res.json();
     const portfolios = data.portfolios || data || [];
+    pnlAllPortfolios = portfolios;
     const sel = $('#portfolio-select');
     sel.innerHTML = '<option value="" disabled>Select a portfolio...</option>';
     portfolios.forEach(p => {
@@ -496,32 +499,41 @@ async function loadPortfolios() {
       opt.textContent = p.name;
       sel.appendChild(opt);
     });
-    // Auto-select the first portfolio and trigger data load
     if (portfolios.length > 0) {
       sel.value = portfolios[0].id;
       onPortfolioChange();
     } else {
-      $('#app').innerHTML = '<div class="loading">Select a portfolio to view P&L</div>';
+      $('#app').innerHTML = '<div class="loading">No portfolios found</div>';
+      $('#portfolio-name-display').textContent = 'No portfolios';
     }
   } catch (e) {
     console.error('Failed to load portfolios:', e);
   }
 }
 
+function updatePnlPortfolioDisplay() {
+  const sel = $('#portfolio-select');
+  const nameEl = $('#portfolio-name-display');
+  const selected = sel.options[sel.selectedIndex];
+  if (nameEl) nameEl.textContent = selected ? selected.textContent : 'Select portfolio';
+  const list = $('#portfolio-picker-list');
+  if (list) {
+    list.innerHTML = pnlAllPortfolios.map(p =>
+      `<div style="padding:8px 12px;cursor:pointer;border-radius:6px;font-size:13px;color:${p.id === currentPortfolioId ? 'var(--cyan)' : 'var(--text)'};font-weight:${p.id === currentPortfolioId ? '600' : '400'};"
+        onmouseover="this.style.background='rgba(79,195,247,0.08)'"
+        onmouseout="this.style.background=''"
+        onclick="$('#portfolio-select').value='${p.id}';$('#portfolio-picker').style.display='none';onPortfolioChange();">${p.name || p.id}</div>`
+    ).join('');
+  }
+}
+
 function onPortfolioChange() {
   const sel = $('#portfolio-select');
   currentPortfolioId = sel.value;
+  updatePnlPortfolioDisplay();
   if (!currentPortfolioId) {
     $('#app').innerHTML = '<div class="loading">Select a portfolio to view P&L</div>';
-    const subtitle = $('#portfolio-subtitle');
-    if (subtitle) { subtitle.textContent = ''; subtitle.style.display = 'none'; }
     return;
-  }
-  // Update page title subtitle
-  const subtitle = $('#portfolio-subtitle');
-  if (subtitle) {
-    subtitle.textContent = sel.options[sel.selectedIndex].text;
-    subtitle.style.display = 'block';
   }
   // Reload all data
   $('#app').innerHTML = '<div class="loading"><div class="spinner"></div><div>Loading trades...</div></div>';
