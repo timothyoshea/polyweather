@@ -1441,6 +1441,30 @@
     }
   }
 
+  function toggleRulesEdit() {
+    const grid = document.getElementById('rules-grid');
+    const editor = document.getElementById('strategy-editor-container');
+    const btn = document.getElementById('rules-edit-toggle');
+    if (editor.style.display === 'none') {
+      grid.style.display = 'none';
+      editor.style.display = 'block';
+      btn.textContent = 'View Rules';
+      btn.style.borderColor = 'var(--cyan)';
+      btn.style.color = 'var(--cyan)';
+      if (activePortfolioId && portfolioRules && typeof renderStrategyEditor === 'function') {
+        renderStrategyEditor('strategy-editor-container', portfolioRules, activePortfolioId);
+      }
+    } else {
+      grid.style.display = '';
+      editor.style.display = 'none';
+      btn.textContent = 'Edit Rules';
+      btn.style.borderColor = '';
+      btn.style.color = '';
+      // Reload rules in case they were saved
+      if (activePortfolioId) loadPortfolioRules(activePortfolioId);
+    }
+  }
+
   function renderRules(strategy) {
     const grid = document.getElementById('rules-grid');
     if (!strategy) {
