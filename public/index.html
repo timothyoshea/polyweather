@@ -1757,6 +1757,31 @@
     const confColor = o.confidence >= 80 ? 'var(--green)' : o.confidence >= 50 ? 'var(--amber)' : 'var(--red)';
     const confTextColor = o.confidence >= 80 ? 'var(--green)' : o.confidence >= 50 ? 'var(--amber)' : 'var(--red)';
 
+    // Edge color
+    const edgeColor = o.edge >= 10 ? 'var(--green)' : o.edge >= 5 ? 'var(--cyan)' : 'var(--amber)';
+
+    // Compact mode — return minimal card
+    if (compactMode) {
+      const priceSummary = o.side === 'NO'
+        ? 'Buy NO at ' + o.mkt_p.toFixed(1) + '¢ — ' + o.edge.toFixed(1) + 'pp edge'
+        : 'Buy YES at ' + o.mkt_p.toFixed(1) + '¢ — ' + o.edge.toFixed(1) + 'pp edge';
+      return '<div class="' + cardClass + ' compact">' +
+        '<div class="card-header">' +
+          '<div class="card-badges">' + typeBadge + sideBadge + '</div>' +
+          '<div class="confidence-wrap">' +
+            '<div class="confidence-bar-bg"><div class="confidence-bar-fill" style="width:' + o.confidence + '%; background:' + confColor + '"></div></div>' +
+            '<span class="confidence-value" style="color:' + confTextColor + '">' + o.confidence + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="card-meta"><span class="city">' + esc(o.city) + '</span><span class="sep">·</span><span class="detail">' + o.date + '</span></div>' +
+        '<div style="font-family:var(--mono);font-size:13px;margin:8px 0;color:var(--text2);">' +
+          priceSummary + ' <span style="color:' + edgeColor + ';font-weight:600;">+' + o.edge.toFixed(1) + 'pp</span>' +
+        '</div>' +
+        '<div class="cta-row"><a class="cta-btn ' + (o.side === 'YES' ? 'yes' : 'no') + '" href="' + esc(o.url) + '" target="_blank" rel="noopener">' +
+          'Trade on Polymarket <span class="cta-arrow">→</span></a></div>' +
+      '</div>';
+    }
+
     // Date
     const d = new Date(o.date + 'T00:00:00');
     const dateStr = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
