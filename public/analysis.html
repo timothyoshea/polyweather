@@ -1538,6 +1538,59 @@ function drawAnalysisCharts(resolved) {
       }
     }
   }));
+
+  // Win Rate by Hour of Day
+  const hourCanvas = document.getElementById('chart-wr-hour');
+  if (hourCanvas) {
+    const hourGroups = {};
+    for (let h = 0; h < 24; h++) hourGroups[String(h).padStart(2, '0') + ':00'] = { won: 0, total: 0 };
+    resolved.forEach(t => {
+      if (!t.created_at) return;
+      const h = new Date(t.created_at).getUTCHours();
+      const key = String(h).padStart(2, '0') + ':00';
+      hourGroups[key].total++;
+      if (t.status === 'won') hourGroups[key].won++;
+    });
+    const hourLabels = Object.keys(hourGroups).sort();
+    const hourWR = hourLabels.map(h => hourGroups[h].total > 0 ? (hourGroups[h].won / hourGroups[h].total * 100) : null);
+    const hourCounts = hourLabels.map(h => hourGroups[h].total);
+    const hourColors = hourWR.map(v => v === null ? 'rgba(136,136,136,0.3)' : v >= 60 ? 'rgba(0,230,118,0.7)' : v >= 40 ? 'rgba(255,193,7,0.7)' : 'rgba(255,82,82,0.7)');
+
+    chartInstances.push(new Chart(hourCanvas, {
+      type: 'bar',
+      data: {
+        labels: hourLabels,
+        datasets: [{
+          label: 'Win Rate %',
+          data: hourWR.map(v => v !== null ? v.toFixed(1) : 0),
+          backgroundColor: hourColors,
+          borderColor: hourColors.map(c => c.replace('0.7', '1').replace('0.3', '0.5')),
+          borderWidth: 1,
+          borderRadius: 3
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                const idx = ctx.dataIndex;
+                const wr = hourWR[idx];
+                const count = hourCounts[idx];
+                return wr !== null ? `${wr.toFixed(1)}% win rate (${count} trades)` : 'No trades';
+              }
+            }
+          }
+        },
+        scales: {
+          x: { ticks: { color: '#888', font: { size: 10 } }, grid: { display: false } },
+          y: { beginAtZero: true, max: 100, ticks: { color: '#888', callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+        }
+      }
+    }));
+  }
 }
 
 // ── Breakdown Tabs ────────────────────────
