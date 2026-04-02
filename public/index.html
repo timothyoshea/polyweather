@@ -1369,14 +1369,18 @@
   let portfolioRules = null;
 
   // ── Portfolio Management ─────────────────────
+  let allPortfolios = [];
+
   async function loadPortfolios() {
     try {
       const resp = await fetch('/api/portfolios');
       const portfolios = await resp.json();
+      allPortfolios = portfolios || [];
       const sel = document.getElementById('portfolio-select');
       sel.innerHTML = '';
       if (!portfolios || !portfolios.length) {
         sel.innerHTML = '<option value="">No portfolios</option>';
+        document.getElementById('portfolio-name-display').textContent = 'No portfolios';
         return;
       }
       portfolios.forEach(p => {
@@ -1386,22 +1390,44 @@
         if (p.is_active) opt.selected = true;
         sel.appendChild(opt);
       });
-      // Set the active portfolio
       activePortfolioId = sel.value || portfolios[0].id;
       if (!sel.value) sel.value = activePortfolioId;
-      // Load rules for the active portfolio
+      updatePortfolioDisplay();
       loadPortfolioRules(activePortfolioId);
     } catch (e) {
       console.error('Failed to load portfolios:', e);
-      document.getElementById('portfolio-select').innerHTML = '<option value="">Error loading</option>';
+      document.getElementById('portfolio-name-display').textContent = 'Error';
     }
+  }
+
+  function updatePortfolioDisplay() {
+    const sel = document.getElementById('portfolio-select');
+    const nameEl = document.getElementById('portfolio-name-display');
+    const selected = sel.options[sel.selectedIndex];
+    if (nameEl) nameEl.textContent = selected ? selected.textContent : 'Select portfolio';
+    // Update picker list
+    const list = document.getElementById('portfolio-picker-list');
+    if (list) {
+      list.innerHTML = allPortfolios.map(p =>
+        `<div style="padding:8px 12px;cursor:pointer;border-radius:6px;font-size:13px;color:${p.id === activePortfolioId ? 'var(--cyan)' : 'var(--text)'};font-weight:${p.id === activePortfolioId ? '600' : '400'};transition:background 0.15s;"
+          onmouseover="this.style.background='rgba(79,195,247,0.08)'"
+          onmouseout="this.style.background=''"
+          onclick="selectPortfolio('${p.id}')">${p.name || p.id}</div>`
+      ).join('');
+    }
+  }
+
+  function selectPortfolio(id) {
+    document.getElementById('portfolio-select').value = id;
+    document.getElementById('portfolio-picker').style.display = 'none';
+    switchPortfolio();
   }
 
   function switchPortfolio() {
     const sel = document.getElementById('portfolio-select');
     activePortfolioId = sel.value;
+    updatePortfolioDisplay();
     loadPortfolioRules(activePortfolioId);
-    // Reload trades with new portfolio
     if (tradingLoaded) loadTradeTable();
     updateSettingsPortfolioInfo();
   }
