@@ -45,14 +45,15 @@ def save_analysis(question, analysis, trade_count, date_range=None, portfolio_id
         print(f"[WARN] Failed to save analysis: {e}")
 
 
-def get_analysis_history(limit=20):
+def get_analysis_history(limit=20, portfolio_id=None):
     """Fetch past AI analyses from Supabase."""
     if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
         return []
     try:
+        pf_filter = f"&portfolio_id=eq.{portfolio_id}" if portfolio_id else ""
         url = (
             f"{SUPABASE_URL}/rest/v1/ai_analyses"
-            f"?select=*&order=created_at.desc&limit={limit}"
+            f"?select=*&order=created_at.desc&limit={limit}{pf_filter}"
         )
         headers = {
             "apikey": SUPABASE_SERVICE_KEY,
