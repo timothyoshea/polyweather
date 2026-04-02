@@ -670,10 +670,45 @@ let currentPortfolioId = '';
 let portfolioMap = {};
 
 // ── Init ───────────────────────────────────
-// Close sig tooltips when clicking outside
+// Position and toggle sig tooltips
+function positionTooltip(badge) {
+  const tip = badge.querySelector('.sig-tooltip');
+  if (!tip) return;
+  tip.style.display = 'block';
+  const rect = badge.getBoundingClientRect();
+  let left = rect.left + rect.width / 2 - tip.offsetWidth / 2;
+  let top = rect.top - tip.offsetHeight - 8;
+  // Keep within viewport
+  if (left < 8) left = 8;
+  if (left + tip.offsetWidth > window.innerWidth - 8) left = window.innerWidth - tip.offsetWidth - 8;
+  if (top < 8) top = rect.bottom + 8; // flip below if no room above
+  tip.style.left = left + 'px';
+  tip.style.top = top + 'px';
+}
+
 document.addEventListener('click', e => {
-  if (!e.target.closest('.sig-badge')) {
-    document.querySelectorAll('.sig-badge.active').forEach(el => el.classList.remove('active'));
+  const badge = e.target.closest('.sig-badge');
+  // Close all others first
+  document.querySelectorAll('.sig-badge.active').forEach(el => {
+    if (el !== badge) { el.classList.remove('active'); const t = el.querySelector('.sig-tooltip'); if (t) t.style.display = 'none'; }
+  });
+  if (badge) {
+    badge.classList.toggle('active');
+    if (badge.classList.contains('active')) positionTooltip(badge);
+    else { const t = badge.querySelector('.sig-tooltip'); if (t) t.style.display = 'none'; }
+  }
+});
+
+// Also position on hover
+document.addEventListener('mouseover', e => {
+  const badge = e.target.closest('.sig-badge');
+  if (badge && !badge.classList.contains('active')) positionTooltip(badge);
+});
+document.addEventListener('mouseout', e => {
+  const badge = e.target.closest('.sig-badge');
+  if (badge && !badge.classList.contains('active')) {
+    const t = badge.querySelector('.sig-tooltip');
+    if (t) t.style.display = 'none';
   }
 });
 
