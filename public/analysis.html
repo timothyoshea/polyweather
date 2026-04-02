@@ -926,6 +926,68 @@ function renderBreakdownPanel(title, resolved, groupFn) {
   </div>`;
 }
 
+// ── Binomial Significance ──────────────────
+// Computes p-value for observing k or more wins in n trials given baseline probability p0
+// Uses normal approximation to binomial for n >= 10, exact for smaller
+function binomialPValue(k, n, p0) {
+  if (n === 0 || p0 <= 0 || p0 >= 1) return 1;
+  // For small n, compute exact binomial CDF
+  if (n < 30) {
+    // P(X >= k) = 1 - P(X <= k-1)
+    let cdf = 0;
+    for (let i = 0; i < k; i++) {
+      cdf += binomCoeff(n, i) * Math.pow(p0, i) * Math.pow(1 - p0, n - i);
+    }
+    // Two-tailed: also consider if win rate is significantly LOWER
+    const observedRate = k / n;
+    if (observedRate < p0) {
+      // P(X <= k)
+      let lowerCdf = 0;
+      for (let i = 0; i <= k; i++) {
+        lowerCdf += binomCoeff(n, i) * Math.pow(p0, i) * Math.pow(1 - p0, n - i);
+      }
+      return Math.min(lowerCdf * 2, 1);
+    }
+    return Math.min((1 - cdf) * 2, 1); // two-tailed
+  }
+  // Normal approximation for larger n
+  const mean = n * p0;
+  const std = Math.sqrt(n * p0 * (1 - p0));
+  if (std === 0) return 1;
+  const z = Math.abs((k - mean) / std);
+  // Approximate two-tailed p-value from z-score
+  const p = 2 * (1 - normalCDF(z));
+  return p;
+}
+
+function binomCoeff(n, k) {
+  if (k > n) return 0;
+  if (k === 0 || k === n) return 1;
+  let r = 1;
+  for (let i = 0; i < k; i++) {
+    r = r * (n - i) / (i + 1);
+  }
+  return r;
+}
+
+function normalCDF(z) {
+  // Abramowitz & Stegun approximation
+  const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429;
+  const p = 0.3275911;
+  const sign = z < 0 ? -1 : 1;
+  z = Math.abs(z);
+  const t = 1 / (1 + p * z);
+  const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-z * z / 2);
+  return 0.5 * (1 + sign * y);
+}
+
+function sigLabel(pval) {
+  if (pval < 0.01) return { text: '***', color: 'var(--green)', title: 'Highly significant (p < 0.01)' };
+  if (pval < 0.05) return { text: '**', color: 'var(--green)', title: 'Significant (p < 0.05)' };
+  if (pval < 0.10) return { text: '*', color: 'var(--amber)', title: 'Marginally significant (p < 0.10)' };
+  return { text: 'n.s.', color: 'var(--text2)', title: 'Not significant (p >= 0.10)' };
+}
+
 // ── Bucket Functions ───────────────────────
 function edgeBucket(edge) {
   const e = parseFloat(edge);
