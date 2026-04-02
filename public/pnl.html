@@ -920,15 +920,8 @@ function renderTradesTable() {
 }
 
 // ── Init ──
+// Load portfolios first; auto-selects first portfolio which triggers trade loading
 loadPortfolios();
-loadTrades().then(trades => {
-  allTrades = trades;
-  if (trades.length === 0) {
-    $('#app').innerHTML = '<div class="loading">No closed trades found.</div>';
-    return;
-  }
-  render(trades);
-});
 </script>
 </body>
 </html>
