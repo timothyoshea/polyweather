@@ -1414,19 +1414,7 @@
     grid.innerHTML = html;
   }
 
-  function toggleRules() {
-    const panel = document.getElementById('rules-panel');
-    const btn = document.getElementById('rules-btn');
-    panel.classList.toggle('open');
-    btn.classList.toggle('active');
-  }
-
-  function toggleScannerTools() {
-    const panel = document.getElementById('scanner-tools-panel');
-    const btn = document.getElementById('scanner-tools-btn');
-    panel.classList.toggle('open');
-    btn.classList.toggle('active');
-  }
+  // toggleRules and toggleScannerTools removed — rules and scanner tools are now in Settings section
 
   // Normalize opportunity data from Supabase (flatten forecast_details, add derived fields)
   function normalizeOpps(rawOpps) {
