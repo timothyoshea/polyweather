@@ -307,7 +307,28 @@
     transition: width 0.3s;
   }
 
-  .sig-badge { font-family: var(--sans); font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; white-space: nowrap; letter-spacing: 0.3px; }
+  .sig-badge {
+    font-family: var(--sans); font-size: 10px; font-weight: 600;
+    padding: 2px 8px; border-radius: 10px; white-space: nowrap;
+    letter-spacing: 0.3px; position: relative; cursor: pointer;
+    user-select: none; -webkit-tap-highlight-color: transparent;
+  }
+  .sig-tooltip {
+    display: none; position: absolute; bottom: calc(100% + 8px); left: 50%;
+    transform: translateX(-50%); background: #1a1a2e; color: var(--text);
+    border: 1px solid var(--card-border); border-radius: 8px;
+    padding: 10px 14px; font-size: 12px; font-weight: 400;
+    line-height: 1.5; width: 260px; z-index: 200;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5); pointer-events: none;
+    letter-spacing: 0;
+  }
+  .sig-tooltip::after {
+    content: ''; position: absolute; top: 100%; left: 50%;
+    transform: translateX(-50%); border: 6px solid transparent;
+    border-top-color: #1a1a2e;
+  }
+  .sig-badge:hover .sig-tooltip,
+  .sig-badge.active .sig-tooltip { display: block; }
 
   .profit-pos { color: var(--green); }
   .profit-neg { color: var(--red); }
