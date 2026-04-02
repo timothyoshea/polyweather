@@ -2080,7 +2080,7 @@
   async function loadScanOpps(scanId) {
     console.log('loadScanOpps called with:', scanId);
     // Make sure we're on the scanner tab
-    switchTab('scanner');
+    switchTab('dashboard');
     setStatus('scanning', 'Loading scan ' + scanId.slice(0,8) + '...');
     try {
       const resp = await fetch('/api/history?scan_id=' + scanId);
