@@ -1372,6 +1372,46 @@
     loadPortfolioRules(activePortfolioId);
     // Reload trades with new portfolio
     if (tradingLoaded) loadTradeTable();
+    updateSettingsPortfolioInfo();
+  }
+
+  function updateSettingsPortfolioInfo() {
+    const sel = document.getElementById('portfolio-select');
+    const nameEl = document.getElementById('settings-portfolio-name');
+    if (sel && nameEl) {
+      const selected = sel.options[sel.selectedIndex];
+      nameEl.textContent = selected ? selected.textContent : '--';
+    }
+  }
+
+  async function createNewPortfolio() {
+    const name = document.getElementById('new-portfolio-name').value.trim();
+    if (!name) { alert('Please enter a portfolio name.'); return; }
+    const desc = document.getElementById('new-portfolio-desc').value.trim();
+    try {
+      // Copy strategy from current portfolio if available
+      const body = { name: name, description: desc };
+      if (portfolioRules) body.strategy = portfolioRules;
+      const resp = await fetch('/api/portfolios', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const result = await resp.json();
+      // Reset form
+      document.getElementById('new-portfolio-name').value = '';
+      document.getElementById('new-portfolio-desc').value = '';
+      document.getElementById('create-portfolio-form').style.display = 'none';
+      // Reload portfolios and select the new one
+      await loadPortfolios();
+      if (result && result.id) {
+        document.getElementById('portfolio-select').value = result.id;
+        switchPortfolio();
+      }
+    } catch (e) {
+      alert('Failed to create portfolio: ' + e.message);
+    }
   }
 
   async function loadPortfolioRules(portfolioId) {
