@@ -652,7 +652,12 @@ async function loadTrades() {
 }
 
 function onPortfolioChange() {
-  currentPortfolioId = document.getElementById('portfolio-select').value;
+  const sel = document.getElementById('portfolio-select');
+  currentPortfolioId = sel.value;
+  if (!currentPortfolioId) {
+    document.getElementById('app').innerHTML = '<div class="empty-state">Select a portfolio to view analysis</div>';
+    return;
+  }
   loadTrades();
 }
 
