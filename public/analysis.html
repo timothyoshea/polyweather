@@ -947,8 +947,6 @@ function renderBreakdownPanel(title, resolved, groupFn) {
     tableRows = '<tr><td colspan="9" style="text-align:center;color:var(--text2);padding:16px;">No data</td></tr>';
   }
 
-  const sigTooltip = 'Is this win rate real or just luck? Strong = very likely real, Likely = probably real, Possible = might be random, Too few = not enough trades to tell.';
-
   return `<div class="panel">
     <div class="panel-header">
       <div class="panel-title">${title}</div>
@@ -956,7 +954,7 @@ function renderBreakdownPanel(title, resolved, groupFn) {
     </div>
     <div class="panel-body">
       <table class="breakdown-table">
-        <thead><tr><th>Group</th><th>Count</th><th>Won</th><th>Lost</th><th>Win %</th><th>Invested</th><th>Profit</th><th>ROI</th><th><span style="cursor:help;" title="${sigTooltip}">Sig.</span></th></tr></thead>
+        <thead><tr><th>Group</th><th>Count</th><th>Won</th><th>Lost</th><th>Win %</th><th>Invested</th><th>Profit</th><th>ROI</th><th><span class="sig-badge" style="color:var(--text2);background:none;font-size:10px;" onclick="this.classList.toggle('active')">Sig. <span class="sig-tooltip">Is this win rate real or just luck?<br><br><b style="color:var(--green)">Strong</b> = very likely real<br><b style="color:var(--cyan)">Likely</b> = probably real<br><b style="color:var(--amber)">Possible</b> = might be random<br><b style="color:var(--text2)">Too few</b> = not enough data</span></span></th></tr></thead>
         <tbody>${tableRows}</tbody>
       </table>
     </div>
