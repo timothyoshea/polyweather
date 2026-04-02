@@ -10,7 +10,8 @@
   "rewrites": [
     { "source": "/", "destination": "/index.html" },
     { "source": "/pnl", "destination": "/pnl.html" },
-    { "source": "/analysis", "destination": "/analysis.html" }
+    { "source": "/analysis", "destination": "/analysis.html" },
+    { "source": "/compare", "destination": "/compare.html" }
   ],
   "crons": [
     {
