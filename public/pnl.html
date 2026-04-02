@@ -866,6 +866,8 @@ function render(trades) {
       else { gSortCol = key; gSortAsc = true; }
 
       $$('#trades-table th .sort-arrow').forEach(el => el.remove());
+      $$('#trades-table th').forEach(el => el.classList.remove('sorted'));
+      th.classList.add('sorted');
       th.insertAdjacentHTML('beforeend', `<span class="sort-arrow">${gSortAsc ? '▲' : '▼'}</span>`);
 
       const getVal = (t) => {
