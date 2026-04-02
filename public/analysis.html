@@ -1023,11 +1023,23 @@ function normalCDF(z) {
   return 0.5 * (1 + sign * y);
 }
 
-function sigLabel(pval) {
-  if (pval < 0.01) return { text: 'Strong', color: 'var(--green)', bg: 'rgba(0,230,118,0.12)', title: 'Very likely a real pattern — only a 1% chance this is random luck' };
-  if (pval < 0.05) return { text: 'Likely', color: 'var(--cyan)', bg: 'rgba(79,195,247,0.12)', title: 'Probably a real pattern — less than 5% chance this is random' };
-  if (pval < 0.10) return { text: 'Possible', color: 'var(--amber)', bg: 'rgba(255,193,7,0.12)', title: 'Might be a real pattern but could be random — needs more trades to confirm' };
-  return { text: 'Too few', color: 'var(--text2)', bg: 'rgba(136,136,136,0.08)', title: 'Not enough evidence — this could easily be random chance' };
+function sigLabel(pval, winRate, baselineRate) {
+  // Determine direction: is this group better or worse than baseline?
+  const better = winRate >= baselineRate;
+  if (pval < 0.01) {
+    return better
+      ? { text: 'Strong', color: 'var(--green)', bg: 'rgba(0,230,118,0.12)', title: 'Very likely a real edge — only 1% chance this is random luck' }
+      : { text: 'Strong', color: 'var(--red)', bg: 'rgba(255,82,82,0.12)', title: 'Very likely a real problem — only 1% chance this is random bad luck' };
+  }
+  if (pval < 0.05) {
+    return better
+      ? { text: 'Likely', color: 'var(--cyan)', bg: 'rgba(79,195,247,0.12)', title: 'Probably a real edge — less than 5% chance this is random' }
+      : { text: 'Likely', color: 'var(--amber)', bg: 'rgba(255,193,7,0.12)', title: 'Probably a real problem — less than 5% chance this is random' };
+  }
+  if (pval < 0.10) {
+    return { text: 'Possible', color: 'var(--amber)', bg: 'rgba(255,193,7,0.12)', title: 'Might be a real pattern but could be random — needs more trades to confirm' };
+  }
+  return { text: 'Too few', color: 'var(--text2)', bg: 'rgba(136,136,136,0.08)', title: 'Not enough evidence — could easily be random chance' };
 }
 
 // ── Bucket Functions ───────────────────────
