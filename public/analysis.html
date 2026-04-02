@@ -926,7 +926,7 @@ function renderBreakdownPanel(title, resolved, groupFn) {
     tableRows = '<tr><td colspan="9" style="text-align:center;color:var(--text2);padding:16px;">No data</td></tr>';
   }
 
-  const sigTooltip = 'Binomial significance tests whether this group\'s win rate is statistically different from the overall baseline. *** p<0.01, ** p<0.05, * p<0.10, n.s. = not significant.';
+  const sigTooltip = 'Is this win rate real or just luck? Strong = very likely real, Likely = probably real, Possible = might be random, Too few = not enough trades to tell.';
 
   return `<div class="panel">
     <div class="panel-header">
