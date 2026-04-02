@@ -1369,6 +1369,7 @@ function buildBreakdowns(resolved) {
     by_edge: groupBy(resolved, 'Edge Bucket', t => edgeBucket(t.edge)),
     by_entry_price: groupBy(resolved, 'Entry Price', t => priceBucket(t.entry_price)),
     by_confidence: groupBy(resolved, 'Confidence', t => confBucket(t.confidence)),
+    by_time_of_day: groupBy(resolved, 'Time of Day', t => timeBucket(t.created_at)),
     by_trade_size: groupBy(resolved, 'Trade Size', t => sizeBucket(t.total_cost_usd)),
     by_risk: groupBy(resolved, 'Risk', t => t.risk || '?'),
     by_band_type: groupBy(resolved, 'Band Type', t => t.band_type || '?'),
