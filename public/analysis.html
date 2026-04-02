@@ -1146,7 +1146,7 @@ async function generateAI() {
     const res = await fetch('/api/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ trades: resolved, date_range: dateRange, breakdowns })
+      body: JSON.stringify({ trades: resolved, date_range: dateRange, breakdowns, portfolio_id: currentPortfolioId || undefined })
     });
     const data = await res.json();
     result.innerHTML = renderMarkdown(data.analysis || data.text || data.message || JSON.stringify(data));
