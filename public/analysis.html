@@ -880,6 +880,7 @@ function render() {
   html += '<div class="breakdown-grid">';
   html += renderBreakdownPanel('By Days Before Event', resolved, t => daysBucket(t.created_at, t.date));
   html += renderBreakdownPanel('By Time of Day (UTC)', resolved, t => timeBucket(t.created_at));
+  html += renderBreakdownPanel('By Hour of Day (UTC)', resolved, t => hourBucket(t.created_at));
   html += renderBreakdownPanel('By Confidence', resolved, t => confBucket(t.confidence));
   html += '</div></div>';
 
