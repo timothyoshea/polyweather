@@ -1197,10 +1197,14 @@
 
   <!-- Trading Rules -->
   <div style="background:var(--card);border:1px solid var(--card-border);border-radius:10px;margin:20px 24px;padding:20px 24px;">
-    <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;color:var(--text);">Trading Rules</h3>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="font-size:15px;font-weight:600;color:var(--text);">Trading Rules</h3>
+      <button class="toggle-btn" id="rules-edit-toggle" onclick="toggleRulesEdit()" style="font-size:11px;">Edit Rules</button>
+    </div>
     <div class="rules-grid" id="rules-grid">
       <span style="color:var(--text2);font-size:13px;">Select a portfolio to view rules.</span>
     </div>
+    <div id="strategy-editor-container" style="display:none;"></div>
   </div>
 
   <!-- TODOs -->
