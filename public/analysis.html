@@ -1176,7 +1176,7 @@ async function askFollowup() {
     const res = await fetch('/api/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ trades: resolved, question, date_range: dateRange, breakdowns })
+      body: JSON.stringify({ trades: resolved, question, date_range: dateRange, breakdowns, portfolio_id: currentPortfolioId || undefined })
     });
     const data = await res.json();
     const answer = renderMarkdown(data.analysis || data.text || data.message || JSON.stringify(data));
