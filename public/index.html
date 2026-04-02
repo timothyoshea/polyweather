@@ -2142,6 +2142,53 @@
     }
   }
 
+  // ── All Trades History ─────────────────────────
+  async function loadAllTradesHistory() {
+    const container = document.getElementById('all-trades-history');
+    container.innerHTML = '<span style="color:var(--cyan)">Loading all trades...</span>';
+    try {
+      const resp = await fetch('/api/trades_all?limit=1000');
+      const trades = await resp.json();
+      if (!trades.length) {
+        container.innerHTML = '<span>No trades found.</span>';
+        return;
+      }
+      const rows = trades.map(t => {
+        const profit = Number(t.profit_usd) || 0;
+        const profitColor = t.status === 'open' ? 'var(--text2)' : profit >= 0 ? 'var(--green)' : 'var(--red)';
+        const statusColor = t.status === 'won' ? 'var(--green)' : t.status === 'lost' ? 'var(--red)' : 'var(--cyan)';
+        return `<tr>
+          <td style="color:${statusColor};font-weight:600;font-size:10px;text-transform:uppercase">${t.status}</td>
+          <td style="color:var(--cyan)">${esc(t.portfolio_name || '—')}</td>
+          <td>${esc(t.city || '—')}</td>
+          <td>${(t.date || '').slice(0,10)}</td>
+          <td>${esc(t.band_c || '—')}</td>
+          <td>${t.side || '—'}</td>
+          <td>${t.bet_type || '—'}</td>
+          <td>${t.total_cost_usd != null ? '$' + Number(t.total_cost_usd).toFixed(2) : '—'}</td>
+          <td style="color:${profitColor}">${t.status === 'open' ? '—' : (profit >= 0 ? '+' : '') + '$' + profit.toFixed(2)}</td>
+        </tr>`;
+      }).join('');
+      container.innerHTML = `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead><tr style="border-bottom:1px solid var(--card-border);">
+          <th style="text-align:left;padding:6px 10px;color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;">Status</th>
+          <th style="text-align:left;padding:6px 10px;color:var(--text2);font-size:10px;text-transform:uppercase;">Portfolio</th>
+          <th style="text-align:left;padding:6px 10px;color:var(--text2);font-size:10px;text-transform:uppercase;">City</th>
+          <th style="text-align:left;padding:6px 10px;color:var(--text2);font-size:10px;text-transform:uppercase;">Date</th>
+          <th style="text-align:left;padding:6px 10px;color:var(--text2);font-size:10px;text-transform:uppercase;">Band</th>
+          <th style="text-align:left;padding:6px 10px;color:var(--text2);font-size:10px;text-transform:uppercase;">Side</th>
+          <th style="text-align:left;padding:6px 10px;color:var(--text2);font-size:10px;text-transform:uppercase;">Type</th>
+          <th style="text-align:left;padding:6px 10px;color:var(--text2);font-size:10px;text-transform:uppercase;">Cost</th>
+          <th style="text-align:left;padding:6px 10px;color:var(--text2);font-size:10px;text-transform:uppercase;">Profit</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+      <div style="margin-top:8px;font-size:11px;color:var(--text2);">${trades.length} trades across all portfolios</div>`;
+    } catch (e) {
+      container.innerHTML = '<span style="color:var(--red)">Error: ' + esc(e.message) + '</span>';
+    }
+  }
+
   // ── Tab Switching ─────────────────────────────
   function switchTab(tab) {
     document.getElementById('scanner-section').style.display = tab === 'dashboard' ? '' : 'none';
