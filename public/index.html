@@ -1139,12 +1139,14 @@
 <!-- ── Main Content ────────────────────────────── -->
 <div class="main-content">
 <div class="top-bar">
-  <div style="display:flex;align-items:center;gap:8px;">
-    <span style="font-size:12px;color:var(--text2);">Portfolio:</span>
-    <select class="sidebar-portfolio-select" id="portfolio-select" onchange="switchPortfolio()">
-      <option value="">Loading...</option>
-    </select>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span id="portfolio-name-display" style="font-size:20px;font-weight:700;color:var(--text);font-family:var(--sans);">Loading...</span>
+    <button onclick="document.getElementById('portfolio-picker').style.display=document.getElementById('portfolio-picker').style.display==='none'?'block':'none'" style="background:none;border:1px solid var(--card-border);color:var(--cyan);padding:5px 14px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--sans);">Change</button>
   </div>
+  <div id="portfolio-picker" style="display:none;position:absolute;right:24px;top:48px;background:var(--card);border:1px solid var(--card-border);border-radius:8px;padding:8px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,0.5);min-width:200px;">
+    <div id="portfolio-picker-list"></div>
+  </div>
+  <select id="portfolio-select" onchange="switchPortfolio()" style="display:none;"><option value="">Loading...</option></select>
 </div>
 
 <!-- ── Settings Section ─────────────────────────── -->
