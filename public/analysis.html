@@ -617,7 +617,7 @@ async function loadPortfolios() {
     const data = await res.json();
     const portfolios = data.portfolios || data || [];
     const sel = document.getElementById('portfolio-select');
-    sel.innerHTML = '<option value="">All Portfolios</option>';
+    sel.innerHTML = '<option value="" disabled>Select a portfolio...</option>';
     portfolios.forEach(p => {
       const opt = document.createElement('option');
       opt.value = p.id;
@@ -625,6 +625,13 @@ async function loadPortfolios() {
       sel.appendChild(opt);
       portfolioMap[p.id] = p.name || p.id;
     });
+    // Auto-select the first portfolio and trigger data load
+    if (portfolios.length > 0) {
+      sel.value = portfolios[0].id;
+      onPortfolioChange();
+    } else {
+      document.getElementById('app').innerHTML = '<div class="empty-state">Select a portfolio to view analysis</div>';
+    }
   } catch (e) {
     console.error('Failed to load portfolios:', e);
   }
