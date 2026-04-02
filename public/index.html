@@ -959,22 +959,7 @@
     .trading-summary, .pnl-chart-wrap, .breakdown-row, .trade-table-wrap { padding-left: 16px; padding-right: 16px; }
   }
 
-  /* ── Nav Tabs ────────────────────────────────── */
-  .nav-tabs { display: flex; gap: 4px; }
-  .nav-tab {
-    background: var(--card);
-    border: 1px solid var(--card-border);
-    color: var(--text2);
-    padding: 6px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-family: var(--sans);
-    font-size: 13px;
-    font-weight: 500;
-    transition: all 0.2s;
-  }
-  .nav-tab.active { background: var(--cyan); color: #000; border-color: var(--cyan); }
-  .nav-tab:hover:not(.active) { color: var(--text); border-color: var(--text2); }
+  /* ── Nav Tabs (legacy, kept for JS compat) ──── */
 
   /* ── Header Controls Row ────────────────────────── */
   .header-controls {
