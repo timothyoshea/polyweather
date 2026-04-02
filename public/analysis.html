@@ -998,10 +998,10 @@ function normalCDF(z) {
 }
 
 function sigLabel(pval) {
-  if (pval < 0.01) return { text: '***', color: 'var(--green)', title: 'Highly significant (p < 0.01)' };
-  if (pval < 0.05) return { text: '**', color: 'var(--green)', title: 'Significant (p < 0.05)' };
-  if (pval < 0.10) return { text: '*', color: 'var(--amber)', title: 'Marginally significant (p < 0.10)' };
-  return { text: 'n.s.', color: 'var(--text2)', title: 'Not significant (p >= 0.10)' };
+  if (pval < 0.01) return { text: 'Strong', color: 'var(--green)', bg: 'rgba(0,230,118,0.12)', title: 'Very likely a real pattern — only a 1% chance this is random luck' };
+  if (pval < 0.05) return { text: 'Likely', color: 'var(--cyan)', bg: 'rgba(79,195,247,0.12)', title: 'Probably a real pattern — less than 5% chance this is random' };
+  if (pval < 0.10) return { text: 'Possible', color: 'var(--amber)', bg: 'rgba(255,193,7,0.12)', title: 'Might be a real pattern but could be random — needs more trades to confirm' };
+  return { text: 'Too few', color: 'var(--text2)', bg: 'rgba(136,136,136,0.08)', title: 'Not enough evidence — this could easily be random chance' };
 }
 
 // ── Bucket Functions ───────────────────────
