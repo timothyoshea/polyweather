@@ -1064,7 +1064,9 @@ async function loadAIHistory() {
   const container = document.getElementById('ai-history');
   if (!container) return;
   try {
-    const res = await fetch('/api/analyze?limit=20');
+    let aiUrl = '/api/analyze?limit=20';
+    if (currentPortfolioId) aiUrl += '&portfolio_id=' + encodeURIComponent(currentPortfolioId);
+    const res = await fetch(aiUrl);
     const history = await res.json();
     if (!Array.isArray(history) || history.length === 0) {
       container.innerHTML = '';
