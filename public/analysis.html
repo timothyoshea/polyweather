@@ -1165,7 +1165,7 @@ function renderPatterns(resolved) {
     const sigTip = `${Math.round(p.wr/100*p.count)}/${p.count} wins vs ${(baselineRate*100).toFixed(1)}% baseline — ${p.sig.title}`;
     return `<div class="pattern-card">
       <div class="pattern-rank" style="color:${rankColor}">#${i + 1}</div>
-      <div class="pattern-desc">${escHtml(p.desc)} <span class="sig-badge" style="color:${p.sig.color};background:${p.sig.bg};cursor:help;margin-left:8px;" title="${sigTip}">${p.sig.text}</span></div>
+      <div class="pattern-desc">${escHtml(p.desc)} <span class="sig-badge" style="color:${p.sig.color};background:${p.sig.bg};margin-left:8px;" onclick="this.classList.toggle('active')">${p.sig.text}<span class="sig-tooltip">${sigTip}</span></span></div>
       <div class="pattern-stats">
         <div><div class="pattern-stat-label">Trades</div><div>${p.count}</div></div>
         <div><div class="pattern-stat-label">Win Rate</div><div class="${wrClass(p.wr)}">${p.wr.toFixed(1)}%</div></div>
