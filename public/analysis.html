@@ -614,22 +614,24 @@
     <span class="logo-icon">🌤</span>
     <span>PolyWeather</span>
   </a>
-  <div class="sidebar-portfolio">
-    <select class="portfolio-select" id="portfolio-select" onchange="onPortfolioChange()">
-      <option value="" disabled selected>Select a portfolio...</option>
-    </select>
-  </div>
   <div class="sidebar-nav">
     <a class="sidebar-link" href="/">Dashboard</a>
     <a class="sidebar-link" href="/pnl.html">P&amp;L</a>
     <a class="sidebar-link active" href="/analysis.html">Analysis</a>
+    <a class="sidebar-link" href="/compare.html">Compare</a>
+    <a class="sidebar-link" href="/" onclick="localStorage.setItem('pw-tab','settings')">Settings</a>
   </div>
 </nav>
 
 <!-- ── Main Content ────────────────────────────── -->
 <div class="main-content">
 <div class="top-bar">
-  <a class="top-bar-settings-btn" href="/" onclick="localStorage.setItem('pw-tab','settings')">Settings</a>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span style="font-size:12px;color:var(--text2);">Portfolio:</span>
+    <select class="sidebar-portfolio-select" id="portfolio-select" onchange="onPortfolioChange()">
+      <option value="" disabled selected>Select a portfolio...</option>
+    </select>
+  </div>
 </div>
 
 <!-- ── Date Range Bar ─────────────────────── -->
