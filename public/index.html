@@ -761,16 +761,17 @@
     font-family: var(--sans);
     font-size: 13px;
     cursor: pointer;
-    padding: 4px 0;
+    padding: 8px 6px;
     margin-bottom: 4px;
-    transition: color 0.2s;
+    border-radius: 6px;
+    transition: color 0.2s, background 0.2s;
   }
 
-  .model-toggle:hover { color: var(--text); }
+  .model-toggle:hover { color: var(--text); background: rgba(79,195,247,0.05); }
 
   .model-toggle .arrow {
     font-size: 10px;
-    transition: transform 0.2s;
+    transition: transform 0.3s ease;
     display: inline-block;
   }
 
