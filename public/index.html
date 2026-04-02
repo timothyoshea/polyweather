@@ -1134,22 +1134,24 @@
     <span class="logo-icon">⛈</span>
     <span>PolyWeather</span>
   </a>
-  <div class="sidebar-portfolio">
-    <select class="filter-select" id="portfolio-select" onchange="switchPortfolio()">
-      <option value="">Loading...</option>
-    </select>
-  </div>
   <div class="sidebar-nav">
     <button class="sidebar-link active" onclick="switchTab('dashboard')">Dashboard</button>
     <a class="sidebar-link" href="/pnl.html">P&amp;L</a>
     <a class="sidebar-link" href="/analysis.html">Analysis</a>
+    <a class="sidebar-link" href="/compare.html">Compare</a>
+    <button class="sidebar-link" onclick="switchTab('settings')">Settings</button>
   </div>
 </nav>
 
 <!-- ── Main Content ────────────────────────────── -->
 <div class="main-content">
 <div class="top-bar">
-  <button class="top-bar-settings-btn" onclick="switchTab('settings')">Settings</button>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span style="font-size:12px;color:var(--text2);">Portfolio:</span>
+    <select class="sidebar-portfolio-select" id="portfolio-select" onchange="switchPortfolio()">
+      <option value="">Loading...</option>
+    </select>
+  </div>
 </div>
 
 <!-- ── Settings Section ─────────────────────────── -->
