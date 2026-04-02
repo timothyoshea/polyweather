@@ -705,11 +705,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Don't load trades until a portfolio is selected (auto-selected in loadPortfolios)
 });
 
+let analysisAllPortfolios = [];
+
 async function loadPortfolios() {
   try {
     const res = await fetch('/api/portfolios');
     const data = await res.json();
     const portfolios = data.portfolios || data || [];
+    analysisAllPortfolios = portfolios;
     const sel = document.getElementById('portfolio-select');
     sel.innerHTML = '<option value="" disabled>Select a portfolio...</option>';
     portfolios.forEach(p => {
@@ -719,15 +722,31 @@ async function loadPortfolios() {
       sel.appendChild(opt);
       portfolioMap[p.id] = p.name || p.id;
     });
-    // Auto-select the first portfolio and trigger data load
     if (portfolios.length > 0) {
       sel.value = portfolios[0].id;
       onPortfolioChange();
     } else {
-      document.getElementById('app').innerHTML = '<div class="empty-state">Select a portfolio to view analysis</div>';
+      document.getElementById('app').innerHTML = '<div class="empty-state">No portfolios found</div>';
+      document.getElementById('portfolio-name-display').textContent = 'No portfolios';
     }
   } catch (e) {
     console.error('Failed to load portfolios:', e);
+  }
+}
+
+function updateAnalysisPortfolioDisplay() {
+  const sel = document.getElementById('portfolio-select');
+  const nameEl = document.getElementById('portfolio-name-display');
+  const selected = sel.options[sel.selectedIndex];
+  if (nameEl) nameEl.textContent = selected ? selected.textContent : 'Select portfolio';
+  const list = document.getElementById('portfolio-picker-list');
+  if (list) {
+    list.innerHTML = analysisAllPortfolios.map(p =>
+      `<div style="padding:8px 12px;cursor:pointer;border-radius:6px;font-size:13px;color:${p.id === currentPortfolioId ? 'var(--cyan)' : 'var(--text)'};font-weight:${p.id === currentPortfolioId ? '600' : '400'};"
+        onmouseover="this.style.background='rgba(79,195,247,0.08)'"
+        onmouseout="this.style.background=''"
+        onclick="document.getElementById('portfolio-select').value='${p.id}';document.getElementById('portfolio-picker').style.display='none';onPortfolioChange();">${p.name || p.id}</div>`
+    ).join('');
   }
 }
 
