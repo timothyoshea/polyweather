@@ -1112,6 +1112,15 @@ function daysBucket(createdAt, eventDate) {
   return '3d+';
 }
 
+function timeBucket(createdAt) {
+  if (!createdAt) return 'Unknown';
+  const h = new Date(createdAt).getUTCHours();
+  if (h < 6) return '00-06 (Night)';
+  if (h < 12) return '06-12 (Morning)';
+  if (h < 18) return '12-18 (Afternoon)';
+  return '18-24 (Evening)';
+}
+
 function priceBucket(price) {
   const p = parseFloat(price);
   if (isNaN(p)) return 'Unknown';
