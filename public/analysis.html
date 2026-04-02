@@ -1371,7 +1371,8 @@ function showBreakdownTab(tab) {
     g.style.display = g.dataset.tab === tab ? '' : 'none';
   });
   document.querySelectorAll('.breakdown-tab').forEach(b => {
-    b.classList.toggle('active', b.textContent.toLowerCase().includes(tab === 'cross' ? 'cross' : tab));
+    b.classList.remove('active');
+    if (b.getAttribute('onclick').includes("'" + tab + "'")) b.classList.add('active');
   });
 }
 
