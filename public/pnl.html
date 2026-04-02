@@ -550,9 +550,12 @@ function onPortfolioChange() {
 }
 
 async function loadTrades() {
+  if (!currentPortfolioId) {
+    $('#app').innerHTML = '<div class="loading">Select a portfolio to view P&L</div>';
+    return [];
+  }
   try {
-    let url = '/api/trades?limit=2000';
-    if (currentPortfolioId) url += '&portfolio_id=' + encodeURIComponent(currentPortfolioId);
+    let url = '/api/trades?limit=2000&portfolio_id=' + encodeURIComponent(currentPortfolioId);
     const res = await fetch(url);
     const data = await res.json();
     const all = data.trades || data;
