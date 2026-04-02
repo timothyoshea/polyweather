@@ -608,7 +608,7 @@ let portfolioMap = {};
 // ── Init ───────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
   await loadPortfolios();
-  await loadTrades();
+  // Don't load trades until a portfolio is selected (auto-selected in loadPortfolios)
 });
 
 async function loadPortfolios() {
