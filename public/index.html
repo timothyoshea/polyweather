@@ -1307,6 +1307,99 @@
   let currentMode = 'tomorrow';
   let allData = null;        // raw API response
   let allOpps = [];          // unfiltered opportunities
+  let activePortfolioId = null;
+  let portfolioRules = null;
+
+  // ── Portfolio Management ─────────────────────
+  async function loadPortfolios() {
+    try {
+      const resp = await fetch('/api/portfolios');
+      const portfolios = await resp.json();
+      const sel = document.getElementById('portfolio-select');
+      sel.innerHTML = '';
+      if (!portfolios || !portfolios.length) {
+        sel.innerHTML = '<option value="">No portfolios</option>';
+        return;
+      }
+      portfolios.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.name || ('Portfolio ' + p.id);
+        if (p.is_active) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      // Set the active portfolio
+      activePortfolioId = sel.value || portfolios[0].id;
+      if (!sel.value) sel.value = activePortfolioId;
+      // Load rules for the active portfolio
+      loadPortfolioRules(activePortfolioId);
+    } catch (e) {
+      console.error('Failed to load portfolios:', e);
+      document.getElementById('portfolio-select').innerHTML = '<option value="">Error loading</option>';
+    }
+  }
+
+  function switchPortfolio() {
+    const sel = document.getElementById('portfolio-select');
+    activePortfolioId = sel.value;
+    loadPortfolioRules(activePortfolioId);
+    // Reload trades with new portfolio
+    if (tradingLoaded) loadTradeTable();
+  }
+
+  async function loadPortfolioRules(portfolioId) {
+    if (!portfolioId) return;
+    try {
+      const resp = await fetch('/api/portfolios?id=' + portfolioId);
+      const data = await resp.json();
+      const strategy = data.strategy || data;
+      portfolioRules = strategy;
+      renderRules(strategy);
+    } catch (e) {
+      console.error('Failed to load portfolio rules:', e);
+    }
+  }
+
+  function renderRules(strategy) {
+    const grid = document.getElementById('rules-grid');
+    if (!strategy) {
+      grid.innerHTML = '<span style="color:var(--text2);font-size:13px;">No strategy rules found.</span>';
+      return;
+    }
+
+    function ruleCard(title, obj) {
+      if (!obj || typeof obj !== 'object') return '';
+      const rows = Object.entries(obj).map(([k, v]) => {
+        const displayVal = typeof v === 'object' ? JSON.stringify(v) : v;
+        return '<div class="rule-row"><span class="rule-key">' + k + '</span><span class="rule-val">' + displayVal + '</span></div>';
+      }).join('');
+      return '<div class="rules-card"><h4>' + title + '</h4>' + rows + '</div>';
+    }
+
+    let html = '';
+    if (strategy.sure_bet) html += ruleCard('Sure Bet', strategy.sure_bet);
+    if (strategy.edge_bet) html += ruleCard('Edge Bet', strategy.edge_bet);
+    if (strategy.safe_no) html += ruleCard('Safe NO', strategy.safe_no);
+    if (strategy.risk_filters) html += ruleCard('Risk Filters', strategy.risk_filters);
+    if (strategy.position_sizing) html += ruleCard('Position Sizing', strategy.position_sizing);
+    // Fallback: show all top-level keys if none of the expected ones found
+    if (!html) html = ruleCard('Strategy', strategy);
+    grid.innerHTML = html;
+  }
+
+  function toggleRules() {
+    const panel = document.getElementById('rules-panel');
+    const btn = document.getElementById('rules-btn');
+    panel.classList.toggle('open');
+    btn.classList.toggle('active');
+  }
+
+  function toggleScannerTools() {
+    const panel = document.getElementById('scanner-tools-panel');
+    const btn = document.getElementById('scanner-tools-btn');
+    panel.classList.toggle('open');
+    btn.classList.toggle('active');
+  }
 
   // Normalize opportunity data from Supabase (flatten forecast_details, add derived fields)
   function normalizeOpps(rawOpps) {
