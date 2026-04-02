@@ -2090,7 +2090,9 @@
 
   async function loadTradingDashboard() {
     try {
-      const tradesResp = await fetch('/api/trades?limit=200');
+      let tradeUrl = '/api/trades?limit=200';
+      if (activePortfolioId) tradeUrl += '&portfolio_id=' + activePortfolioId;
+      const tradesResp = await fetch(tradeUrl);
       const trades = await tradesResp.json();
       tradingLoaded = true;
       renderTradeTable(trades);
