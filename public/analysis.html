@@ -1017,7 +1017,9 @@ function renderPatterns(resolved) {
 // ── AI Insights ────────────────────────────
 function getDateLabel() {
   const activeBtn = document.querySelector('.date-btn.active');
-  return activeBtn ? activeBtn.textContent.trim() : 'All Time';
+  const dateLabel = activeBtn ? activeBtn.textContent.trim() : 'All Time';
+  const portfolioName = currentPortfolioId ? (portfolioMap[currentPortfolioId] || currentPortfolioId) : null;
+  return portfolioName ? `${portfolioName} — ${dateLabel}` : dateLabel;
 }
 
 function updateAIButton() {
