@@ -1146,6 +1146,7 @@ function renderPatterns(resolved) {
     { label: 'Confidence', fn: t => confBucket(t.confidence) },
     { label: 'Trade Size', fn: t => sizeBucket(t.total_cost_usd) },
     { label: 'Days Before', fn: t => daysBucket(t.created_at, t.date) },
+    { label: 'Time of Day', fn: t => timeBucket(t.created_at) },
     { label: 'Entry Price', fn: t => priceBucket(t.entry_price) },
     // Cross-dimensional
     { label: 'Bet Type + Side', fn: t => `${t.bet_type || '?'} / ${t.side || '?'}` },
