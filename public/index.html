@@ -2321,8 +2321,8 @@
     document.getElementById('scanner-section').style.display = tab === 'dashboard' ? '' : 'none';
     document.getElementById('dashboard-section').style.display = tab === 'dashboard' ? '' : 'none';
     document.getElementById('settings-section').style.display = tab === 'settings' ? '' : 'none';
-    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-    const activeTab = document.querySelector('.nav-tab[onclick*="' + tab + '"]');
+    document.querySelectorAll('.sidebar-link').forEach(t => t.classList.remove('active'));
+    const activeTab = document.querySelector('.sidebar-link[onclick*="' + tab + '"]');
     if (activeTab) activeTab.classList.add('active');
     if (tab === 'dashboard' && !tradingLoaded) loadTradingDashboard();
     if (tab === 'settings') updateSettingsPortfolioInfo();
