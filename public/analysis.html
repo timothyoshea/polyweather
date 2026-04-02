@@ -314,19 +314,13 @@
     user-select: none; -webkit-tap-highlight-color: transparent;
   }
   .sig-tooltip {
-    display: none; position: absolute; bottom: calc(100% + 8px); right: 0;
-    background: #1a1a2e; color: var(--text);
+    display: none; position: fixed; background: #1a1a2e; color: var(--text);
     border: 1px solid var(--card-border); border-radius: 8px;
     padding: 10px 14px; font-size: 12px; font-weight: 400;
-    line-height: 1.6; min-width: 280px; width: max-content; max-width: 400px;
-    z-index: 200;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.5); pointer-events: none;
+    line-height: 1.6; max-width: 360px; width: max-content;
+    z-index: 9999;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6); pointer-events: none;
     letter-spacing: 0; text-align: left;
-  }
-  .sig-tooltip::after {
-    content: ''; position: absolute; top: 100%; right: 16px;
-    border: 6px solid transparent;
-    border-top-color: #1a1a2e;
   }
   .sig-badge:hover .sig-tooltip,
   .sig-badge.active .sig-tooltip { display: block; }
