@@ -976,7 +976,7 @@ function renderBreakdownPanel(title, resolved, groupFn) {
       <td>$${r.invested.toFixed(2)}</td>
       <td><div class="bar-cell"><span class="${r.profit >= 0 ? 'profit-pos' : 'profit-neg'}">${r.profit >= 0 ? '+' : ''}$${r.profit.toFixed(2)}</span><div class="mini-bar" style="width:${barW}%;background:${barColor}"></div></div></td>
       <td class="${r.roi >= 0 ? 'profit-pos' : 'profit-neg'}">${r.roi.toFixed(1)}%</td>
-      <td><span class="sig-badge" style="color:${r.sig.color};background:${r.sig.bg};" onclick="this.classList.toggle('active')">${r.sig.text}<span class="sig-tooltip">${sigTip}</span></span></td>
+      <td><span class="sig-badge" style="color:${r.sig.color};background:${r.sig.bg};">${r.sig.text}<span class="sig-tooltip">${sigTip}</span></span></td>
     </tr>`;
   }).join('');
 
@@ -991,7 +991,7 @@ function renderBreakdownPanel(title, resolved, groupFn) {
     </div>
     <div class="panel-body">
       <table class="breakdown-table">
-        <thead><tr><th>Group</th><th>Count</th><th>Won</th><th>Lost</th><th>Win %</th><th>Invested</th><th>Profit</th><th>ROI</th><th><span class="sig-badge" style="color:var(--text2);background:none;font-size:10px;" onclick="this.classList.toggle('active')">Sig. <span class="sig-tooltip">Is this win rate real or just luck?<br><br><b style="color:var(--green)">Strong</b> = very likely real<br><b style="color:var(--cyan)">Likely</b> = probably real<br><b style="color:var(--amber)">Possible</b> = might be random<br><b style="color:var(--text2)">Too few</b> = not enough data</span></span></th></tr></thead>
+        <thead><tr><th>Group</th><th>Count</th><th>Won</th><th>Lost</th><th>Win %</th><th>Invested</th><th>Profit</th><th>ROI</th><th><span class="sig-badge" style="color:var(--text2);background:none;font-size:10px;">Sig. <span class="sig-tooltip">Is this win rate real or just luck?<br><br><b style="color:var(--green)">Strong</b> = very likely real<br><b style="color:var(--cyan)">Likely</b> = probably real<br><b style="color:var(--amber)">Possible</b> = might be random<br><b style="color:var(--text2)">Too few</b> = not enough data</span></span></th></tr></thead>
         <tbody>${tableRows}</tbody>
       </table>
     </div>
@@ -1214,7 +1214,7 @@ function renderPatterns(resolved) {
     const sigTip = `${Math.round(p.wr/100*p.count)}/${p.count} wins vs ${(baselineRate*100).toFixed(1)}% baseline — ${p.sig.title}`;
     return `<div class="pattern-card">
       <div class="pattern-rank" style="color:${rankColor}">#${i + 1}</div>
-      <div class="pattern-desc">${escHtml(p.desc)} <span class="sig-badge" style="color:${p.sig.color};background:${p.sig.bg};margin-left:8px;" onclick="this.classList.toggle('active')">${p.sig.text}<span class="sig-tooltip">${sigTip}</span></span></div>
+      <div class="pattern-desc">${escHtml(p.desc)} <span class="sig-badge" style="color:${p.sig.color};background:${p.sig.bg};margin-left:8px;">${p.sig.text}<span class="sig-tooltip">${sigTip}</span></span></div>
       <div class="pattern-stats">
         <div><div class="pattern-stat-label">Trades</div><div>${p.count}</div></div>
         <div><div class="pattern-stat-label">Win Rate</div><div class="${wrClass(p.wr)}">${p.wr.toFixed(1)}%</div></div>
