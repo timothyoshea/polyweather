@@ -525,11 +525,17 @@ async function loadPortfolios() {
 function onPortfolioChange() {
   const sel = $('#portfolio-select');
   currentPortfolioId = sel.value;
+  if (!currentPortfolioId) {
+    $('#app').innerHTML = '<div class="loading">Select a portfolio to view P&L</div>';
+    const subtitle = $('#portfolio-subtitle');
+    if (subtitle) { subtitle.textContent = ''; subtitle.style.display = 'none'; }
+    return;
+  }
   // Update page title subtitle
   const subtitle = $('#portfolio-subtitle');
   if (subtitle) {
-    subtitle.textContent = sel.value ? sel.options[sel.selectedIndex].text : '';
-    subtitle.style.display = sel.value ? 'block' : 'none';
+    subtitle.textContent = sel.options[sel.selectedIndex].text;
+    subtitle.style.display = 'block';
   }
   // Reload all data
   $('#app').innerHTML = '<div class="loading"><div class="spinner"></div><div>Loading trades...</div></div>';
