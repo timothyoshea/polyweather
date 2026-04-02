@@ -112,6 +112,8 @@ class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         try:
             params = parse_qs(urlparse(self.path).query)
+            portfolio_id = params.get("portfolio_id", [None])[0]
+            pf_filter = f"&portfolio_id=eq.{portfolio_id}" if portfolio_id else ""
 
             # Single trade + snapshots
             trade_id = params.get("id", [None])[0]
@@ -132,7 +134,7 @@ class handler(BaseHTTPRequestHandler):
             # Summary mode
             if params.get("summary", [None])[0] == "true":
                 all_trades = supabase_query(
-                    "paper_trades?select=*&order=created_at.desc"
+                    f"paper_trades?select=*&order=created_at.desc{pf_filter}"
                 )
                 data = build_summary(all_trades)
                 self._respond(200, data)
@@ -143,7 +145,7 @@ class handler(BaseHTTPRequestHandler):
             limit = int(params.get("limit", ["100"])[0])
             from_date = params.get("from", [None])[0]
             to_date = params.get("to", [None])[0]
-            query = "paper_trades?select=*&order=created_at.desc"
+            query = f"paper_trades?select=*&order=created_at.desc{pf_filter}"
             if status:
                 query += f"&status=eq.{status}"
             if from_date:
