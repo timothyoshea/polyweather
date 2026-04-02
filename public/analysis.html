@@ -1149,7 +1149,7 @@ function renderPatterns(resolved) {
         roi,
         score,
         pval,
-        sig: sigLabel(pval)
+        sig: sigLabel(pval, wr, baselineRate)
       });
     });
   });
@@ -1175,7 +1175,7 @@ function renderPatterns(resolved) {
       const wr = g.won / g.count * 100;
       const roi = g.invested > 0 ? g.profit / g.invested * 100 : 0;
       const pval = binomialPValue(g.won, g.count, baselineRate);
-      allWithEnough.push({ desc: `${dim.label}: ${value}`, count: g.count, wr, profit: g.profit, roi, pval, sig: sigLabel(pval) });
+      allWithEnough.push({ desc: `${dim.label}: ${value}`, count: g.count, wr, profit: g.profit, roi, pval, sig: sigLabel(pval, wr / 100, baselineRate) });
     });
   });
   const worst = allWithEnough.filter(p => p.roi < 0).sort((a, b) => a.roi - b.roi).slice(0, 10);
