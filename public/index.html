@@ -1136,48 +1136,89 @@
   </div>
 </header>
 
-<!-- ── Rules Panel ──────────────────────────────── -->
-<div class="rules-panel" id="rules-panel">
-  <div class="log-header">
-    <span class="log-title">Portfolio Strategy Rules</span>
-    <button class="log-copy-btn" onclick="toggleRules()">Close</button>
-  </div>
-  <div class="rules-grid" id="rules-grid">
-    <span style="color:var(--text2);font-size:13px;">Select a portfolio to view rules.</span>
-  </div>
-</div>
+<!-- ── Settings Section ─────────────────────────── -->
+<div id="settings-section" style="display:none;">
 
-<div class="log-panel" id="log-panel">
-  <div class="log-header">
-    <span class="log-title">Scan Log</span>
-    <button class="log-copy-btn" onclick="copyLog()">Copy</button>
+  <!-- Scanner Tools -->
+  <div style="background:var(--card);border:1px solid var(--card-border);border-radius:10px;margin:20px 24px;padding:20px 24px;">
+    <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;color:var(--text);">Scanner Tools</h3>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+      <div class="control-group">
+        <button class="toggle-btn active" id="btn-tomorrow" onclick="setMode('tomorrow')">Tomorrow</button>
+        <button class="toggle-btn" id="btn-all" onclick="setMode('all')">All Days</button>
+      </div>
+      <label class="checkbox-label">
+        <input type="checkbox" id="chk-tier1" onchange="applyFilters()"> Tier 1 Only
+      </label>
+      <button class="scan-btn" id="scan-btn" onclick="scan()">Scan Now</button>
+      <button class="log-btn" id="log-btn" onclick="toggleLog()">Scan Log</button>
+      <button class="log-btn" id="history-btn" onclick="toggleHistory()">History</button>
+    </div>
+    <!-- Scan Log (inline) -->
+    <div class="log-panel" id="log-panel" style="border-radius:8px;border:1px solid var(--card-border);margin-bottom:12px;">
+      <div class="log-header">
+        <span class="log-title">Scan Log</span>
+        <button class="log-copy-btn" onclick="copyLog()">Copy</button>
+      </div>
+      <pre id="log-content"><span class="log-empty">No scan log yet. Run a scan to see debug output.</span></pre>
+    </div>
+    <!-- History (inline) -->
+    <div class="log-panel" id="history-panel" style="max-height:400px;border-radius:8px;border:1px solid var(--card-border);">
+      <div class="log-header">
+        <span class="log-title">Scan History (from Supabase)</span>
+        <button class="log-copy-btn" onclick="loadHistory()">Refresh</button>
+      </div>
+      <div id="history-content" style="padding:12px;font-size:13px;color:var(--text2);overflow-y:auto;max-height:340px;">
+        <span class="log-empty">Click to load scan history.</span>
+      </div>
+    </div>
   </div>
-  <pre id="log-content"><span class="log-empty">No scan log yet. Run a scan to see debug output.</span></pre>
-</div>
 
-<!-- ── History Panel ──────────────────────────── -->
-<div class="log-panel" id="history-panel" style="max-height:400px;">
-  <div class="log-header">
-    <span class="log-title">Scan History (from Supabase)</span>
-    <button class="log-copy-btn" onclick="loadHistory()">Refresh</button>
+  <!-- Portfolio Management -->
+  <div style="background:var(--card);border:1px solid var(--card-border);border-radius:10px;margin:20px 24px;padding:20px 24px;">
+    <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;color:var(--text);">Portfolio Management</h3>
+    <div id="portfolio-info" style="font-size:13px;color:var(--text2);margin-bottom:16px;">
+      <span>Current portfolio: <strong id="settings-portfolio-name" style="color:var(--text);">--</strong></span>
+      <span id="settings-portfolio-desc" style="margin-left:12px;"></span>
+    </div>
+    <button class="log-btn" id="create-portfolio-toggle" onclick="document.getElementById('create-portfolio-form').style.display=document.getElementById('create-portfolio-form').style.display==='none'?'block':'none'">Create New Portfolio</button>
+    <div id="create-portfolio-form" style="display:none;margin-top:16px;background:rgba(10,10,15,0.6);border:1px solid var(--card-border);border-radius:8px;padding:16px;">
+      <div style="margin-bottom:12px;">
+        <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px;">Name</label>
+        <input type="text" id="new-portfolio-name" placeholder="e.g. Conservative Weather" style="width:100%;max-width:400px;background:var(--bg);border:1px solid var(--card-border);color:var(--text);padding:8px 12px;border-radius:6px;font-family:var(--sans);font-size:13px;">
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px;">Description</label>
+        <textarea id="new-portfolio-desc" placeholder="Optional description..." rows="2" style="width:100%;max-width:400px;background:var(--bg);border:1px solid var(--card-border);color:var(--text);padding:8px 12px;border-radius:6px;font-family:var(--sans);font-size:13px;resize:vertical;"></textarea>
+      </div>
+      <button class="scan-btn" onclick="createNewPortfolio()">Create Portfolio</button>
+    </div>
   </div>
-  <div id="history-content" style="padding:12px;font-size:13px;color:var(--text2);overflow-y:auto;max-height:340px;">
-    <span class="log-empty">Click to load scan history.</span>
+
+  <!-- Trading Rules -->
+  <div style="background:var(--card);border:1px solid var(--card-border);border-radius:10px;margin:20px 24px;padding:20px 24px;">
+    <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;color:var(--text);">Trading Rules</h3>
+    <div class="rules-grid" id="rules-grid">
+      <span style="color:var(--text2);font-size:13px;">Select a portfolio to view rules.</span>
+    </div>
   </div>
-</div>
+
+  <!-- TODOs -->
+  <div style="background:linear-gradient(90deg,rgba(255,193,7,0.08),rgba(255,152,0,0.05));border:1px solid rgba(255,193,7,0.2);border-radius:10px;margin:20px 24px;padding:16px 24px;display:flex;align-items:flex-start;gap:10px;font-size:13px;color:#ffc107;">
+    <span style="font-size:16px;">📌</span>
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <h3 style="font-size:15px;font-weight:600;margin-bottom:4px;color:#ffc107;">TODOs</h3>
+      <span><strong>TODO 1:</strong> Grab historical Cold Math backtest data to analyse best outcome bets</span>
+      <span><strong>TODO 2:</strong> Backtest using Karpathy method — train on 786+ days of verified forecast data to optimise trade selection algo</span>
+      <span><strong>TODO 3:</strong> Add trade position limit — no single trade can impact more than 3% of portfolio value in a loss</span>
+      <span><strong>TODO 4:</strong> Limit bet size on edge bets — edge bets are high-risk and position sizes need capping to avoid outsized losses</span>
+      <span><strong>TODO 5:</strong> Audit forecast accuracy per city — many city forecasts are off, need to research which weather models are most accurate for each city and recalibrate</span>
+    </div>
+  </div>
+
+</div><!-- end settings-section -->
 
 <div id="scanner-section">
-<!-- ── TODO Banner ─────────────────────────────── -->
-<div style="background:linear-gradient(90deg,rgba(255,193,7,0.08),rgba(255,152,0,0.05));border-bottom:1px solid rgba(255,193,7,0.2);padding:10px 24px;display:flex;align-items:center;gap:10px;font-size:13px;color:#ffc107;">
-  <span style="font-size:16px;">📌</span>
-  <div style="display:flex;flex-direction:column;gap:6px;">
-    <span><strong>TODO 1:</strong> Grab historical Cold Math backtest data to analyse best outcome bets</span>
-    <span><strong>TODO 2:</strong> Backtest using Karpathy method — train on 786+ days of verified forecast data to optimise trade selection algo</span>
-    <span><strong>TODO 3:</strong> Add trade position limit — no single trade can impact more than 3% of portfolio value in a loss</span>
-    <span><strong>TODO 4:</strong> Limit bet size on edge bets — edge bets are high-risk and position sizes need capping to avoid outsized losses</span>
-    <span><strong>TODO 5:</strong> Audit forecast accuracy per city — many city forecasts are off, need to research which weather models are most accurate for each city and recalibrate</span>
-  </div>
-</div>
 
 <!-- ── Status Bar ──────────────────────────────── -->
 <div class="status-bar">
