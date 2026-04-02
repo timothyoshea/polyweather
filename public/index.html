@@ -949,6 +949,67 @@
   .nav-tab.active { background: var(--cyan); color: #000; border-color: var(--cyan); }
   .nav-tab:hover:not(.active) { color: var(--text); border-color: var(--text2); }
 
+  /* ── Header Controls Row ────────────────────────── */
+  .header-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+
+  /* ── Scanner Tools Collapsible ──────────────────── */
+  .scanner-tools-panel {
+    display: none;
+    padding: 12px 24px;
+    border-top: 1px solid var(--card-border);
+    margin-top: 12px;
+    background: rgba(18, 18, 26, 0.5);
+    border-radius: 8px;
+  }
+  .scanner-tools-panel.open { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+  /* ── Rules Panel ────────────────────────────────── */
+  .rules-panel {
+    display: none;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-top: none;
+    padding: 20px 24px;
+    max-height: 500px;
+    overflow-y: auto;
+  }
+  .rules-panel.open { display: block; }
+  .rules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+  }
+  .rules-card {
+    background: rgba(10, 10, 15, 0.6);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 14px;
+  }
+  .rules-card h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--cyan);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .rules-card .rule-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 12px;
+    border-bottom: 1px solid rgba(30, 30, 46, 0.5);
+  }
+  .rules-card .rule-row:last-child { border-bottom: none; }
+  .rules-card .rule-key { color: var(--text2); }
+  .rules-card .rule-val { color: var(--text); font-family: var(--mono); font-weight: 500; }
+
   /* ── Trading Dashboard ─────────────────────────── */
   .trading-summary {
     display: grid;
