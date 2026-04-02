@@ -1631,6 +1631,58 @@
     });
   }
 
+  // ── Compact Mode ─────────────────────────────
+  var compactMode = false;
+
+  function toggleCompact() {
+    compactMode = !compactMode;
+    const btn = document.getElementById('compact-toggle');
+    btn.textContent = compactMode ? 'Full' : 'Compact';
+    btn.classList.toggle('active', compactMode);
+    applyFilters();
+  }
+
+  // ── Filter Chips ────────────────────────────
+  function renderFilterChips() {
+    const chipsEl = document.getElementById('filter-chips');
+    if (!chipsEl) return;
+    const filters = [
+      { id: 'filter-city', key: 'city', label: 'City' },
+      { id: 'filter-risk', key: 'risk', label: 'Risk' },
+      { id: 'filter-type', key: 'type', label: 'Type' },
+      { id: 'filter-side', key: 'side', label: 'Side' },
+    ];
+    let chips = '';
+    filters.forEach(f => {
+      const val = document.getElementById(f.id).value;
+      if (val) {
+        const display = document.getElementById(f.id).options[document.getElementById(f.id).selectedIndex].textContent;
+        chips += '<span class="chip">' + f.label + ': ' + display + ' <button onclick="clearFilter(\'' + f.key + '\')">×</button></span>';
+      }
+    });
+    const tier1El = document.getElementById('chk-tier1');
+    if (tier1El && tier1El.checked) {
+      chips += '<span class="chip">Tier 1 Only <button onclick="clearFilter(\'tier1\')">×</button></span>';
+    }
+    if (chips) {
+      chipsEl.style.display = 'flex';
+      chipsEl.innerHTML = chips;
+    } else {
+      chipsEl.style.display = 'none';
+      chipsEl.innerHTML = '';
+    }
+  }
+
+  function clearFilter(key) {
+    const map = { city: 'filter-city', risk: 'filter-risk', type: 'filter-type', side: 'filter-side' };
+    if (key === 'tier1') {
+      document.getElementById('chk-tier1').checked = false;
+    } else if (map[key]) {
+      document.getElementById(map[key]).value = '';
+    }
+    applyFilters();
+  }
+
   // ── Filter + Sort + Render ───────────────────
   function applyFilters() {
     let opps = [...allOpps];
