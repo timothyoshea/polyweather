@@ -675,6 +675,13 @@ let currentPortfolioId = '';
 let portfolioMap = {};
 
 // ── Init ───────────────────────────────────
+// Close sig tooltips when clicking outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('.sig-badge')) {
+    document.querySelectorAll('.sig-badge.active').forEach(el => el.classList.remove('active'));
+  }
+});
+
 document.addEventListener('DOMContentLoaded', async () => {
   await loadPortfolios();
   // Don't load trades until a portfolio is selected (auto-selected in loadPortfolios)
