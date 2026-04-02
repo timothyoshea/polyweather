@@ -905,6 +905,7 @@ function renderTradesTable() {
 }
 
 // ── Init ──
+loadPortfolios();
 loadTrades().then(trades => {
   allTrades = trades;
   if (trades.length === 0) {
