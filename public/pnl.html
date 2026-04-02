@@ -503,14 +503,20 @@ async function loadPortfolios() {
     const data = await res.json();
     const portfolios = data.portfolios || data || [];
     const sel = $('#portfolio-select');
-    // Clear existing options beyond the default
-    sel.innerHTML = '<option value="">All Portfolios</option>';
+    sel.innerHTML = '<option value="" disabled>Select a portfolio...</option>';
     portfolios.forEach(p => {
       const opt = document.createElement('option');
       opt.value = p.id;
       opt.textContent = p.name;
       sel.appendChild(opt);
     });
+    // Auto-select the first portfolio and trigger data load
+    if (portfolios.length > 0) {
+      sel.value = portfolios[0].id;
+      onPortfolioChange();
+    } else {
+      $('#app').innerHTML = '<div class="loading">Select a portfolio to view P&L</div>';
+    }
   } catch (e) {
     console.error('Failed to load portfolios:', e);
   }
