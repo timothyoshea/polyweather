@@ -88,10 +88,18 @@ Are trades too large/small? Which categories deserve bigger/smaller positions? W
 ## Recommendations
 Ranked list of the top 3-5 concrete changes to make, with expected impact.
 
+## Statistical Significance
+For every pattern you highlight, assess its **binomial significance**. Use this method:
+- Null hypothesis: the win rate equals the overall portfolio win rate (baseline)
+- For a group with k wins out of n trades, compute the p-value using binomial test against the baseline rate
+- Report significance as: p < 0.01 (highly significant), p < 0.05 (significant), p < 0.10 (marginally significant), or "not significant"
+- Only recommend acting on patterns that are at least marginally significant (p < 0.10)
+- Flag any pattern you mention that is NOT statistically significant — say "Note: small sample, not statistically significant"
+
 Rules:
 - Only analyze CLOSED trades (won/lost). Never include open trades.
 - Be specific with numbers — cite actual cities, bet types, win rates, profits, ROI.
-- Use markdown tables when comparing categories.
+- Use markdown tables when comparing categories. Include a "Sig." column showing p-value significance level.
 - Keep it concise but thorough. No fluff.
 - Bold the most important numbers and conclusions."""
 
