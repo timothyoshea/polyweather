@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PolyWeather — Compare Portfolios</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --card: #12121a;
+    --card-border: #1e1e2e;
+    --green: #00e676;
+    --red: #ff5252;
+    --amber: #ffc107;
+    --cyan: #4fc3f7;
+    --text: #e0e0e0;
+    --text2: #888;
+    --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* ── Sidebar ─────────────────────────────────── */
+  .sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0; width: 200px;
+    background: #0d0d14; border-right: 1px solid var(--card-border);
+    display: flex; flex-direction: column; padding: 20px 0; z-index: 100;
+  }
+  .sidebar-logo {
+    display: flex; align-items: center; gap: 8px; padding: 0 16px 20px;
+    font-size: 16px; font-weight: 700; text-decoration: none; color: var(--text);
+  }
+  .sidebar-logo .logo-icon {
+    font-size: 20px;
+    filter: drop-shadow(0 0 6px rgba(79, 195, 247, 0.5));
+  }
+  .sidebar-logo span:not(.logo-icon) {
+    background: linear-gradient(135deg, var(--cyan), var(--green));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .sidebar-portfolio-select {
+    background: var(--card); border: 1px solid var(--card-border);
+    color: var(--text); padding: 8px 10px; border-radius: 6px;
+    font-family: var(--sans); font-size: 12px; cursor: pointer;
+  }
+  .sidebar-portfolio-select:focus { outline: none; border-color: var(--cyan); }
+  .sidebar-nav { display: flex; flex-direction: column; gap: 2px; }
+  .sidebar-link {
+    display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+    color: var(--text2); font-size: 13px; font-weight: 500; text-decoration: none;
+    border-left: 3px solid transparent; transition: all 0.2s;
+  }
+  .sidebar-link:hover { color: var(--text); background: rgba(79,195,247,0.05); }
+  .sidebar-link.active {
+    color: var(--cyan); border-left-color: var(--cyan);
+    background: rgba(79,195,247,0.08);
+  }
+  .main-content { margin-left: 200px; min-height: 100vh; }
+  .top-bar {
+    display: flex; justify-content: flex-end; align-items: center;
+    padding: 10px 24px; border-bottom: 1px solid var(--card-border);
+  }
+
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main-content { margin-left: 0; }
+  }
+
+  /* ── Layout ─────────────────────────────────── */
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  .section-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-title .icon { font-size: 18px; }
+
+  /* ── Comparison Table ──────────────────────── */
+  .compare-table-wrap {
+    overflow-x: auto;
+    margin-bottom: 32px;
+  }
+
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    font-family: var(--mono);
+  }
+
+  .compare-table th {
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text2);
+    border-bottom: 1px solid var(--card-border);
+    white-space: nowrap;
+    font-family: var(--sans);
+    font-weight: 600;
+  }
+
+  .compare-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--card-border);
+    white-space: nowrap;
+  }
+
+  .compare-table tr:hover td {
+    background: rgba(79, 195, 247, 0.03);
+  }
+
+  .compare-table .portfolio-name {
+    font-family: var(--sans);
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .val-pos { color: var(--green); }
+  .val-neg { color: var(--red); }
+  .val-neutral { color: var(--text2); }
+  .best-col { background: rgba(79, 195, 247, 0.08); }
+
+  /* ── Chart ─────────────────────────────────── */
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 32px;
+  }
+
+  .chart-card canvas {
+    width: 100% !important;
+    max-height: 400px;
+  }
+
+  /* ── Loading ───────────────────────────────── */
+  .loading {
+    text-align: center;
+    padding: 60px 24px;
+    color: var(--text2);
+    font-size: 14px;
+  }
+
+  .loading .spinner {
+    display: inline-block;
+    width: 24px; height: 24px;
+    border: 2px solid var(--card-border);
+    border-top-color: var(--cyan);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 12px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- ── Sidebar ─────────────────────────────────── -->
+<nav class="sidebar">
+  <a href="/" class="sidebar-logo">
+    <span class="logo-icon">⛈</span>
+    <span>PolyWeather</span>
+  </a>
+  <div class="sidebar-nav">
+    <a class="sidebar-link" href="/">Dashboard</a>
+    <a class="sidebar-link" href="/pnl.html">P&amp;L</a>
+    <a class="sidebar-link" href="/analysis.html">Analysis</a>
+    <a class="sidebar-link active" href="/compare.html">Compare</a>
+    <a class="sidebar-link" href="/" onclick="localStorage.setItem('pw-tab','settings')">Settings</a>
+  </div>
+</nav>
+
+<!-- ── Main Content ────────────────────────────── -->
+<div class="main-content">
+<div class="top-bar">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span style="font-size:12px;color:var(--text2);">Portfolio:</span>
+    <select class="sidebar-portfolio-select" id="portfolio-select" onchange="onPortfolioChange()">
+      <option value="" disabled selected>All Portfolios</option>
+    </select>
+  </div>
+</div>
+
+<div class="container">
+  <div class="section-title"><span class="icon">📊</span> Compare Portfolios</div>
+
+  <div id="loading" class="loading">
+    <div class="spinner"></div>
+    <div>Loading portfolio data...</div>
+  </div>
+
+  <div id="content" style="display:none;">
+    <div class="compare-table-wrap">
+      <table class="compare-table" id="compare-table">
+        <thead><tr id="table-header"></tr></thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+
+    <div class="section-title"><span class="icon">📈</span> Cumulative P&amp;L</div>
+    <div class="chart-card">
+      <canvas id="pnl-chart"></canvas>
+    </div>
+  </div>
+</div>
+
+<footer style="text-align:center;padding:24px;color:var(--text2);font-size:11px;border-top:1px solid var(--card-border);margin-top:40px;">
+  Paper trading simulation — not financial advice. Powered by Polymarket weather markets.
+</footer>
+</div>
+
+<script>
+// ── Portfolio dropdown (for navigation consistency) ──
+let portfolios = [];
+
+async function loadPortfolios() {
+  try {
+    const resp = await fetch('/api/portfolios');
+    portfolios = await resp.json();
+    const sel = document.getElementById('portfolio-select');
+    sel.innerHTML = '<option value="" disabled selected>All Portfolios</option>';
+    portfolios.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.name;
+      sel.appendChild(opt);
+    });
+  } catch (e) {
+    console.error('Failed to load portfolios:', e);
+  }
+}
+
+function onPortfolioChange() {
+  // On compare page, portfolio dropdown is mainly for nav consistency
+  // Could filter to single portfolio view, but we show all by default
+}
+
+// ── Main data loading ──
+async function loadCompareData() {
+  try {
+    const resp = await fetch('/api/portfolios');
+    portfolios = await resp.json();
+
+    // Populate dropdown
+    const sel = document.getElementById('portfolio-select');
+    sel.innerHTML = '<option value="" disabled selected>All Portfolios</option>';
+    portfolios.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.name;
+      sel.appendChild(opt);
+    });
+
+    // Fetch trades for each portfolio
+    const allData = await Promise.all(portfolios.map(async (p) => {
+      const tresp = await fetch('/api/trades?portfolio_id=' + p.id + '&limit=2000');
+      const trades = await tresp.json();
+      return { portfolio: p, trades };
+    }));
+
+    // Compute metrics
+    const metrics = allData.map(({ portfolio, trades }) => computeMetrics(portfolio, trades));
+
+    renderTable(metrics);
+    renderChart(allData);
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('content').style.display = '';
+  } catch (e) {
+    document.getElementById('loading').innerHTML =
+      '<span style="color:var(--red)">Error loading data: ' + escHtml(e.message) + '</span>';
+  }
+}
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ── Metric Computation ──
+function computeMetrics(portfolio, trades) {
+  const closed = trades.filter(t => t.status === 'closed' || t.status === 'resolved');
+  const open = trades.filter(t => t.status === 'open' || t.status === 'active');
+
+  const won = closed.filter(t => (t.profit || 0) > 0);
+  const lost = closed.filter(t => (t.profit || 0) < 0);
+  const totalInvested = closed.reduce((s, t) => s + (t.cost || t.amount || 0), 0);
+  const totalProfit = closed.reduce((s, t) => s + (t.profit || 0), 0);
+  const winRate = closed.length > 0 ? (won.length / closed.length) * 100 : 0;
+  const roi = totalInvested > 0 ? (totalProfit / totalInvested) * 100 : 0;
+  const avgTradeSize = closed.length > 0 ? totalInvested / closed.length : 0;
+
+  // Best / worst trade
+  const profits = closed.map(t => t.profit || 0);
+  const bestTrade = profits.length > 0 ? Math.max(...profits) : 0;
+  const worstTrade = profits.length > 0 ? Math.min(...profits) : 0;
+
+  // Age in days
+  const timestamps = trades.map(t => new Date(t.created_at || t.timestamp || t.date).getTime()).filter(t => !isNaN(t));
+  const firstTrade = timestamps.length > 0 ? Math.min(...timestamps) : Date.now();
+  const ageDays = Math.floor((Date.now() - firstTrade) / (1000 * 60 * 60 * 24));
+
+  // Max capital deployed (peak concurrent open cost)
+  const maxCapital = computeMaxCapital(trades);
+
+  // Max drawdown
+  const maxDrawdown = computeMaxDrawdown(closed);
+
+  // Sharpe-like ratio
+  const sharpe = computeSharpe(closed);
+
+  return {
+    name: portfolio.name,
+    totalTrades: closed.length,
+    won: won.length,
+    lost: lost.length,
+    winRate,
+    totalInvested,
+    totalProfit,
+    roi,
+    maxCapital,
+    maxDrawdown,
+    avgTradeSize,
+    bestTrade,
+    worstTrade,
+    ageDays,
+    sharpe
+  };
+}
+
+function computeMaxCapital(trades) {
+  // Build timeline of opens/closes, track peak concurrent capital
+  const events = [];
+  trades.forEach(t => {
+    const cost = t.cost || t.amount || 0;
+    const openTime = new Date(t.created_at || t.timestamp || t.date).getTime();
+    if (isNaN(openTime)) return;
+    events.push({ time: openTime, delta: cost });
+
+    if (t.status === 'closed' || t.status === 'resolved') {
+      const closeTime = new Date(t.resolved_at || t.closed_at || t.updated_at || t.created_at).getTime();
+      if (!isNaN(closeTime)) {
+        events.push({ time: closeTime, delta: -cost });
+      }
+    }
+  });
+
+  events.sort((a, b) => a.time - b.time);
+  let current = 0, max = 0;
+  events.forEach(e => {
+    current += e.delta;
+    if (current > max) max = current;
+  });
+  return max;
+}
+
+function computeMaxDrawdown(closedTrades) {
+  // Sort by close time, compute cumulative P&L, find max peak-to-trough
+  const sorted = [...closedTrades].sort((a, b) => {
+    const ta = new Date(a.resolved_at || a.closed_at || a.updated_at || a.created_at).getTime();
+    const tb = new Date(b.resolved_at || b.closed_at || b.updated_at || b.created_at).getTime();
+    return ta - tb;
+  });
+
+  let cumPnl = 0, peak = 0, maxDd = 0;
+  sorted.forEach(t => {
+    cumPnl += (t.profit || 0);
+    if (cumPnl > peak) peak = cumPnl;
+    const dd = peak - cumPnl;
+    if (dd > maxDd) maxDd = dd;
+  });
+
+  // Express as % of peak (if peak > 0)
+  return peak > 0 ? (maxDd / peak) * 100 : 0;
+}
+
+function computeSharpe(closedTrades) {
+  // Group profits by day, compute mean/stddev of daily returns
+  const dailyMap = {};
+  closedTrades.forEach(t => {
+    const d = (t.resolved_at || t.closed_at || t.updated_at || t.created_at || '').slice(0, 10);
+    if (!d) return;
+    if (!dailyMap[d]) dailyMap[d] = 0;
+    dailyMap[d] += (t.profit || 0);
+  });
+
+  const dailyReturns = Object.values(dailyMap);
+  if (dailyReturns.length < 2) return 0;
+
+  const mean = dailyReturns.reduce((s, v) => s + v, 0) / dailyReturns.length;
+  const variance = dailyReturns.reduce((s, v) => s + (v - mean) ** 2, 0) / (dailyReturns.length - 1);
+  const stddev = Math.sqrt(variance);
+
+  return stddev > 0 ? mean / stddev : 0;
+}
+
+// ── Render Table ──
+function renderTable(metrics) {
+  const columns = [
+    { key: 'name', label: 'Portfolio', format: v => v, best: null },
+    { key: 'totalTrades', label: 'Trades', format: v => v.toLocaleString(), best: 'max' },
+    { key: 'won', label: 'Won', format: v => v.toLocaleString(), best: 'max' },
+    { key: 'lost', label: 'Lost', format: v => v.toLocaleString(), best: 'min' },
+    { key: 'winRate', label: 'Win %', format: v => v.toFixed(1) + '%', best: 'max' },
+    { key: 'totalInvested', label: 'Invested', format: v => '$' + v.toFixed(2), best: null },
+    { key: 'totalProfit', label: 'Profit', format: v => '$' + v.toFixed(2), best: 'max' },
+    { key: 'roi', label: 'ROI %', format: v => v.toFixed(1) + '%', best: 'max' },
+    { key: 'maxCapital', label: 'Max Capital', format: v => '$' + v.toFixed(2), best: null },
+    { key: 'maxDrawdown', label: 'Max DD %', format: v => v.toFixed(1) + '%', best: 'min' },
+    { key: 'avgTradeSize', label: 'Avg Trade', format: v => '$' + v.toFixed(2), best: null },
+    { key: 'bestTrade', label: 'Best Trade', format: v => '$' + v.toFixed(2), best: 'max' },
+    { key: 'worstTrade', label: 'Worst Trade', format: v => '$' + v.toFixed(2), best: 'max' },
+    { key: 'ageDays', label: 'Age (days)', format: v => v.toString(), best: null },
+    { key: 'sharpe', label: 'Sharpe', format: v => v.toFixed(2), best: 'max' },
+  ];
+
+  // Find best value for each column
+  const bestValues = {};
+  columns.forEach(col => {
+    if (!col.best || metrics.length < 2) return;
+    const vals = metrics.map(m => m[col.key]);
+    bestValues[col.key] = col.best === 'max' ? Math.max(...vals) : Math.min(...vals);
+  });
+
+  // Header
+  const header = document.getElementById('table-header');
+  header.innerHTML = columns.map(c => '<th>' + c.label + '</th>').join('');
+
+  // Body
+  const body = document.getElementById('table-body');
+  body.innerHTML = metrics.map(m => {
+    return '<tr>' + columns.map(col => {
+      const val = m[col.key];
+      let cls = '';
+
+      if (col.key === 'name') {
+        cls = 'portfolio-name';
+      } else if (typeof val === 'number') {
+        if (col.key === 'maxDrawdown') {
+          cls = val > 0 ? 'val-neg' : 'val-neutral';
+        } else if (col.key === 'worstTrade') {
+          cls = val < 0 ? 'val-neg' : 'val-pos';
+        } else if (['totalProfit', 'roi', 'sharpe', 'bestTrade'].includes(col.key)) {
+          cls = val > 0 ? 'val-pos' : val < 0 ? 'val-neg' : 'val-neutral';
+        } else if (col.key === 'winRate') {
+          cls = val >= 50 ? 'val-pos' : val > 0 ? 'val-neg' : 'val-neutral';
+        }
+      }
+
+      // Highlight best
+      const isBest = col.best && metrics.length > 1 && val === bestValues[col.key];
+      const bestCls = isBest ? ' best-col' : '';
+
+      return '<td class="' + cls + bestCls + '">' + col.format(val) + '</td>';
+    }).join('') + '</tr>';
+  }).join('');
+}
+
+// ── Render Chart ──
+const COLORS = [
+  '#4fc3f7', '#00e676', '#ffc107', '#ff5252', '#b388ff',
+  '#ff6e40', '#64ffda', '#e040fb', '#ffab40', '#69f0ae'
+];
+
+function renderChart(allData) {
+  const datasets = allData.map(({ portfolio, trades }, i) => {
+    const closed = trades
+      .filter(t => t.status === 'closed' || t.status === 'resolved')
+      .sort((a, b) => {
+        const ta = new Date(a.resolved_at || a.closed_at || a.updated_at || a.created_at).getTime();
+        const tb = new Date(b.resolved_at || b.closed_at || b.updated_at || b.created_at).getTime();
+        return ta - tb;
+      });
+
+    // Build cumulative P&L by day
+    const dailyMap = {};
+    closed.forEach(t => {
+      const d = (t.resolved_at || t.closed_at || t.updated_at || t.created_at || '').slice(0, 10);
+      if (!d) return;
+      if (!dailyMap[d]) dailyMap[d] = 0;
+      dailyMap[d] += (t.profit || 0);
+    });
+
+    const days = Object.keys(dailyMap).sort();
+    let cum = 0;
+    const data = days.map(d => {
+      cum += dailyMap[d];
+      return { x: d, y: parseFloat(cum.toFixed(2)) };
+    });
+
+    return {
+      label: portfolio.name,
+      data,
+      borderColor: COLORS[i % COLORS.length],
+      backgroundColor: COLORS[i % COLORS.length] + '20',
+      borderWidth: 2,
+      pointRadius: 1,
+      tension: 0.3,
+      fill: false
+    };
+  });
+
+  const ctx = document.getElementById('pnl-chart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: { datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          labels: {
+            color: '#888',
+            font: { family: "'Inter', sans-serif", size: 12 }
+          }
+        },
+        tooltip: {
+          backgroundColor: '#1a1a2e',
+          borderColor: '#2a2a3e',
+          borderWidth: 1,
+          titleColor: '#e0e0e0',
+          bodyColor: '#e0e0e0',
+          callbacks: {
+            label: ctx => ctx.dataset.label + ': $' + ctx.parsed.y.toFixed(2)
+          }
+        }
+      },
+      scales: {
+        x: {
+          type: 'category',
+          ticks: { color: '#666', maxTicksLimit: 15, font: { size: 10 } },
+          grid: { color: 'rgba(255,255,255,0.03)' }
+        },
+        y: {
+          ticks: {
+            color: '#666',
+            font: { family: "'JetBrains Mono', monospace", size: 11 },
+            callback: v => '$' + v.toFixed(0)
+          },
+          grid: { color: 'rgba(255,255,255,0.05)' }
+        }
+      }
+    }
+  });
+}
+
+// ── Init ──
+loadCompareData();
+</script>
+</body>
+</html>
