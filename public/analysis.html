@@ -1272,6 +1272,132 @@ async function askFollowup() {
   }
 }
 
+// ── Charts ────────────────────────────────
+let chartInstances = [];
+
+function renderCharts(resolved) {
+  return `<div class="charts-grid">
+    <div class="chart-card"><h3>Win Rate by City</h3><canvas id="chart-wr-city"></canvas></div>
+    <div class="chart-card"><h3>ROI by Bet Type</h3><canvas id="chart-roi-bet"></canvas></div>
+  </div>`;
+}
+
+function drawAnalysisCharts(resolved) {
+  // Destroy previous chart instances
+  chartInstances.forEach(c => c.destroy());
+  chartInstances = [];
+
+  const cityCanvas = document.getElementById('chart-wr-city');
+  const betCanvas = document.getElementById('chart-roi-bet');
+  if (!cityCanvas || !betCanvas) return;
+
+  // Win Rate by City
+  const cityGroups = {};
+  resolved.forEach(t => {
+    const city = t.city || 'Unknown';
+    if (!cityGroups[city]) cityGroups[city] = { won: 0, total: 0 };
+    cityGroups[city].total++;
+    if (t.status === 'won') cityGroups[city].won++;
+  });
+  const cityLabels = Object.keys(cityGroups).sort((a, b) => {
+    const wrA = cityGroups[a].won / cityGroups[a].total;
+    const wrB = cityGroups[b].won / cityGroups[b].total;
+    return wrA - wrB;
+  });
+  const cityWR = cityLabels.map(c => (cityGroups[c].won / cityGroups[c].total * 100).toFixed(1));
+
+  chartInstances.push(new Chart(cityCanvas, {
+    type: 'bar',
+    data: {
+      labels: cityLabels,
+      datasets: [{
+        label: 'Win Rate %',
+        data: cityWR,
+        backgroundColor: 'rgba(0, 230, 118, 0.7)',
+        borderColor: 'rgba(0, 230, 118, 1)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { beginAtZero: true, max: 100, ticks: { color: '#888', callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        y: { ticks: { color: '#e0e0e0', font: { size: 11 } }, grid: { display: false } }
+      }
+    }
+  }));
+
+  // ROI by Bet Type
+  const betGroups = {};
+  resolved.forEach(t => {
+    const bt = t.bet_type || 'Unknown';
+    if (!betGroups[bt]) betGroups[bt] = { invested: 0, profit: 0 };
+    betGroups[bt].invested += (t.total_cost_usd || 0);
+    betGroups[bt].profit += (t.profit_usd || 0);
+  });
+  const betLabels = Object.keys(betGroups);
+  const betROI = betLabels.map(b => betGroups[b].invested > 0 ? (betGroups[b].profit / betGroups[b].invested * 100).toFixed(1) : 0);
+  const betColors = betROI.map(v => v >= 0 ? 'rgba(0, 230, 118, 0.7)' : 'rgba(255, 82, 82, 0.7)');
+  const betBorders = betROI.map(v => v >= 0 ? 'rgba(0, 230, 118, 1)' : 'rgba(255, 82, 82, 1)');
+
+  chartInstances.push(new Chart(betCanvas, {
+    type: 'bar',
+    data: {
+      labels: betLabels,
+      datasets: [{
+        label: 'ROI %',
+        data: betROI,
+        backgroundColor: betColors,
+        borderColor: betBorders,
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#e0e0e0', font: { size: 11 } }, grid: { display: false } },
+        y: { ticks: { color: '#888', callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+      }
+    }
+  }));
+}
+
+// ── Breakdown Tabs ────────────────────────
+function showBreakdownTab(tab) {
+  document.querySelectorAll('.breakdown-group').forEach(g => {
+    g.style.display = g.dataset.tab === tab ? '' : 'none';
+  });
+  document.querySelectorAll('.breakdown-tab').forEach(b => {
+    b.classList.toggle('active', b.textContent.toLowerCase().includes(tab === 'cross' ? 'cross' : tab));
+  });
+}
+
+// ── Export CSV ────────────────────────────
+function exportCSV() {
+  const resolved = filteredTrades.filter(t => t.status === 'won' || t.status === 'lost');
+  if (resolved.length === 0) return;
+
+  const cols = ['date', 'city', 'bet_type', 'side', 'band_type', 'risk', 'edge', 'confidence', 'entry_price', 'total_cost_usd', 'profit_usd', 'status'];
+  const header = cols.join(',');
+  const rows = resolved.map(t => cols.map(c => {
+    const val = t[c] ?? '';
+    const str = String(val);
+    return str.includes(',') || str.includes('"') ? '"' + str.replace(/"/g, '""') + '"' : str;
+  }).join(','));
+
+  const csv = [header, ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'polyweather_trades.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 // ── Helpers ────────────────────────────────
 function wrClass(wr) {
   if (wr >= 60) return 'wr-high';
