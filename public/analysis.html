@@ -926,7 +926,7 @@ function renderBreakdownPanel(title, resolved, groupFn) {
       const wr = g.count > 0 ? g.won / g.count * 100 : 0;
       const roi = g.invested > 0 ? g.profit / g.invested * 100 : 0;
       const pval = binomialPValue(g.won, g.count, baselineRate);
-      const sig = sigLabel(pval);
+      const sig = sigLabel(pval, wr / 100, baselineRate);
       return { key, ...g, wr, roi, pval, sig };
     })
     .sort((a, b) => b.profit - a.profit);
