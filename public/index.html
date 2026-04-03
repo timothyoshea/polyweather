@@ -1607,11 +1607,10 @@
   }
 
   function updateTradeModeUI(mode, walletAddr) {
-    const paperBtn = document.getElementById('mode-paper-btn');
-    const liveBtn = document.getElementById('mode-live-btn');
-    const status = document.getElementById('trade-mode-status');
-    const walletInfo = document.getElementById('live-wallet-info');
     const badge = document.getElementById('trade-mode-badge');
+    const goLiveBtn = document.getElementById('go-live-btn');
+    const goLiveDesc = document.getElementById('go-live-desc');
+    const liveStatus = document.getElementById('live-portfolio-status');
 
     // Top bar badge
     if (badge) {
@@ -1629,72 +1628,381 @@
       }
     }
 
+    // Go Live card
     if (mode === 'live') {
-      liveBtn.style.background = 'rgba(0,230,118,0.15)';
-      liveBtn.style.borderColor = 'var(--green)';
-      liveBtn.style.color = 'var(--green)';
-      paperBtn.style.background = 'var(--card)';
-      paperBtn.style.borderColor = 'var(--card-border)';
-      paperBtn.style.color = 'var(--text2)';
-      status.innerHTML = '<span style="color:var(--green);font-weight:600;">LIVE TRADING ACTIVE</span>';
-      walletInfo.style.display = '';
+      goLiveBtn.style.display = 'none';
+      goLiveDesc.textContent = 'This is a live trading portfolio.';
+      liveStatus.style.display = '';
+      if (walletAddr) {
+        document.getElementById('wallet-addr').textContent = walletAddr.slice(0, 6) + '...' + walletAddr.slice(-4);
+        fetch('/api/wallet?portfolio_id=' + encodeURIComponent(activePortfolioId))
+          .then(r => r.json())
+          .then(d => {
+            if (d.available && d.balance_usdc) {
+              const bal = (parseFloat(d.balance_usdc) / 1e6).toFixed(2);
+              document.getElementById('wallet-balance').textContent = '$' + bal;
+            } else {
+              document.getElementById('wallet-balance').textContent = d.message || '--';
+            }
+          })
+          .catch(() => { document.getElementById('wallet-balance').textContent = '--'; });
+      }
     } else {
-      paperBtn.style.background = 'rgba(79,195,247,0.15)';
-      paperBtn.style.borderColor = 'var(--cyan)';
-      paperBtn.style.color = 'var(--cyan)';
-      liveBtn.style.background = 'var(--card)';
-      liveBtn.style.borderColor = 'var(--card-border)';
-      liveBtn.style.color = 'var(--text2)';
-      status.innerHTML = '<span style="color:var(--cyan);">Paper trading (simulated)</span>';
-      walletInfo.style.display = 'none';
-    }
-
-    if (walletAddr) {
-      document.getElementById('wallet-addr').textContent = walletAddr.slice(0, 6) + '...' + walletAddr.slice(-4);
-      // Fetch wallet balance
-      fetch('/api/wallet?portfolio_id=' + encodeURIComponent(activePortfolioId))
-        .then(r => r.json())
-        .then(d => {
-          if (d.available && d.balance_usdc) {
-            const bal = (parseFloat(d.balance_usdc) / 1e6).toFixed(2);
-            document.getElementById('wallet-balance').textContent = '$' + bal;
-          } else {
-            document.getElementById('wallet-balance').textContent = d.message || '--';
-          }
-        })
-        .catch(() => {
-          document.getElementById('wallet-balance').textContent = '--';
-        });
+      goLiveBtn.style.display = '';
+      goLiveDesc.textContent = 'Create a live trading portfolio based on this paper portfolio\'s strategy.';
+      liveStatus.style.display = 'none';
     }
   }
 
-  async function setTradeMode(mode) {
-    if (!activePortfolioId) return;
+  // ── Live Portfolio Wizard ─────────────────────
+  let wizardStrategy = null;
+  let wizardStep = 0;
+  const wizardSteps = [
+    { id: 'name',     title: 'Name Your Portfolio',      render: renderWizardName },
+    { id: 'trades',   title: 'What to Trade',            render: renderWizardTrades },
+    { id: 'capital',  title: 'Capital & Position Limits', render: renderWizardCapital },
+    { id: 'hours',    title: 'Trading Hours',             render: renderWizardHours },
+    { id: 'wallet',   title: 'Wallet & Funding',          render: renderWizardWallet },
+    { id: 'confirm',  title: 'Review & Go Live',          render: renderWizardConfirm },
+  ];
 
-    if (mode === 'live') {
-      const confirmed = confirm(
-        'Switch to LIVE trading?\n\n' +
-        'This portfolio will place REAL orders on Polymarket using actual USDC.\n\n' +
-        'Make sure you have:\n' +
-        '- Funded your wallet with USDC.e\n' +
-        '- Reviewed your trading rules\n' +
-        '- Set trading hours if needed\n\n' +
-        'Continue?'
-      );
-      if (!confirmed) return;
-    }
+  function openLiveWizard() {
+    if (!portfolioRules) { alert('Select a portfolio first.'); return; }
+    wizardStrategy = JSON.parse(JSON.stringify(portfolioRules));
+    wizardStep = 0;
+    // Get source portfolio name
+    const srcName = document.getElementById('portfolio-name-display').textContent;
+    wizardStrategy._sourceName = srcName;
+    wizardStrategy._newName = srcName + ' (Live)';
+    wizardStrategy._startingCapital = 50;
+    renderWizardStep();
+    const overlay = document.getElementById('live-wizard-overlay');
+    overlay.style.display = 'flex';
+  }
+
+  function closeWizard() {
+    document.getElementById('live-wizard-overlay').style.display = 'none';
+  }
+
+  function wizardNext() { wizardStep++; renderWizardStep(); }
+  function wizardBack() { wizardStep--; renderWizardStep(); }
+
+  function renderWizardStep() {
+    const step = wizardSteps[wizardStep];
+    const container = document.getElementById('live-wizard-content');
+    const isFirst = wizardStep === 0;
+    const isLast = wizardStep === wizardSteps.length - 1;
+
+    container.innerHTML = `
+      <div style="padding:28px 32px 0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-size:11px;color:var(--text2);font-family:var(--mono);">Step ${wizardStep + 1} of ${wizardSteps.length}</span>
+          <button onclick="closeWizard()" style="background:none;border:none;color:var(--text2);font-size:18px;cursor:pointer;padding:0;line-height:1;">&times;</button>
+        </div>
+        <div style="height:3px;background:var(--card-border);border-radius:2px;margin-bottom:20px;">
+          <div style="height:100%;width:${((wizardStep + 1) / wizardSteps.length) * 100}%;background:var(--green);border-radius:2px;transition:width 0.3s;"></div>
+        </div>
+        <h2 style="font-size:20px;font-weight:700;color:var(--text);margin:0 0 20px;">${step.title}</h2>
+      </div>
+      <div id="wizard-body" style="padding:0 32px;"></div>
+      <div style="padding:20px 32px 28px;display:flex;justify-content:space-between;align-items:center;gap:12px;">
+        ${isFirst ? '<button onclick="closeWizard()" style="padding:10px 20px;border-radius:8px;font-size:13px;cursor:pointer;background:none;border:1px solid var(--card-border);color:var(--text2);">Cancel</button>' : '<button onclick="wizardBack()" style="padding:10px 20px;border-radius:8px;font-size:13px;cursor:pointer;background:none;border:1px solid var(--card-border);color:var(--text2);">Back</button>'}
+        ${isLast ? '<button id="wizard-create-btn" onclick="wizardCreate()" style="padding:10px 28px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;border:none;background:var(--green);color:#0a0a0f;">Create Live Portfolio</button>' : '<button onclick="wizardNext()" style="padding:10px 28px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:var(--cyan);color:#0a0a0f;">Next</button>'}
+      </div>
+    `;
+    step.render(document.getElementById('wizard-body'));
+  }
+
+  function _wizardField(label, value, type, onchange) {
+    return `<div style="margin-bottom:14px;">
+      <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:4px;font-family:var(--mono);">${label}</label>
+      <input type="${type}" value="${value ?? ''}" ${type === 'number' ? 'step="any"' : ''} onchange="${onchange}"
+        style="width:100%;box-sizing:border-box;background:var(--card);border:1px solid var(--card-border);border-radius:6px;padding:10px 12px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;">
+    </div>`;
+  }
+
+  function renderWizardName(body) {
+    body.innerHTML = `
+      <p style="color:var(--text2);font-size:13px;margin:0 0 16px;">This will create a new portfolio that trades with <strong style="color:var(--green);">real money</strong> on Polymarket. Your paper portfolio stays unchanged.</p>
+      <div style="padding:12px 16px;background:rgba(79,195,247,0.06);border:1px solid rgba(79,195,247,0.12);border-radius:8px;margin-bottom:20px;font-size:12px;color:var(--text2);">
+        Copying strategy from: <strong style="color:var(--cyan);">${wizardStrategy._sourceName}</strong>
+      </div>
+      ${_wizardField('Portfolio Name', wizardStrategy._newName, 'text', "wizardStrategy._newName=this.value")}
+      ${_wizardField('Starting Capital (USD)', wizardStrategy._startingCapital, 'number', "wizardStrategy._startingCapital=Number(this.value)")}
+    `;
+  }
+
+  function renderWizardTrades(body) {
+    const s = wizardStrategy;
+    const bets = s.allowed_bet_types || [];
+    const sides = s.allowed_sides || [];
+    const bands = s.allowed_band_types || [];
+    const blocked = (s.blocked_cities || []).join(', ') || 'None';
+
+    function chk(arr, val) { return (arr || []).includes(val); }
+
+    body.innerHTML = `
+      <p style="color:var(--text2);font-size:13px;margin:0 0 16px;">Choose which types of trades this portfolio will make.</p>
+
+      <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:6px;font-family:var(--mono);">Bet Types</label>
+      <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+        ${['sure', 'edge', 'safe_no'].map(t => `
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text);cursor:pointer;font-family:var(--mono);">
+            <input type="checkbox" ${chk(bets, t) ? 'checked' : ''} onchange="wizToggleArr('allowed_bet_types','${t}',this.checked)" style="accent-color:var(--cyan);width:16px;height:16px;cursor:pointer;">
+            ${t}
+          </label>
+        `).join('')}
+      </div>
+
+      <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:6px;font-family:var(--mono);">Sides</label>
+      <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+        ${['YES', 'NO'].map(t => `
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text);cursor:pointer;font-family:var(--mono);">
+            <input type="checkbox" ${chk(sides, t) ? 'checked' : ''} onchange="wizToggleArr('allowed_sides','${t}',this.checked)" style="accent-color:var(--cyan);width:16px;height:16px;cursor:pointer;">
+            ${t}
+          </label>
+        `).join('')}
+      </div>
+
+      <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:6px;font-family:var(--mono);">Band Types</label>
+      <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+        ${['above', 'below', 'exact'].map(t => `
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text);cursor:pointer;font-family:var(--mono);">
+            <input type="checkbox" ${chk(bands, t) ? 'checked' : ''} onchange="wizToggleArr('allowed_band_types','${t}',this.checked)" style="accent-color:var(--cyan);width:16px;height:16px;cursor:pointer;">
+            ${t}
+          </label>
+        `).join('')}
+      </div>
+
+      <div style="padding:10px 14px;background:var(--card);border:1px solid var(--card-border);border-radius:6px;font-size:12px;color:var(--text2);font-family:var(--mono);">
+        Blocked cities: ${blocked}
+      </div>
+    `;
+  }
+
+  function wizToggleArr(key, val, checked) {
+    if (!wizardStrategy[key]) wizardStrategy[key] = [];
+    if (checked && !wizardStrategy[key].includes(val)) wizardStrategy[key].push(val);
+    if (!checked) wizardStrategy[key] = wizardStrategy[key].filter(v => v !== val);
+  }
+
+  function renderWizardCapital(body) {
+    const cm = wizardStrategy.capital_management || {};
+    body.innerHTML = `
+      <p style="color:var(--text2);font-size:13px;margin:0 0 16px;">Set limits to control risk. These cap how much capital can be deployed.</p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 20px;">
+        ${_wizardField('Max single trade (USD)', cm.max_single_trade_usd, 'number', "wizSetCM('max_single_trade_usd',Number(this.value))")}
+        ${_wizardField('Max single trade (%)', cm.max_single_trade_pct, 'number', "wizSetCM('max_single_trade_pct',Number(this.value))")}
+        ${_wizardField('Max portfolio utilization (%)', cm.max_portfolio_utilization_pct, 'number', "wizSetCM('max_portfolio_utilization_pct',Number(this.value))")}
+        ${_wizardField('Max city exposure (%)', cm.max_correlated_exposure_pct, 'number', "wizSetCM('max_correlated_exposure_pct',Number(this.value))")}
+      </div>
+
+      <div style="margin-top:8px;padding:10px 14px;background:rgba(255,193,7,0.06);border:1px solid rgba(255,193,7,0.15);border-radius:6px;font-size:12px;color:var(--amber);">
+        With $${wizardStrategy._startingCapital || 0} starting capital, max single trade = $${Math.min(cm.max_single_trade_usd || 999, (wizardStrategy._startingCapital || 0) * (cm.max_single_trade_pct || 100) / 100).toFixed(0)}
+      </div>
+    `;
+  }
+
+  function wizSetCM(key, val) {
+    if (!wizardStrategy.capital_management) wizardStrategy.capital_management = {};
+    wizardStrategy.capital_management[key] = val;
+  }
+
+  function renderWizardHours(body) {
+    const th = wizardStrategy.trading_hours || {};
+    const enabled = th.enabled || false;
+    const allowed = th.allowed_windows || [];
+    const blackout = th.blackout_windows || [];
+
+    body.innerHTML = `
+      <p style="color:var(--text2);font-size:13px;margin:0 0 16px;">Control when trades can be placed. All times in UTC.</p>
+
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);cursor:pointer;margin-bottom:16px;">
+        <input type="checkbox" ${enabled ? 'checked' : ''} onchange="wizToggleHours(this.checked)" style="accent-color:var(--cyan);width:16px;height:16px;cursor:pointer;">
+        Enable trading hours restrictions
+      </label>
+
+      <div id="wiz-hours-content" style="display:${enabled ? '' : 'none'};">
+        <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:6px;font-family:var(--mono);">Allowed Windows (trade only during these)</label>
+        <div id="wiz-allowed-windows">${allowed.length === 0 ? '<div style="color:var(--text2);font-size:12px;font-style:italic;margin-bottom:8px;">No restriction — trades at any time</div>' : ''}</div>
+        ${allowed.map((w, i) => `<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+          <input type="text" value="${w.start}" onchange="wizSetWindow('allowed_windows',${i},'start',this.value)" style="width:70px;text-align:center;background:var(--card);border:1px solid var(--card-border);border-radius:6px;padding:6px;color:var(--text);font-family:var(--mono);font-size:13px;">
+          <span style="color:var(--text2);font-size:12px;">to</span>
+          <input type="text" value="${w.end}" onchange="wizSetWindow('allowed_windows',${i},'end',this.value)" style="width:70px;text-align:center;background:var(--card);border:1px solid var(--card-border);border-radius:6px;padding:6px;color:var(--text);font-family:var(--mono);font-size:13px;">
+          <button onclick="wizRemoveWindow('allowed_windows',${i})" style="background:none;border:1px solid #333;border-radius:4px;color:#f44;font-size:12px;cursor:pointer;padding:4px 8px;">x</button>
+        </div>`).join('')}
+        <button onclick="wizAddWindow('allowed_windows')" style="background:var(--card);border:1px solid var(--card-border);border-radius:6px;padding:4px 12px;color:var(--cyan);font-size:12px;cursor:pointer;font-family:var(--mono);margin-bottom:16px;">+ Add allowed window</button>
+
+        <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:6px;margin-top:8px;font-family:var(--mono);">Blackout Windows (never trade during these)</label>
+        <div id="wiz-blackout-windows">${blackout.length === 0 ? '<div style="color:var(--text2);font-size:12px;font-style:italic;margin-bottom:8px;">No blackouts</div>' : ''}</div>
+        ${blackout.map((w, i) => `<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+          <input type="text" value="${w.start}" onchange="wizSetWindow('blackout_windows',${i},'start',this.value)" style="width:70px;text-align:center;background:var(--card);border:1px solid var(--card-border);border-radius:6px;padding:6px;color:var(--text);font-family:var(--mono);font-size:13px;">
+          <span style="color:var(--text2);font-size:12px;">to</span>
+          <input type="text" value="${w.end}" onchange="wizSetWindow('blackout_windows',${i},'end',this.value)" style="width:70px;text-align:center;background:var(--card);border:1px solid var(--card-border);border-radius:6px;padding:6px;color:var(--text);font-family:var(--mono);font-size:13px;">
+          <button onclick="wizRemoveWindow('blackout_windows',${i})" style="background:none;border:1px solid #333;border-radius:4px;color:#f44;font-size:12px;cursor:pointer;padding:4px 8px;">x</button>
+        </div>`).join('')}
+        <button onclick="wizAddWindow('blackout_windows')" style="background:var(--card);border:1px solid var(--card-border);border-radius:6px;padding:4px 12px;color:var(--cyan);font-size:12px;cursor:pointer;font-family:var(--mono);">+ Add blackout window</button>
+      </div>
+
+      <div style="margin-top:12px;font-size:11px;color:var(--text2);font-family:var(--mono);">Blackout overrides allowed. Overnight spans supported (e.g. 22:00 to 06:00).</div>
+    `;
+  }
+
+  function wizToggleHours(checked) {
+    if (!wizardStrategy.trading_hours) wizardStrategy.trading_hours = {};
+    wizardStrategy.trading_hours.enabled = checked;
+    document.getElementById('wiz-hours-content').style.display = checked ? '' : 'none';
+  }
+  function wizSetWindow(key, idx, field, val) {
+    if (!wizardStrategy.trading_hours) wizardStrategy.trading_hours = {};
+    if (!wizardStrategy.trading_hours[key]) wizardStrategy.trading_hours[key] = [];
+    wizardStrategy.trading_hours[key][idx][field] = val;
+  }
+  function wizAddWindow(key) {
+    if (!wizardStrategy.trading_hours) wizardStrategy.trading_hours = {};
+    if (!wizardStrategy.trading_hours[key]) wizardStrategy.trading_hours[key] = [];
+    wizardStrategy.trading_hours[key].push({ start: '06:00', end: '22:00' });
+    renderWizardStep(); // re-render to show new window
+  }
+  function wizRemoveWindow(key, idx) {
+    wizardStrategy.trading_hours[key].splice(idx, 1);
+    renderWizardStep();
+  }
+
+  function renderWizardWallet(body) {
+    body.innerHTML = `
+      <p style="color:var(--text2);font-size:13px;margin:0 0 16px;">Your wallet is connected to the trading service. Checking balance...</p>
+      <div id="wiz-wallet-status" style="padding:16px;background:var(--card);border:1px solid var(--card-border);border-radius:8px;">
+        <div style="color:var(--text2);font-size:13px;">Loading wallet info...</div>
+      </div>
+    `;
+
+    fetch('/api/wallet?portfolio_id=' + encodeURIComponent(activePortfolioId))
+      .then(r => r.json())
+      .then(d => {
+        const el = document.getElementById('wiz-wallet-status');
+        if (!el) return;
+        if (d.available && d.balance_usdc) {
+          const bal = (parseFloat(d.balance_usdc) / 1e6).toFixed(2);
+          el.innerHTML = `
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;"></span>
+                <span style="color:var(--green);font-weight:600;font-size:13px;">Wallet Connected</span>
+              </div>
+              <div style="font-size:13px;color:var(--text2);">Balance: <strong style="color:var(--text);">$${bal} USDC.e</strong></div>
+              <div style="font-size:12px;color:var(--text2);font-family:var(--mono);">Starting capital for this portfolio: <strong style="color:var(--text);">$${wizardStrategy._startingCapital}</strong></div>
+              ${parseFloat(bal) < wizardStrategy._startingCapital ? '<div style="padding:8px 12px;background:rgba(255,82,82,0.1);border:1px solid rgba(255,82,82,0.2);border-radius:6px;font-size:12px;color:#ff5252;">Warning: wallet balance is less than starting capital</div>' : ''}
+            </div>
+          `;
+        } else {
+          el.innerHTML = `
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="width:8px;height:8px;border-radius:50%;background:var(--amber);display:inline-block;"></span>
+              <span style="color:var(--amber);font-size:13px;">${d.message || 'Wallet not available'}</span>
+            </div>
+            <p style="font-size:12px;color:var(--text2);margin:10px 0 0;">You can still create the portfolio and fund the wallet later.</p>
+          `;
+        }
+      })
+      .catch(() => {
+        const el = document.getElementById('wiz-wallet-status');
+        if (el) el.innerHTML = '<div style="color:var(--text2);font-size:13px;">Could not check wallet. You can still create the portfolio.</div>';
+      });
+  }
+
+  function renderWizardConfirm(body) {
+    const s = wizardStrategy;
+    const cm = s.capital_management || {};
+    const th = s.trading_hours || {};
+
+    body.innerHTML = `
+      <div style="border:1px solid rgba(0,230,118,0.2);border-radius:10px;overflow:hidden;">
+        <div style="background:rgba(0,230,118,0.08);padding:14px 18px;border-bottom:1px solid rgba(0,230,118,0.12);">
+          <span style="font-size:14px;font-weight:700;color:var(--green);">${s._newName}</span>
+          <span style="font-size:11px;color:var(--text2);margin-left:8px;">LIVE</span>
+        </div>
+        <div style="padding:18px;font-size:13px;display:flex;flex-direction:column;gap:12px;">
+          <div>
+            <span style="color:var(--text2);">Starting Capital:</span>
+            <strong style="color:var(--text);margin-left:6px;">$${s._startingCapital}</strong>
+          </div>
+          <div>
+            <span style="color:var(--text2);">Bet Types:</span>
+            <span style="color:var(--text);margin-left:6px;">${(s.allowed_bet_types || []).join(', ') || 'All'}</span>
+          </div>
+          <div>
+            <span style="color:var(--text2);">Sides:</span>
+            <span style="color:var(--text);margin-left:6px;">${(s.allowed_sides || []).join(', ') || 'All'}</span>
+          </div>
+          <div>
+            <span style="color:var(--text2);">Max Single Trade:</span>
+            <span style="color:var(--text);margin-left:6px;">$${cm.max_single_trade_usd || 'No limit'} / ${cm.max_single_trade_pct || 100}%</span>
+          </div>
+          <div>
+            <span style="color:var(--text2);">Max Utilization:</span>
+            <span style="color:var(--text);margin-left:6px;">${cm.max_portfolio_utilization_pct || 100}%</span>
+          </div>
+          <div>
+            <span style="color:var(--text2);">Trading Hours:</span>
+            <span style="color:var(--text);margin-left:6px;">${th.enabled ? (th.allowed_windows || []).map(w => w.start + '-' + w.end).join(', ') || 'Enabled (no windows set)' : 'No restrictions'}</span>
+          </div>
+          ${th.enabled && (th.blackout_windows || []).length > 0 ? `<div>
+            <span style="color:var(--text2);">Blackouts:</span>
+            <span style="color:var(--amber);margin-left:6px;">${th.blackout_windows.map(w => w.start + '-' + w.end).join(', ')}</span>
+          </div>` : ''}
+        </div>
+      </div>
+      <div style="margin-top:16px;padding:12px 16px;background:rgba(255,193,7,0.06);border:1px solid rgba(255,193,7,0.15);border-radius:8px;font-size:12px;color:var(--amber);">
+        This portfolio will place real orders on Polymarket with real USDC. Trades run automatically on each scanner cycle. You can deactivate it at any time from Settings.
+      </div>
+    `;
+  }
+
+  async function wizardCreate() {
+    const btn = document.getElementById('wizard-create-btn');
+    btn.disabled = true;
+    btn.textContent = 'Creating...';
 
     try {
-      const resp = await fetch('/api/portfolios?id=' + encodeURIComponent(activePortfolioId), {
-        method: 'PATCH',
+      // Clean up internal fields
+      const strategy = JSON.parse(JSON.stringify(wizardStrategy));
+      const name = strategy._newName;
+      const capital = strategy._startingCapital;
+      delete strategy._newName;
+      delete strategy._sourceName;
+      delete strategy._startingCapital;
+
+      const resp = await fetch('/api/portfolios', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ trade_mode: mode }),
+        body: JSON.stringify({
+          name: name,
+          description: 'Live trading portfolio',
+          strategy: strategy,
+          starting_capital_usd: capital,
+          unlimited_capital: false,
+          trade_mode: 'live',
+          wallet_address: '0xa3e4d2142A20f08C2D9e644b11E77A817ec03976',
+        }),
       });
+
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      // Reload to refresh UI
-      loadPortfolioRules(activePortfolioId);
+      const result = await resp.json();
+
+      closeWizard();
+
+      // Reload and switch to the new portfolio
+      await loadPortfolios();
+      if (result && result.id) {
+        document.getElementById('portfolio-select').value = result.id;
+        switchPortfolio();
+      }
     } catch (e) {
-      alert('Failed to set trade mode: ' + e.message);
+      alert('Failed to create portfolio: ' + e.message);
+      btn.disabled = false;
+      btn.textContent = 'Create Live Portfolio';
     }
   }
 
