@@ -520,7 +520,7 @@ function renderChart(allData) {
       const d = (t.resolved_at || t.closed_at || t.updated_at || t.created_at || '').slice(0, 10);
       if (!d) return;
       if (!dailyMap[d]) dailyMap[d] = 0;
-      dailyMap[d] += (t.profit || 0);
+      dailyMap[d] += (Number(t.profit_usd) || 0);
     });
 
     const days = Object.keys(dailyMap).sort();
