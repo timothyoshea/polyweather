@@ -191,12 +191,15 @@ class handler(BaseHTTPRequestHandler):
 
             # List trades with optional status/date filters
             status = params.get("status", [None])[0]
+            bet_type = params.get("bet_type", [None])[0]
             limit = int(params.get("limit", ["100"])[0])
             from_date = params.get("from", [None])[0]
             to_date = params.get("to", [None])[0]
             query = f"paper_trades?select=*&order=created_at.desc{pf_filter}"
             if status:
                 query += f"&status=eq.{status}"
+            if bet_type:
+                query += f"&bet_type=eq.{bet_type}"
             if from_date:
                 query += f"&date=gte.{from_date}"
             if to_date:
