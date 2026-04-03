@@ -1399,7 +1399,6 @@
         opt.value = p.id;
         opt.textContent = p.name || ('Portfolio ' + p.id);
         sel.appendChild(opt);
-        if (sidebarSel) sidebarSel.appendChild(opt.cloneNode(true));
       });
       // Restore from localStorage or use first
       const saved = localStorage.getItem('pw-portfolio-id');
