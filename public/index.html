@@ -1088,13 +1088,18 @@
   .trade-table th {
     text-align: left;
     padding: 8px 6px;
-    color: var(--cyan);
+    color: var(--text2);
     text-transform: uppercase;
     font-size: 10px;
     letter-spacing: 0.5px;
     border-bottom: 1px solid var(--card-border);
     white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.15s;
   }
+  .trade-table th:hover { color: var(--cyan); }
+  .trade-table th.sort-active { color: var(--cyan); }
   .trade-table td {
     padding: 8px 6px;
     border-bottom: 1px solid rgba(255,255,255,0.03);
