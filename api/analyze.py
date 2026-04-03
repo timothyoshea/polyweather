@@ -247,8 +247,9 @@ class handler(BaseHTTPRequestHandler):
                 })
 
             portfolio_id = body.get("portfolio_id", None)
+            messages = body.get("messages", None)
 
-            analysis = call_claude(slim_trades, question, breakdowns, date_range)
+            analysis = call_claude(slim_trades, question, breakdowns, date_range, messages=messages)
 
             # Save to history
             save_analysis(
