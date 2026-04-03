@@ -358,6 +358,7 @@ def approve():
 
         return jsonify({
             "address": address,
+            "rpc": connected_rpc,
             "approvals": results,
             "balances": {
                 "usdc_e": str(usdc_e_contract.functions.balanceOf(address).call() / 1e6),
