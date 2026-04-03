@@ -831,6 +831,9 @@ async function loadTrades() {
 function onPortfolioChange() {
   const sel = document.getElementById('portfolio-select');
   currentPortfolioId = sel.value;
+  localStorage.setItem('pw-portfolio-id', currentPortfolioId);
+  const sidebarSel = document.getElementById('sidebar-pf-select');
+  if (sidebarSel) sidebarSel.value = currentPortfolioId;
   updateAnalysisPortfolioDisplay();
   if (!currentPortfolioId) {
     document.getElementById('app').innerHTML = '<div class="empty-state">Select a portfolio to view analysis</div>';
