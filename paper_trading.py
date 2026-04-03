@@ -70,7 +70,36 @@ def _supabase_get(url, headers, timeout=10):
         return json.loads(resp.read().decode("utf-8"))
 
 
-def open_paper_trades(opps, scan_id, supabase_url, supabase_service_key):
+def _score_and_sort_opportunities(opps, strategy):
+    """Score and sort opportunities based on capital_allocation strategy.
+
+    Args:
+        opps: list of opportunity dicts
+        strategy: portfolio strategy dict
+
+    Returns:
+        sorted list (best first), mutated with '_score' key
+    """
+    alloc = strategy.get('capital_allocation', {})
+    sort_field = alloc.get('sort_field', 'composite')
+    weights = alloc.get('sort_weights', {'edge': 0.4, 'confidence': 0.3, 'ev_per_dollar': 0.3})
+
+    for opp in opps:
+        if sort_field == 'composite':
+            opp['_score'] = (
+                (opp.get('edge', 0) or 0) * weights.get('edge', 0.33) +
+                (opp.get('confidence', 0) or 0) * weights.get('confidence', 0.33) +
+                (opp.get('ev_per_dollar', 0) or 0) * weights.get('ev_per_dollar', 0.33)
+            )
+        else:
+            opp['_score'] = opp.get(sort_field, 0) or 0
+
+    opps.sort(key=lambda o: o.get('_score', 0), reverse=True)
+    return opps
+
+
+def open_paper_trades(opps, scan_id, supabase_url, supabase_service_key,
+                      portfolio_id=None, portfolio=None):
     """Open paper trades for scanner opportunities with liquidity data.
 
     For each opportunity, computes a position from book levels and upserts
@@ -81,6 +110,8 @@ def open_paper_trades(opps, scan_id, supabase_url, supabase_service_key):
         scan_id: UUID of the current scan
         supabase_url: Supabase project URL
         supabase_service_key: Supabase service role key
+        portfolio_id: optional portfolio UUID to tag trades with
+        portfolio: optional portfolio dict with strategy, starting_capital_usd, unlimited_capital
     """
     headers = {
         "apikey": supabase_service_key,
@@ -88,6 +119,53 @@ def open_paper_trades(opps, scan_id, supabase_url, supabase_service_key):
         "Content-Type": "application/json",
         "Prefer": "return=representation",
     }
+
+    # --- Capital management setup ---
+    use_capital_mgmt = (
+        portfolio is not None
+        and not portfolio.get("unlimited_capital", True)
+        and portfolio.get("starting_capital_usd") is not None
+    )
+
+    if use_capital_mgmt:
+        starting_capital = float(portfolio.get("starting_capital_usd", 0))
+        strategy = portfolio.get("strategy", {})
+        cap_mgmt = strategy.get("capital_management", {})
+        max_single_trade_usd = float(cap_mgmt.get("max_single_trade_usd", 999999))
+        max_single_trade_pct = float(cap_mgmt.get("max_single_trade_pct", 100))
+        max_portfolio_util_pct = float(cap_mgmt.get("max_portfolio_utilization_pct", 100))
+        max_corr_exposure_pct = float(cap_mgmt.get("max_correlated_exposure_pct", 100))
+
+        # Fetch current deployed capital
+        deployed_url = (
+            f"{supabase_url}/rest/v1/paper_trades"
+            f"?status=eq.open&portfolio_id=eq.{portfolio_id}&select=total_cost_usd,city"
+        )
+        open_trades = _supabase_get(deployed_url, headers)
+        deployed = sum(float(t.get("total_cost_usd", 0) or 0) for t in open_trades)
+
+        # Build city exposure map from open trades
+        city_exposure = {}
+        for t in open_trades:
+            c = t.get("city", "")
+            city_exposure[c] = city_exposure.get(c, 0.0) + float(t.get("total_cost_usd", 0) or 0)
+
+        # Fetch realized P&L
+        pnl_url = (
+            f"{supabase_url}/rest/v1/paper_trades"
+            f"?status=in.(won,lost)&portfolio_id=eq.{portfolio_id}&select=profit_usd"
+        )
+        resolved_trades = _supabase_get(pnl_url, headers)
+        realized_pnl = sum(float(t.get("profit_usd", 0) or 0) for t in resolved_trades)
+
+        current_capital = starting_capital + realized_pnl
+        available = current_capital - deployed
+
+        print(f"[CAPITAL] starting=${starting_capital:.2f} realized_pnl=${realized_pnl:.2f} "
+              f"current=${current_capital:.2f} deployed=${deployed:.2f} available=${available:.2f}")
+
+        # Score and sort opportunities
+        opps = _score_and_sort_opportunities(opps, strategy)
 
     count = 0
     for opp in opps:
