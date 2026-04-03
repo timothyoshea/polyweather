@@ -108,6 +108,45 @@ For every pattern you highlight, assess its **binomial significance**. Use this 
 - Only recommend acting on patterns that are at least marginally significant (p < 0.10)
 - Flag any pattern you mention that is NOT statistically significant — say "Note: small sample, not statistically significant"
 
+## Suggested Portfolio Settings
+Based on your analysis, propose optimized settings for a new portfolio. Output them in a fenced code block tagged `suggested-portfolio` so the UI can parse it. Use this exact JSON structure:
+
+```suggested-portfolio
+{
+  "name": "<descriptive name based on strategy>",
+  "starting_capital_usd": 10000,
+  "strategy": {
+    "sure_bet": { "min_edge": ..., "min_prob": ..., "max_price": ..., "min_confidence": ... },
+    "edge_bet": { "min_edge": ..., "min_prob": ..., "max_price": ..., "min_confidence": ... },
+    "safe_no": { "min_prob": ..., "min_return": ..., "max_no_price": ..., "min_no_price": ..., "min_confidence": ... },
+    "allowed_bet_types": [...],
+    "allowed_sides": [...],
+    "blocked_cities": [...],
+    "allowed_cities": [],
+    "capital_management": {
+      "max_single_trade_usd": ...,
+      "max_single_trade_pct": ...,
+      "max_portfolio_utilization_pct": ...,
+      "max_correlated_exposure_pct": ...
+    },
+    "capital_allocation": {
+      "sort_field": "composite",
+      "sort_weights": { "edge": ..., "confidence": ..., "ev_per_dollar": ... },
+      "sort_direction": "desc"
+    },
+    "position_sizing": {
+      "bankroll_usd": 100,
+      "kelly_fraction": 0.5,
+      "min_liquidity_usd": 5,
+      "liquidity_safety_factor": 0.4,
+      "min_edge_after_slippage": 0.03
+    }
+  }
+}
+```
+
+Tighten the settings based on what the data says works. Block cities that lose money, restrict to bet types and sides that are profitable, adjust thresholds to filter out the losing patterns you identified.
+
 Rules:
 - Only analyze CLOSED trades (won/lost). Never include open trades.
 - Be specific with numbers — cite actual cities, bet types, win rates, profits, ROI.
