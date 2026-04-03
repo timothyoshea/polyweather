@@ -275,11 +275,12 @@ def open_paper_trades(opps, scan_id, supabase_url, supabase_service_key,
                     date_enc = urllib.parse.quote(opp.get("date", ""))
                     band_enc = urllib.parse.quote(opp.get("band_c", ""))
                     side_enc = urllib.parse.quote(opp.get("side", ""))
+                    pf_filter = f"&portfolio_id=eq.{portfolio_id}" if portfolio_id else "&portfolio_id=is.null"
                     select_url = (
                         f"{supabase_url}/rest/v1/paper_trades"
                         f"?city=eq.{city_enc}&date=eq.{date_enc}"
                         f"&band_c=eq.{band_enc}&side=eq.{side_enc}"
-                        f"&select=*&status=eq.open"
+                        f"{pf_filter}&select=*&status=eq.open"
                     )
                     existing = _supabase_get(select_url, headers)
                     if existing and len(existing) > 0:
