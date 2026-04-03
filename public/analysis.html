@@ -1902,6 +1902,20 @@ function renderMarkdown(text) {
 
   if (inList) html += `</${listType}>`;
 
+  // Replace suggested portfolio placeholder with settings display + button
+  if (suggestedPortfolio) {
+    const escapedJson = escHtml(suggestedPortfolio);
+    const portfolioHtml = `
+      <div style="margin:20px 0;padding:20px;background:rgba(0,230,118,0.06);border:1px solid rgba(0,230,118,0.25);border-radius:10px;">
+        <div style="font-weight:600;color:var(--green);margin-bottom:12px;font-size:14px;">Suggested Portfolio Settings</div>
+        <pre style="background:rgba(0,0,0,0.4);border:1px solid var(--card-border);border-radius:6px;padding:14px;margin:0 0 16px;overflow-x:auto;font-size:12px;"><code>${escapedJson}</code></pre>
+        <button class="ai-btn" onclick='createSuggestedPortfolio(${JSON.stringify(suggestedPortfolio)})' style="padding:10px 20px;">
+          Create Portfolio with These Settings
+        </button>
+      </div>`;
+    html = html.replace('__SUGGESTED_PORTFOLIO__', portfolioHtml);
+  }
+
   return html;
 }
 
