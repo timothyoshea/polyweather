@@ -374,12 +374,12 @@ function computeMaxCapital(trades) {
   // Build timeline of opens/closes, track peak concurrent capital
   const events = [];
   trades.forEach(t => {
-    const cost = t.cost || t.amount || 0;
+    const cost = Number(t.total_cost_usd) || 0;
     const openTime = new Date(t.created_at || t.timestamp || t.date).getTime();
     if (isNaN(openTime)) return;
     events.push({ time: openTime, delta: cost });
 
-    if (t.status === 'closed' || t.status === 'resolved') {
+    if (t.status === 'won' || t.status === 'lost') {
       const closeTime = new Date(t.resolved_at || t.closed_at || t.updated_at || t.created_at).getTime();
       if (!isNaN(closeTime)) {
         events.push({ time: closeTime, delta: -cost });
