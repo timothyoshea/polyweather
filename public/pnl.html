@@ -663,6 +663,36 @@ function render(trades) {
   const app = $('#app');
   app.innerHTML = '';
 
+  // ── Capital Status Bar ──
+  if (pnlCapitalData) {
+    const c = pnlCapitalData;
+    const isUnlimited = c.unlimited;
+    app.insertAdjacentHTML('beforeend', `
+      <div class="summary-grid" style="margin-bottom:16px;">
+        <div class="stat-card">
+          <div class="label">Starting Capital</div>
+          <div class="value">${isUnlimited ? '<span style="color:var(--amber);">Unlimited</span>' : fmtUsd(c.starting)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Current Value</div>
+          <div class="value ${isUnlimited ? '' : clr(c.current - c.starting)}">${isUnlimited ? 'N/A' : fmtUsd(c.current)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Deployed</div>
+          <div class="value">${fmtUsd(c.deployed)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Available</div>
+          <div class="value">${isUnlimited ? 'N/A' : fmtUsd(c.available)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Utilization</div>
+          <div class="value">${isUnlimited ? '<span style="color:var(--amber);">Unlimited</span>' : fmtPct(c.utilization_pct)}</div>
+        </div>
+      </div>
+    `);
+  }
+
   // ── Summary Cards ──
   const roiOnCapital = stats.maxCapital > 0 ? (stats.totalProfit / stats.maxCapital * 100) : 0;
   const summaryHTML = `
