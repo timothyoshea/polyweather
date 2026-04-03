@@ -527,6 +527,8 @@ function updatePnlPortfolioDisplay() {
   }
 }
 
+let pnlCapitalData = null;
+
 function onPortfolioChange() {
   const sel = $('#portfolio-select');
   currentPortfolioId = sel.value;
@@ -537,7 +539,10 @@ function onPortfolioChange() {
   }
   // Reload all data
   $('#app').innerHTML = '<div class="loading"><div class="spinner"></div><div>Loading trades...</div></div>';
-  loadTrades().then(trades => {
+  Promise.all([
+    loadTrades(),
+    loadCapitalData()
+  ]).then(([trades]) => {
     allTrades = trades;
     if (trades.length === 0) {
       $('#app').innerHTML = '<div class="loading">No closed trades found.</div>';
@@ -545,6 +550,20 @@ function onPortfolioChange() {
     }
     rerender();
   });
+}
+
+async function loadCapitalData() {
+  pnlCapitalData = null;
+  if (!currentPortfolioId) return;
+  try {
+    const res = await fetch('/api/trades?capital=true&portfolio_id=' + encodeURIComponent(currentPortfolioId) + '&limit=1');
+    const data = await res.json();
+    if (data && data.capital) {
+      pnlCapitalData = data.capital;
+    }
+  } catch (e) {
+    console.error('Failed to load capital data:', e);
+  }
 }
 
 async function loadTrades() {
