@@ -1388,12 +1388,9 @@
       const portfolios = await resp.json();
       allPortfolios = portfolios || [];
       const sel = document.getElementById('portfolio-select');
-      const sidebarSel = document.getElementById('sidebar-pf-select');
       sel.innerHTML = '';
-      if (sidebarSel) sidebarSel.innerHTML = '';
       if (!portfolios || !portfolios.length) {
         sel.innerHTML = '<option value="">No portfolios</option>';
-        if (sidebarSel) sidebarSel.innerHTML = '<option value="">No portfolios</option>';
         document.getElementById('portfolio-name-display').textContent = 'No portfolios';
         return;
       }
