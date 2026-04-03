@@ -5,6 +5,10 @@
     "api/scan.py": {
       "maxDuration": 120,
       "memory": 1024
+    },
+    "api/analyze.py": {
+      "maxDuration": 120,
+      "memory": 512
     }
   },
   "rewrites": [
