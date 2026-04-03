@@ -1947,44 +1947,70 @@
   }
 
   function renderWizardWallet(body) {
+    // Default wallet — in future each portfolio can have its own
+    const defaultWallet = '0xa3e4d2142A20f08C2D9e644b11E77A817ec03976';
+    if (!wizardStrategy._walletAddress) wizardStrategy._walletAddress = defaultWallet;
+
     body.innerHTML = `
-      <p style="color:var(--text2);font-size:13px;margin:0 0 16px;">Your wallet is connected to the trading service. Checking balance...</p>
+      <p style="color:var(--text2);font-size:13px;margin:0 0 16px;">Each live portfolio is linked to a wallet that holds USDC.e on Polygon. This wallet will be used to place and settle trades.</p>
+
+      <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:4px;font-family:var(--mono);">Wallet Address</label>
+      <input id="wiz-wallet-input" type="text" value="${wizardStrategy._walletAddress}"
+        onchange="wizardStrategy._walletAddress=this.value;wizCheckWallet();"
+        style="width:100%;box-sizing:border-box;background:var(--card);border:1px solid var(--card-border);border-radius:6px;padding:10px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;margin-bottom:16px;">
+
       <div id="wiz-wallet-status" style="padding:16px;background:var(--card);border:1px solid var(--card-border);border-radius:8px;">
-        <div style="color:var(--text2);font-size:13px;">Loading wallet info...</div>
+        <div style="color:var(--text2);font-size:13px;">Checking wallet balance...</div>
+      </div>
+
+      <div style="margin-top:14px;padding:10px 14px;background:rgba(79,195,247,0.06);border:1px solid rgba(79,195,247,0.12);border-radius:6px;font-size:12px;color:var(--text2);">
+        Each live portfolio has its own wallet. To use a different wallet, paste its Polygon address above. Make sure it has USDC.e funded and Polymarket contracts approved.
       </div>
     `;
 
-    fetch('/api/wallet?portfolio_id=' + encodeURIComponent(activePortfolioId))
+    wizCheckWallet();
+  }
+
+  function wizCheckWallet() {
+    const el = document.getElementById('wiz-wallet-status');
+    if (!el) return;
+    el.innerHTML = '<div style="color:var(--text2);font-size:13px;">Checking wallet balance...</div>';
+
+    fetch('/api/wallet?force=true')
       .then(r => r.json())
       .then(d => {
-        const el = document.getElementById('wiz-wallet-status');
         if (!el) return;
         if (d.available && d.balance_usdc) {
           const bal = (parseFloat(d.balance_usdc) / 1e6).toFixed(2);
+          const cap = wizardStrategy._startingCapital || 0;
+          const low = parseFloat(bal) < cap;
           el.innerHTML = `
             <div style="display:flex;flex-direction:column;gap:10px;">
               <div style="display:flex;align-items:center;gap:8px;">
                 <span style="width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;"></span>
                 <span style="color:var(--green);font-weight:600;font-size:13px;">Wallet Connected</span>
               </div>
-              <div style="font-size:13px;color:var(--text2);">Balance: <strong style="color:var(--text);">$${bal} USDC.e</strong></div>
-              <div style="font-size:12px;color:var(--text2);font-family:var(--mono);">Starting capital for this portfolio: <strong style="color:var(--text);">$${wizardStrategy._startingCapital}</strong></div>
-              ${parseFloat(bal) < wizardStrategy._startingCapital ? '<div style="padding:8px 12px;background:rgba(255,82,82,0.1);border:1px solid rgba(255,82,82,0.2);border-radius:6px;font-size:12px;color:#ff5252;">Warning: wallet balance is less than starting capital</div>' : ''}
+              <div style="display:flex;gap:20px;flex-wrap:wrap;font-size:13px;">
+                <div><span style="color:var(--text2);">USDC.e Balance:</span> <strong style="color:var(--text);">$${bal}</strong></div>
+                <div><span style="color:var(--text2);">Starting Capital:</span> <strong style="color:var(--text);">$${cap}</strong></div>
+              </div>
+              ${low ? '<div style="padding:8px 12px;background:rgba(255,193,7,0.08);border:1px solid rgba(255,193,7,0.2);border-radius:6px;font-size:12px;color:var(--amber);">Wallet balance ($' + bal + ') is less than starting capital ($' + cap + '). You can still create the portfolio and fund the wallet before the next scan.</div>' : '<div style="padding:8px 12px;background:rgba(0,230,118,0.06);border:1px solid rgba(0,230,118,0.15);border-radius:6px;font-size:12px;color:var(--green);">Wallet is funded and ready to trade.</div>'}
             </div>
           `;
         } else {
           el.innerHTML = `
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span style="width:8px;height:8px;border-radius:50%;background:var(--amber);display:inline-block;"></span>
-              <span style="color:var(--amber);font-size:13px;">${d.message || 'Wallet not available'}</span>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="width:8px;height:8px;border-radius:50%;background:var(--amber);display:inline-block;"></span>
+                <span style="color:var(--amber);font-weight:600;font-size:13px;">Trading Service Not Connected</span>
+              </div>
+              <div style="font-size:12px;color:var(--text2);">The trading service is not configured yet. You can still create the portfolio — trades will queue when the service is connected.</div>
             </div>
-            <p style="font-size:12px;color:var(--text2);margin:10px 0 0;">You can still create the portfolio and fund the wallet later.</p>
           `;
         }
       })
       .catch(() => {
-        const el = document.getElementById('wiz-wallet-status');
-        if (el) el.innerHTML = '<div style="color:var(--text2);font-size:13px;">Could not check wallet. You can still create the portfolio.</div>';
+        if (el) el.innerHTML = '<div style="color:var(--text2);font-size:13px;">Could not reach trading service. You can still create the portfolio.</div>';
       });
   }
 
