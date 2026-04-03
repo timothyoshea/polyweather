@@ -1443,8 +1443,6 @@
     const sel = document.getElementById('portfolio-select');
     activePortfolioId = sel.value;
     localStorage.setItem('pw-portfolio-id', activePortfolioId);
-    const sidebarSel = document.getElementById('sidebar-pf-select');
-    if (sidebarSel) sidebarSel.value = activePortfolioId;
     updatePortfolioDisplay();
     loadPortfolioRules(activePortfolioId);
     if (tradingLoaded) loadTradeTable();
