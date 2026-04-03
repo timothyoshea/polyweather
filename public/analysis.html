@@ -1441,16 +1441,61 @@ function buildBreakdowns(resolved) {
   };
 }
 
-async function generateAI() {
-  const btn = document.getElementById('ai-btn');
+// Chat conversation state
+let chatMessages = [];       // {role, content} array for API
+let chatInitialContent = ''; // first user message with trade data
+
+function clearChat() {
+  chatMessages = [];
+  chatInitialContent = '';
+  const thread = document.getElementById('ai-chat-thread');
   const result = document.getElementById('ai-result');
   const followup = document.getElementById('ai-followup');
+  const clearBtn = document.getElementById('ai-clear-btn');
+  if (thread) thread.innerHTML = '';
+  if (result) { result.innerHTML = ''; result.style.display = 'none'; }
+  if (followup) followup.style.display = 'none';
+  if (clearBtn) clearBtn.style.display = 'none';
+}
+
+function appendChatBubble(role, content, isLoading) {
+  const thread = document.getElementById('ai-chat-thread');
+  if (!thread) return;
+  const div = document.createElement('div');
+  div.className = 'ai-chat-msg ' + (role === 'user' ? 'user-msg' : 'assistant-msg');
+  const roleLabel = role === 'user' ? 'You' : 'Claude Opus';
+  if (isLoading) {
+    div.innerHTML = '<div class="chat-role">' + roleLabel + '</div><span class="spinner"></span> Thinking...';
+    div.id = 'chat-loading';
+  } else {
+    const rendered = role === 'user' ? '<p>' + escHtml(content) + '</p>' : renderMarkdown(content);
+    div.innerHTML = '<div class="chat-role">' + roleLabel + '</div>' + rendered;
+  }
+  thread.appendChild(div);
+  div.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  return div;
+}
+
+function removeLoadingBubble() {
+  const el = document.getElementById('chat-loading');
+  if (el) el.remove();
+}
+
+async function generateAI() {
+  const btn = document.getElementById('ai-btn');
+  const followup = document.getElementById('ai-followup');
+  const clearBtn = document.getElementById('ai-clear-btn');
   const dateRange = getDateLabel();
+
+  // Clear any previous chat
+  clearChat();
 
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Analyzing ' + dateRange + '...';
-  result.style.display = 'block';
-  result.innerHTML = '<span class="spinner"></span> Generating analysis for <strong>' + dateRange + '</strong>...';
+
+  // Show user's initial request in chat
+  appendChatBubble('user', 'Analyze my trades: ' + dateRange);
+  appendChatBubble('assistant', '', true);
 
   try {
     const resolved = filteredTrades.filter(t => t.status === 'won' || t.status === 'lost');
@@ -1461,41 +1506,83 @@ async function generateAI() {
       body: JSON.stringify({ trades: resolved, date_range: dateRange, breakdowns, portfolio_id: currentPortfolioId || undefined })
     });
     const data = await res.json();
-    result.innerHTML = renderMarkdown(data.analysis || data.text || data.message || JSON.stringify(data));
+    const analysis = data.analysis || data.text || data.message || JSON.stringify(data);
+
+    removeLoadingBubble();
+    appendChatBubble('assistant', analysis);
+
+    // Store conversation state — the backend built the full first user message with trade data,
+    // so we reconstruct it here for follow-ups
+    chatInitialContent = '__INITIAL__'; // marker: backend will rebuild from trades
+    chatMessages = [
+      { role: 'user', content: chatInitialContent },
+      { role: 'assistant', content: analysis }
+    ];
+
     followup.style.display = 'flex';
+    if (clearBtn) clearBtn.style.display = '';
+    document.getElementById('ai-question').focus();
     loadAIHistory();
   } catch (e) {
-    result.innerHTML = '<span style="color:var(--red)">Error: ' + escHtml(e.message) + '</span>';
+    removeLoadingBubble();
+    appendChatBubble('assistant', 'Error: ' + e.message);
   }
 
   btn.disabled = false;
-  btn.textContent = `Analyze: ${dateRange}`;
+  btn.textContent = 'Analyze: ' + dateRange;
 }
 
 async function askFollowup() {
   const input = document.getElementById('ai-question');
-  const result = document.getElementById('ai-result');
   const question = input.value.trim();
   if (!question) return;
 
   input.value = '';
-  result.innerHTML += '<hr><span class="spinner"></span> Thinking...';
+
+  // Show user question in chat
+  appendChatBubble('user', question);
+  appendChatBubble('assistant', '', true);
 
   try {
     const resolved = filteredTrades.filter(t => t.status === 'won' || t.status === 'lost');
     const dateRange = getDateLabel();
     const breakdowns = buildBreakdowns(resolved);
+
+    // Build full message history for the API
+    // First message is always the trade data (rebuilt by backend), rest are conversation
+    const apiMessages = [];
+
+    // Send trades + breakdowns so backend can build the initial context,
+    // plus the full conversation history for multi-turn
     const res = await fetch('/api/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ trades: resolved, question, date_range: dateRange, breakdowns, portfolio_id: currentPortfolioId || undefined })
+      body: JSON.stringify({
+        trades: resolved,
+        date_range: dateRange,
+        breakdowns,
+        portfolio_id: currentPortfolioId || undefined,
+        messages: [
+          ...chatMessages,
+          { role: 'user', content: question }
+        ]
+      })
     });
     const data = await res.json();
-    const answer = renderMarkdown(data.analysis || data.text || data.message || JSON.stringify(data));
-    result.innerHTML = result.innerHTML.replace(/<span class="spinner"><\/span> Thinking\.\.\./, '') + answer;
+    const answer = data.analysis || data.text || data.message || JSON.stringify(data);
+
+    removeLoadingBubble();
+    appendChatBubble('assistant', answer);
+
+    // Update conversation state
+    chatMessages.push({ role: 'user', content: question });
+    chatMessages.push({ role: 'assistant', content: answer });
+
+    document.getElementById('ai-question').focus();
     loadAIHistory();
   } catch (e) {
-    result.innerHTML = result.innerHTML.replace(/<span class="spinner"><\/span> Thinking\.\.\./, '<span style="color:var(--red)">Error: ' + escHtml(e.message) + '</span>');
+    removeLoadingBubble();
+    appendChatBubble('assistant', 'Error: ' + e.message);
   }
 }
 
