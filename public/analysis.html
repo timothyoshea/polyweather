@@ -762,16 +762,22 @@ async function loadPortfolios() {
     const portfolios = data.portfolios || data || [];
     analysisAllPortfolios = portfolios;
     const sel = document.getElementById('portfolio-select');
+    const sidebarSel = document.getElementById('sidebar-pf-select');
     sel.innerHTML = '<option value="" disabled>Select a portfolio...</option>';
+    if (sidebarSel) sidebarSel.innerHTML = '';
     portfolios.forEach(p => {
       const opt = document.createElement('option');
       opt.value = p.id;
       opt.textContent = p.name || p.id;
       sel.appendChild(opt);
+      if (sidebarSel) sidebarSel.appendChild(opt.cloneNode(true));
       portfolioMap[p.id] = p.name || p.id;
     });
     if (portfolios.length > 0) {
-      sel.value = portfolios[0].id;
+      const saved = localStorage.getItem('pw-portfolio-id');
+      const startId = (saved && portfolios.some(p => p.id === saved)) ? saved : portfolios[0].id;
+      sel.value = startId;
+      if (sidebarSel) sidebarSel.value = startId;
       onPortfolioChange();
     } else {
       document.getElementById('app').innerHTML = '<div class="empty-state">No portfolios found</div>';
@@ -780,6 +786,13 @@ async function loadPortfolios() {
   } catch (e) {
     console.error('Failed to load portfolios:', e);
   }
+}
+
+function onSidebarPortfolioChange() {
+  const sidebarSel = document.getElementById('sidebar-pf-select');
+  if (!sidebarSel) return;
+  document.getElementById('portfolio-select').value = sidebarSel.value;
+  onPortfolioChange();
 }
 
 function updateAnalysisPortfolioDisplay() {
