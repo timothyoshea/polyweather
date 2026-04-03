@@ -1603,6 +1603,23 @@
     const liveBtn = document.getElementById('mode-live-btn');
     const status = document.getElementById('trade-mode-status');
     const walletInfo = document.getElementById('live-wallet-info');
+    const badge = document.getElementById('trade-mode-badge');
+
+    // Top bar badge
+    if (badge) {
+      badge.style.display = 'inline';
+      if (mode === 'live') {
+        badge.textContent = 'LIVE';
+        badge.style.background = 'rgba(0,230,118,0.15)';
+        badge.style.color = 'var(--green)';
+        badge.style.border = '1px solid rgba(0,230,118,0.3)';
+      } else {
+        badge.textContent = 'PAPER';
+        badge.style.background = 'rgba(79,195,247,0.1)';
+        badge.style.color = 'var(--cyan)';
+        badge.style.border = '1px solid rgba(79,195,247,0.2)';
+      }
+    }
 
     if (mode === 'live') {
       liveBtn.style.background = 'rgba(0,230,118,0.15)';
