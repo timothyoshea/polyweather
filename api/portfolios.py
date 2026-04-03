@@ -47,7 +47,7 @@ class handler(BaseHTTPRequestHandler):
                 self._respond(200, data[0] if data else None)
             else:
                 data = _request(
-                    f"{SUPABASE_URL}/rest/v1/portfolios?select=id,name,description,active,created_at,starting_capital_usd,unlimited_capital&order=created_at.asc"
+                    f"{SUPABASE_URL}/rest/v1/portfolios?select=id,name,description,active,created_at,starting_capital_usd,unlimited_capital,trade_mode,wallet_address&order=created_at.asc"
                 )
                 self._respond(200, data)
         except Exception as e:
@@ -65,6 +65,8 @@ class handler(BaseHTTPRequestHandler):
                 "active": body.get("active", True),
                 "starting_capital_usd": body.get("starting_capital_usd", 0),
                 "unlimited_capital": body.get("unlimited_capital", True),
+                "trade_mode": body.get("trade_mode", "paper"),
+                "wallet_address": body.get("wallet_address"),
             }
             result = _request(
                 f"{SUPABASE_URL}/rest/v1/portfolios",
@@ -87,7 +89,7 @@ class handler(BaseHTTPRequestHandler):
             body = json.loads(self.rfile.read(content_length).decode("utf-8"))
 
             update = {}
-            for key in ("name", "description", "strategy", "active"):
+            for key in ("name", "description", "strategy", "active", "trade_mode", "wallet_address"):
                 if key in body:
                     update[key] = body[key]
             update["updated_at"] = datetime.utcnow().isoformat() + "Z"

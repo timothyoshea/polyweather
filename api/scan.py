@@ -133,16 +133,27 @@ def run_scan_and_save(mode="all"):
                 portfolios = json.loads(pf_resp.read().decode("utf-8"))
 
             if portfolios:
+                from live_trading import execute_live_trades
+
                 for pf in portfolios:
                     try:
                         pf_opps = copy.deepcopy(opps)
-                        open_paper_trades(
-                            pf_opps, scan_id, SUPABASE_URL, SUPABASE_SERVICE_KEY,
-                            portfolio_id=pf["id"], portfolio=pf
-                        )
-                        print(f"[INFO] Opened trades for portfolio: {pf.get('name', pf['id'])}")
+                        trade_mode = pf.get("trade_mode", "paper")
+
+                        if trade_mode == "live":
+                            execute_live_trades(
+                                pf_opps, scan_id, SUPABASE_URL, SUPABASE_SERVICE_KEY,
+                                portfolio_id=pf["id"], portfolio=pf
+                            )
+                            print(f"[INFO] Live trades for portfolio: {pf.get('name', pf['id'])}")
+                        else:
+                            open_paper_trades(
+                                pf_opps, scan_id, SUPABASE_URL, SUPABASE_SERVICE_KEY,
+                                portfolio_id=pf["id"], portfolio=pf
+                            )
+                            print(f"[INFO] Paper trades for portfolio: {pf.get('name', pf['id'])}")
                     except Exception as pf_err:
-                        print(f"[WARN] Paper trading error for {pf.get('name')}: {pf_err}")
+                        print(f"[WARN] Trading error for {pf.get('name')}: {pf_err}")
             else:
                 # Fallback: no portfolios, open without portfolio context
                 open_paper_trades(opps, scan_id, SUPABASE_URL, SUPABASE_SERVICE_KEY)
