@@ -1240,21 +1240,29 @@
     </div>
   </div>
 
-  <!-- Trade Mode -->
-  <div id="trade-mode-card" style="background:var(--card);border:1px solid var(--card-border);border-radius:10px;margin:20px 24px;padding:20px 24px;">
-    <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;color:var(--text);">Trade Mode</h3>
-    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <button id="mode-paper-btn" onclick="setTradeMode('paper')" style="padding:8px 20px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--mono);transition:all 0.15s;border:1px solid var(--card-border);background:var(--card);color:var(--text2);">Paper</button>
-        <button id="mode-live-btn" onclick="setTradeMode('live')" style="padding:8px 20px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--mono);transition:all 0.15s;border:1px solid var(--card-border);background:var(--card);color:var(--text2);">Live</button>
+  <!-- Go Live -->
+  <div id="go-live-card" style="background:var(--card);border:1px solid var(--card-border);border-radius:10px;margin:20px 24px;padding:20px 24px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <h3 style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px;">Go Live</h3>
+        <p id="go-live-desc" style="font-size:12px;color:var(--text2);margin:0;">Create a live trading portfolio based on this paper portfolio's strategy.</p>
       </div>
-      <div id="trade-mode-status" style="font-size:12px;color:var(--text2);font-family:var(--mono);"></div>
+      <button id="go-live-btn" onclick="openLiveWizard()" style="padding:10px 24px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--mono);border:1px solid rgba(0,230,118,0.3);background:rgba(0,230,118,0.1);color:var(--green);transition:all 0.15s;white-space:nowrap;">Create Live Portfolio</button>
     </div>
-    <div id="live-wallet-info" style="display:none;margin-top:14px;padding:12px 16px;background:rgba(79,195,247,0.06);border:1px solid rgba(79,195,247,0.15);border-radius:8px;">
-      <div style="display:flex;gap:24px;flex-wrap:wrap;font-size:13px;">
+    <!-- For live portfolios, show wallet status instead -->
+    <div id="live-portfolio-status" style="display:none;margin-top:14px;padding:12px 16px;background:rgba(0,230,118,0.06);border:1px solid rgba(0,230,118,0.15);border-radius:8px;">
+      <div style="display:flex;gap:24px;flex-wrap:wrap;font-size:13px;align-items:center;">
         <div><span style="color:var(--text2);">Wallet:</span> <span id="wallet-addr" style="color:var(--text);font-family:var(--mono);font-size:11px;">--</span></div>
         <div><span style="color:var(--text2);">USDC.e Balance:</span> <strong id="wallet-balance" style="color:var(--green);">--</strong></div>
+        <div><span style="color:var(--text2);">Status:</span> <strong style="color:var(--green);">Active</strong></div>
       </div>
+    </div>
+  </div>
+
+  <!-- Live Wizard Modal -->
+  <div id="live-wizard-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:none;align-items:center;justify-content:center;">
+    <div id="live-wizard" style="background:var(--bg);border:1px solid var(--card-border);border-radius:14px;max-width:600px;width:90%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.6);">
+      <div id="live-wizard-content"></div>
     </div>
   </div>
 
