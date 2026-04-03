@@ -493,21 +493,17 @@ async function loadPortfolios() {
     const portfolios = data.portfolios || data || [];
     pnlAllPortfolios = portfolios;
     const sel = $('#portfolio-select');
-    const sidebarSel = document.getElementById('sidebar-pf-select');
     sel.innerHTML = '<option value="" disabled>Select a portfolio...</option>';
-    if (sidebarSel) sidebarSel.innerHTML = '';
     portfolios.forEach(p => {
       const opt = document.createElement('option');
       opt.value = p.id;
       opt.textContent = p.name;
       sel.appendChild(opt);
-      if (sidebarSel) sidebarSel.appendChild(opt.cloneNode(true));
     });
     if (portfolios.length > 0) {
       const saved = localStorage.getItem('pw-portfolio-id');
       const startId = (saved && portfolios.some(p => p.id === saved)) ? saved : portfolios[0].id;
       sel.value = startId;
-      if (sidebarSel) sidebarSel.value = startId;
       onPortfolioChange();
     } else {
       $('#app').innerHTML = '<div class="loading">No portfolios found</div>';
