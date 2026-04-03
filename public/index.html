@@ -1153,6 +1153,21 @@
 <!-- ── Settings Section ─────────────────────────── -->
 <div id="settings-section" style="display:none;">
 
+  <!-- System Status -->
+  <div style="background:var(--card);border:1px solid var(--card-border);border-radius:10px;margin:20px 24px;padding:20px 24px;">
+    <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;color:var(--text);">System Status</h3>
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="status-dot" id="settings-status-dot"></div>
+        <span id="settings-status-text" style="color:var(--text2);font-size:13px;">Ready to scan</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);">
+        <span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;"></span>
+        <span>Open-Meteo Commercial API</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Scanner Tools -->
   <div style="background:var(--card);border:1px solid var(--card-border);border-radius:10px;margin:20px 24px;padding:20px 24px;">
     <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;color:var(--text);">Scanner Tools</h3>
