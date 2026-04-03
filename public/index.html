@@ -1449,6 +1449,31 @@
       const selected = sel.options[sel.selectedIndex];
       nameEl.textContent = selected ? selected.textContent : '--';
     }
+    // Load capital status
+    loadCapitalStatus();
+  }
+
+  async function loadCapitalStatus() {
+    const card = document.getElementById('capital-status-card');
+    if (!activePortfolioId || !card) return;
+    try {
+      const res = await fetch('/api/trades?capital=true&portfolio_id=' + encodeURIComponent(activePortfolioId) + '&limit=1');
+      const data = await res.json();
+      if (data && data.capital) {
+        const c = data.capital;
+        const isUnlimited = c.unlimited;
+        document.getElementById('cap-starting').innerHTML = isUnlimited
+          ? '<span style="color:var(--amber);">Unlimited</span>'
+          : '$' + c.starting.toFixed(2);
+        document.getElementById('cap-deployed').textContent = '$' + c.deployed.toFixed(2);
+        document.getElementById('cap-available').innerHTML = isUnlimited
+          ? 'N/A'
+          : '$' + c.available.toFixed(2);
+        card.style.display = '';
+      }
+    } catch (e) {
+      console.error('Failed to load capital status:', e);
+    }
   }
 
   async function createNewPortfolio() {
