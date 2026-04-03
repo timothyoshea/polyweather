@@ -31,8 +31,10 @@ class handler(BaseHTTPRequestHandler):
                 })
                 return
 
-            # Check if portfolio is live mode
-            if portfolio_id and SUPABASE_URL and SUPABASE_ANON_KEY:
+            force = params.get("force", [None])[0] == "true"
+
+            # Check if portfolio is live mode (skip if force=true, for wizard)
+            if not force and portfolio_id and SUPABASE_URL and SUPABASE_ANON_KEY:
                 pf_url = f"{SUPABASE_URL}/rest/v1/portfolios?id=eq.{portfolio_id}&select=trade_mode,wallet_address"
                 pf_req = urllib.request.Request(pf_url, headers={
                     "apikey": SUPABASE_ANON_KEY,
