@@ -219,7 +219,7 @@ def call_claude(trades_json, user_question=None, breakdowns=None, date_range=Non
         method="POST",
     )
 
-    with urllib.request.urlopen(req, timeout=120) as resp:
+    with urllib.request.urlopen(req, timeout=240) as resp:
         data = json.loads(resp.read().decode("utf-8"))
         # Extract text from content blocks
         text_parts = [b["text"] for b in data.get("content", []) if b.get("type") == "text"]
