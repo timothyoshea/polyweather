@@ -454,6 +454,11 @@ function renderTable(metrics) {
     { key: 'worstTrade', label: 'Worst Trade', format: v => '$' + v.toFixed(2), best: 'max' },
     { key: 'ageDays', label: 'Age (days)', format: v => v.toString(), best: null },
     { key: 'sharpe', label: 'Sharpe', format: v => v.toFixed(2), best: 'max' },
+    { key: 'startingCapital', label: 'Starting Capital', format: (v, m) => m.unlimitedCapital ? 'Unlimited' : '$' + v.toFixed(2), best: null },
+    { key: 'currentValue', label: 'Current Value', format: (v, m) => m.unlimitedCapital ? 'N/A' : '$' + v.toFixed(2), best: 'max' },
+    { key: 'deployed', label: 'Deployed', format: v => '$' + v.toFixed(2), best: null },
+    { key: 'available', label: 'Available', format: (v, m) => m.unlimitedCapital ? 'N/A' : '$' + v.toFixed(2), best: null },
+    { key: 'utilizationPct', label: 'Utilization %', format: (v, m) => m.unlimitedCapital ? 'Unlimited' : v.toFixed(1) + '%', best: null },
   ];
 
   // Find best value for each column
