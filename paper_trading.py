@@ -98,6 +98,55 @@ def _score_and_sort_opportunities(opps, strategy):
     return opps
 
 
+def _check_trading_hours(strategy):
+    """Check if current UTC time is within allowed trading hours.
+
+    Strategy can include:
+        "trading_hours": {
+            "enabled": true,
+            "allowed_windows": [{"start": "06:00", "end": "22:00"}],
+            "blackout_windows": [{"start": "14:00", "end": "14:30"}]
+        }
+
+    Returns:
+        (allowed: bool, reason: str)
+    """
+    trading_hours = strategy.get("trading_hours")
+    if not trading_hours or not trading_hours.get("enabled", False):
+        return True, "no restrictions"
+
+    from datetime import timezone
+    now = datetime.now(timezone.utc)
+    current_minutes = now.hour * 60 + now.minute
+    current_time_str = now.strftime("%H:%M")
+
+    def _parse_time(t):
+        parts = t.strip().split(":")
+        return int(parts[0]) * 60 + int(parts[1])
+
+    def _in_window(start_str, end_str):
+        start = _parse_time(start_str)
+        end = _parse_time(end_str)
+        if start <= end:
+            return start <= current_minutes < end
+        else:
+            return current_minutes >= start or current_minutes < end
+
+    blackout_windows = trading_hours.get("blackout_windows", [])
+    for bw in blackout_windows:
+        if _in_window(bw.get("start", "00:00"), bw.get("end", "00:00")):
+            return False, f"blackout {bw['start']}-{bw['end']} (now={current_time_str} UTC)"
+
+    allowed_windows = trading_hours.get("allowed_windows", [])
+    if allowed_windows:
+        for aw in allowed_windows:
+            if _in_window(aw.get("start", "00:00"), aw.get("end", "23:59")):
+                return True, f"allowed {aw['start']}-{aw['end']}"
+        return False, f"outside allowed windows (now={current_time_str} UTC)"
+
+    return True, "no restrictions"
+
+
 def open_paper_trades(opps, scan_id, supabase_url, supabase_service_key,
                       portfolio_id=None, portfolio=None):
     """Open paper trades for scanner opportunities with liquidity data.
@@ -119,6 +168,14 @@ def open_paper_trades(opps, scan_id, supabase_url, supabase_service_key,
         "Content-Type": "application/json",
         "Prefer": "return=representation",
     }
+
+    # --- Check trading hours ---
+    strategy = (portfolio or {}).get("strategy", {})
+    hours_ok, hours_reason = _check_trading_hours(strategy)
+    if not hours_ok:
+        pf_name = (portfolio or {}).get("name", str(portfolio_id))
+        print(f"[PAPER] Skipping {pf_name} — {hours_reason}")
+        return
 
     # --- Capital management setup ---
     use_capital_mgmt = (
