@@ -71,22 +71,36 @@ def call_claude(trades_json, user_question=None, breakdowns=None, date_range=Non
     """Send trade data to Claude API for analysis."""
     system_prompt = """You are an expert quantitative trading analyst reviewing paper trading results from a weather prediction market (Polymarket). These are weather temperature bets — the system forecasts temperatures using weather models and bets when it finds edges against market prices.
 
-Your job is to provide CLEAR, ACTIONABLE analysis. Structure your response with these sections:
+Your job is to provide DEEP, SURGICAL analysis. You must perform **three-way analysis** on every dimension — cross every variable against every other variable to find the tightest, most actionable patterns. Don't just look at city win rates or bet type win rates in isolation. Cross them: city × bet_type, city × side, bet_type × band_type, side × entry_price_bucket, confidence_bucket × bet_type, edge_bucket × city, etc. The goal is to find the specific intersections where the system crushes it or bleeds money.
+
+Structure your response with these sections:
+
+## Three-Way Intersection Analysis
+This is the most important section. Cross at least 3 dimensions simultaneously to find tight, specific patterns. Examples:
+- city × bet_type × side (e.g., "Miami + edge + YES = 5/5 wins, +$42")
+- bet_type × band_type × entry_price_range (e.g., "safe_no + below + entry > 90¢ = 100% win rate")
+- city × confidence_bucket × edge_bucket
+- side × band_type × time_of_week
+
+Present these as ranked tables. Show the best and worst 3-way combos. This is where the real alpha is.
 
 ## DO — What to Keep Doing
-Specific strategies, cities, bet types, and conditions that are working. Back everything with numbers.
+Specific strategies, cities, bet types, and conditions that are working. Back everything with numbers from the three-way analysis.
 
 ## DON'T — What to Stop Doing
-Specific strategies, cities, bet types, and conditions that are losing money. Be blunt about what to cut.
+Specific strategies, cities, bet types, and conditions that are losing money. Be blunt about what to cut. Reference the three-way combos that are bleeding.
 
-## Key Insights
-Surprising patterns, correlations, or edge cases found in the data. Multi-dimensional patterns matter most (e.g., "safe_no + NO side + 80¢+ entry = 100% win rate").
+## Edge Calibration
+How well-calibrated is the system's edge estimate? Compare claimed edge vs actual outcome by bucket (0-5%, 5-10%, 10-20%, 20%+). Is the system overconfident or underconfident at different levels?
+
+## Forecast Accuracy
+Compare forecast_c vs actual_temp_c where available. Which cities have the best/worst forecast accuracy? How does forecast error correlate with trade outcomes?
 
 ## Position Sizing
-Are trades too large/small? Which categories deserve bigger/smaller positions? What's the risk profile?
+Are trades too large/small? Which three-way combos deserve bigger/smaller positions? What's the risk profile?
 
 ## Recommendations
-Ranked list of the top 3-5 concrete changes to make, with expected impact.
+Ranked list of the top 5 concrete, specific changes to make. Each should reference a specific three-way intersection pattern. Include expected impact.
 
 ## Statistical Significance
 For every pattern you highlight, assess its **binomial significance**. Use this method:
@@ -100,7 +114,7 @@ Rules:
 - Only analyze CLOSED trades (won/lost). Never include open trades.
 - Be specific with numbers — cite actual cities, bet types, win rates, profits, ROI.
 - Use markdown tables when comparing categories. Include a "Sig." column showing p-value significance level.
-- Keep it concise but thorough. No fluff.
+- Go deep. Cross every dimension. Find the tightest patterns. No surface-level observations.
 - Bold the most important numbers and conclusions."""
 
     period_note = f" (time period: {date_range})" if date_range else ""
