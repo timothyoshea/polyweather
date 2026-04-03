@@ -299,23 +299,78 @@ def get_web3():
 @app.route("/set-allowances", methods=["POST"])
 @require_auth
 def set_allowances():
-    """Use py_clob_client's built-in method to set token allowances."""
+    """Approve Polymarket contracts to spend USDC.e using raw web3 with debug info."""
     try:
+        w3, connected_rpc = get_web3()
+        if w3 is None:
+            return jsonify({"error": "Cannot connect to any Polygon RPC"}), 500
+
+        account = w3.eth.account.from_key(PRIVATE_KEY)
+        address = account.address
+
+        usdc_e = w3.to_checksum_address(USDC_E_ADDR)
+
+        # Full USDC.e ABI with approve
+        usdc_contract = w3.eth.contract(address=usdc_e, abi=ERC20_ABI)
+
+        # Check current state
+        balance = usdc_contract.functions.balanceOf(address).call()
+
+        spenders = {k: w3.to_checksum_address(v) for k, v in POLYMARKET_SPENDERS.items()}
+
+        results = []
+        for name, spender in spenders.items():
+            current = usdc_contract.functions.allowance(address, spender).call()
+
+            # Try to estimate gas first to see if it would revert
+            try:
+                gas_est = usdc_contract.functions.approve(spender, 2**256 - 1).estimate_gas({"from": address})
+                estimation = {"gas_estimate": gas_est}
+            except Exception as est_err:
+                estimation = {"gas_estimate_error": str(est_err)}
+
+            # Try sending with higher gas
+            try:
+                nonce = w3.eth.get_transaction_count(address, "pending")
+                tx = usdc_contract.functions.approve(spender, 2**256 - 1).build_transaction({
+                    "from": address, "nonce": nonce,
+                    "gasPrice": w3.eth.gas_price, "gas": 200000, "chainId": 137,
+                })
+                signed = account.sign_transaction(tx)
+                tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
+                receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=60)
+
+                new_allowance = usdc_contract.functions.allowance(address, spender).call()
+
+                results.append({
+                    "spender": name,
+                    "current_allowance_before": str(current),
+                    "tx_status": receipt["status"],
+                    "gas_used": receipt["gasUsed"],
+                    "tx_hash": tx_hash.hex(),
+                    "new_allowance": str(new_allowance),
+                    **estimation,
+                })
+            except Exception as tx_err:
+                results.append({
+                    "spender": name,
+                    "current_allowance_before": str(current),
+                    "error": str(tx_err),
+                    **estimation,
+                })
+
+        # Final CLOB balance check
         client = get_client()
-
-        # Set allowance for collateral (USDC.e)
-        result_collateral = client.update_balance_allowance(
-            params=BalanceAllowanceParams(asset_type=AssetType.COLLATERAL)
-        )
-
-        # Check balance after
-        bal = client.get_balance_allowance(
+        clob_bal = client.get_balance_allowance(
             params=BalanceAllowanceParams(asset_type=AssetType.COLLATERAL)
         )
 
         return jsonify({
-            "collateral_result": result_collateral,
-            "balance_after": bal,
+            "address": address,
+            "rpc": connected_rpc,
+            "usdc_e_balance_raw": str(balance),
+            "results": results,
+            "clob_balance_after": clob_bal,
         })
     except Exception as e:
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
