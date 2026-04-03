@@ -158,7 +158,6 @@ def execute_live_trades(opps, scan_id, supabase_url, supabase_service_key,
 
     if use_capital_mgmt:
         starting_capital = float(portfolio.get("starting_capital_usd", 0))
-        strategy = portfolio.get("strategy", {})
         cap_mgmt = strategy.get("capital_management", {})
         max_single_trade_usd = float(cap_mgmt.get("max_single_trade_usd", 999999))
         max_single_trade_pct = float(cap_mgmt.get("max_single_trade_pct", 100))
@@ -187,12 +186,17 @@ def execute_live_trades(opps, scan_id, supabase_url, supabase_service_key,
         current_capital = starting_capital + realized_pnl
         available = current_capital - deployed
 
+        capital_info = {
+            "starting": starting_capital, "realized_pnl": realized_pnl,
+            "current": current_capital, "deployed": deployed, "available": available,
+        }
         print(f"[LIVE CAPITAL] starting=${starting_capital:.2f} current=${current_capital:.2f} "
               f"deployed=${deployed:.2f} available=${available:.2f}")
 
+        _log_execution(supabase_url, headers, portfolio_id=portfolio_id,
+                       action="capital_snapshot", response_payload=capital_info)
+
         opps = _score_and_sort_opportunities(opps, strategy)
-    else:
-        strategy = (portfolio or {}).get("strategy", {})
 
     # --- Strategy filters (same as paper_trading) ---
     allowed_sides = strategy.get("allowed_sides")
