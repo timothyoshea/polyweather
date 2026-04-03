@@ -219,11 +219,14 @@ def call_claude(trades_json, user_question=None, breakdowns=None, date_range=Non
         method="POST",
     )
 
-    with urllib.request.urlopen(req, timeout=240) as resp:
-        data = json.loads(resp.read().decode("utf-8"))
-        # Extract text from content blocks
-        text_parts = [b["text"] for b in data.get("content", []) if b.get("type") == "text"]
-        return "\n".join(text_parts)
+    try:
+        with urllib.request.urlopen(req, timeout=240) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            text_parts = [b["text"] for b in data.get("content", []) if b.get("type") == "text"]
+            return "\n".join(text_parts)
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode("utf-8", errors="replace")
+        raise Exception(f"Claude API error {e.code}: {error_body[:500]}")
 
 
 class handler(BaseHTTPRequestHandler):
