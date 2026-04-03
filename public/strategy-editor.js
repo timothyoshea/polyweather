@@ -326,6 +326,103 @@ function _sectionPositionSizing(s, set) {
   return sec;
 }
 
+function _sectionCapitalManagement(s, set) {
+  const sec = _el('div', { className: 'se-section' });
+  sec.appendChild(_el('h3', { textContent: 'Capital Management' }));
+  const grid = _el('div', { className: 'se-grid' });
+  const cm = s.capital_management || {};
+
+  const cmFields = [
+    { key: 'max_portfolio_utilization_pct', label: 'max_portfolio_utilization_pct (0-100)' },
+    { key: 'max_single_trade_pct', label: 'max_single_trade_pct (0-100)' },
+    { key: 'max_single_trade_usd', label: 'max_single_trade_usd' },
+    { key: 'max_correlated_exposure_pct', label: 'max_correlated_exposure_pct (0-100)' },
+    { key: 'reserve_pct', label: 'reserve_pct (0-100)' },
+  ];
+
+  for (const f of cmFields) {
+    grid.appendChild(
+      _numberField(f.label, cm[f.key], (v) => {
+        if (!s.capital_management) s.capital_management = {};
+        s.capital_management[f.key] = v;
+        set('capital_management', { ...s.capital_management });
+      })
+    );
+  }
+
+  sec.appendChild(grid);
+  return sec;
+}
+
+function _selectField(label, options, value, onChange) {
+  const field = _el('div', { className: 'se-field' });
+  field.appendChild(_el('label', { textContent: label }));
+  const sel = _el('select', {
+    className: '',
+  });
+  sel.style.cssText = 'background:#0a0a0f;border:1px solid #1e1e2e;border-radius:6px;padding:8px 10px;color:#e0e0e0;font-family:"JetBrains Mono",monospace;font-size:13px;outline:none;';
+  for (const opt of options) {
+    const o = _el('option', { value: opt, textContent: opt });
+    if (opt === value) o.selected = true;
+    sel.appendChild(o);
+  }
+  sel.addEventListener('change', () => onChange(sel.value));
+  field.appendChild(sel);
+  return field;
+}
+
+function _sectionCapitalAllocation(s, set) {
+  const sec = _el('div', { className: 'se-section' });
+  sec.appendChild(_el('h3', { textContent: 'Capital Allocation' }));
+  const grid = _el('div', { className: 'se-grid' });
+  const ca = s.capital_allocation || {};
+
+  // sort_field dropdown
+  grid.appendChild(
+    _selectField('sort_field', ['edge', 'confidence', 'ev_per_dollar', 'composite'], ca.sort_field || 'edge', (v) => {
+      if (!s.capital_allocation) s.capital_allocation = {};
+      s.capital_allocation.sort_field = v;
+      set('capital_allocation', { ...s.capital_allocation });
+      // Toggle sort_weights visibility
+      weightsWrap.style.display = v === 'composite' ? '' : 'none';
+    })
+  );
+
+  // sort_weights (3 number inputs, shown only when composite)
+  const sw = ca.sort_weights || {};
+  const weightsWrap = _el('div', { className: 'se-field full' });
+  weightsWrap.style.display = (ca.sort_field === 'composite') ? '' : 'none';
+  weightsWrap.appendChild(_el('label', { textContent: 'sort_weights (edge / confidence / ev)' }));
+  const weightsGrid = _el('div', {});
+  weightsGrid.style.cssText = 'display:flex;gap:12px;';
+
+  const weightKeys = ['edge', 'confidence', 'ev'];
+  for (const wk of weightKeys) {
+    const inp = _el('input', {
+      type: 'number',
+      value: sw[wk] ?? '',
+      step: 'any',
+      placeholder: wk,
+    });
+    inp.style.cssText = 'background:#0a0a0f;border:1px solid #1e1e2e;border-radius:6px;padding:8px 10px;color:#e0e0e0;font-family:"JetBrains Mono",monospace;font-size:13px;outline:none;width:100%;';
+    inp.addEventListener('input', () => {
+      if (!s.capital_allocation) s.capital_allocation = {};
+      if (!s.capital_allocation.sort_weights) s.capital_allocation.sort_weights = {};
+      s.capital_allocation.sort_weights[wk] = inp.value === '' ? null : Number(inp.value);
+      set('capital_allocation', { ...s.capital_allocation });
+    });
+    const wrapper = _el('div', {}, [_el('label', { textContent: wk, className: '' }), inp]);
+    wrapper.style.cssText = 'flex:1;display:flex;flex-direction:column;gap:4px;';
+    wrapper.querySelector('label').style.cssText = 'font-size:11px;color:#888;font-family:"JetBrains Mono",monospace;';
+    weightsGrid.appendChild(wrapper);
+  }
+  weightsWrap.appendChild(weightsGrid);
+  grid.appendChild(weightsWrap);
+
+  sec.appendChild(grid);
+  return sec;
+}
+
 function _sectionNotes(s, set) {
   const sec = _el('div', { className: 'se-section' });
   sec.appendChild(_el('h3', { textContent: 'Notes' }));
