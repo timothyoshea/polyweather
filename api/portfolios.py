@@ -47,7 +47,7 @@ class handler(BaseHTTPRequestHandler):
                 self._respond(200, data[0] if data else None)
             else:
                 data = _request(
-                    f"{SUPABASE_URL}/rest/v1/portfolios?select=id,name,description,active,created_at&order=created_at.asc"
+                    f"{SUPABASE_URL}/rest/v1/portfolios?select=id,name,description,active,created_at,starting_capital_usd,unlimited_capital&order=created_at.asc"
                 )
                 self._respond(200, data)
         except Exception as e:
