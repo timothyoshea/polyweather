@@ -1392,9 +1392,12 @@
       const portfolios = await resp.json();
       allPortfolios = portfolios || [];
       const sel = document.getElementById('portfolio-select');
+      const sidebarSel = document.getElementById('sidebar-pf-select');
       sel.innerHTML = '';
+      if (sidebarSel) sidebarSel.innerHTML = '';
       if (!portfolios || !portfolios.length) {
         sel.innerHTML = '<option value="">No portfolios</option>';
+        if (sidebarSel) sidebarSel.innerHTML = '<option value="">No portfolios</option>';
         document.getElementById('portfolio-name-display').textContent = 'No portfolios';
         return;
       }
@@ -1402,17 +1405,31 @@
         const opt = document.createElement('option');
         opt.value = p.id;
         opt.textContent = p.name || ('Portfolio ' + p.id);
-        if (p.is_active) opt.selected = true;
         sel.appendChild(opt);
+        if (sidebarSel) sidebarSel.appendChild(opt.cloneNode(true));
       });
-      activePortfolioId = sel.value || portfolios[0].id;
-      if (!sel.value) sel.value = activePortfolioId;
+      // Restore from localStorage or use first
+      const saved = localStorage.getItem('pw-portfolio-id');
+      if (saved && portfolios.some(p => p.id === saved)) {
+        activePortfolioId = saved;
+      } else {
+        activePortfolioId = portfolios[0].id;
+      }
+      sel.value = activePortfolioId;
+      if (sidebarSel) sidebarSel.value = activePortfolioId;
       updatePortfolioDisplay();
       loadPortfolioRules(activePortfolioId);
     } catch (e) {
       console.error('Failed to load portfolios:', e);
       document.getElementById('portfolio-name-display').textContent = 'Error';
     }
+  }
+
+  function onSidebarPortfolioChange() {
+    const sidebarSel = document.getElementById('sidebar-pf-select');
+    if (!sidebarSel) return;
+    document.getElementById('portfolio-select').value = sidebarSel.value;
+    switchPortfolio();
   }
 
   function updatePortfolioDisplay() {
