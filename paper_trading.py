@@ -256,6 +256,9 @@ def open_paper_trades(opps, scan_id, supabase_url, supabase_service_key,
                 "status": "open",
             }
 
+            if portfolio_id:
+                trade_row["portfolio_id"] = portfolio_id
+
             # Try INSERT; on conflict (city, date, band_c, side), accumulate new liquidity
             trade_id = None
             is_new_trade = False
