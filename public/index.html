@@ -1565,6 +1565,8 @@
     if (strategy.safe_no) html += ruleCard('Safe NO', strategy.safe_no);
     if (strategy.risk_filters) html += ruleCard('Risk Filters', strategy.risk_filters);
     if (strategy.position_sizing) html += ruleCard('Position Sizing', strategy.position_sizing);
+    if (strategy.capital_management) html += ruleCard('Capital Management', strategy.capital_management);
+    if (strategy.capital_allocation) html += ruleCard('Capital Allocation', strategy.capital_allocation);
     // Fallback: show all top-level keys if none of the expected ones found
     if (!html) html = ruleCard('Strategy', strategy);
     grid.innerHTML = html;
