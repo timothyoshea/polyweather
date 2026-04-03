@@ -167,9 +167,34 @@ def open_paper_trades(opps, scan_id, supabase_url, supabase_service_key,
         # Score and sort opportunities
         opps = _score_and_sort_opportunities(opps, strategy)
 
+    # --- Strategy filters (per-portfolio) ---
+    strategy = (portfolio or {}).get("strategy", {})
+    allowed_sides = strategy.get("allowed_sides")       # e.g. ["NO"]
+    allowed_bet_types = strategy.get("allowed_bet_types")  # e.g. ["safe_no", "edge"]
+    allowed_band_types = strategy.get("allowed_band_types")  # e.g. ["above", "below"]
+    blocked_cities = strategy.get("blocked_cities", [])
+    allowed_cities = strategy.get("allowed_cities", [])  # empty = all allowed
+
     count = 0
     for opp in opps:
         try:
+            # --- Strategy filters ---
+            opp_side = opp.get("side", "")
+            opp_bet_type = opp.get("bet_type", "")
+            opp_band_type = opp.get("band_type", "")
+            opp_city = opp.get("city", "")
+
+            if allowed_sides and opp_side not in allowed_sides:
+                continue
+            if allowed_bet_types and opp_bet_type not in allowed_bet_types:
+                continue
+            if allowed_band_types and opp_band_type not in allowed_band_types:
+                continue
+            if blocked_cities and opp_city in blocked_cities:
+                continue
+            if allowed_cities and opp_city not in allowed_cities:
+                continue
+
             liquidity = opp.get("liquidity")
             if not liquidity:
                 continue
