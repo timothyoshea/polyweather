@@ -780,13 +780,6 @@ async function loadPortfolios() {
   }
 }
 
-function onSidebarPortfolioChange() {
-  const sidebarSel = document.getElementById('sidebar-pf-select');
-  if (!sidebarSel) return;
-  document.getElementById('portfolio-select').value = sidebarSel.value;
-  onPortfolioChange();
-}
-
 function updateAnalysisPortfolioDisplay() {
   const sel = document.getElementById('portfolio-select');
   const nameEl = document.getElementById('portfolio-name-display');
