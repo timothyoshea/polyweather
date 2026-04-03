@@ -7,7 +7,7 @@
       "memory": 1024
     },
     "api/analyze.py": {
-      "maxDuration": 120,
+      "maxDuration": 300,
       "memory": 512
     }
   },
