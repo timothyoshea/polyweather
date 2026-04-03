@@ -331,7 +331,7 @@ def approve():
                     continue
 
                 # Send approve transaction
-                nonce = w3.eth.get_transaction_count(address)
+                nonce = w3.eth.get_transaction_count(address, "pending")
                 tx = contract.functions.approve(spender_addr, MAX_UINT256).build_transaction({
                     "from": address,
                     "nonce": nonce,
