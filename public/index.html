@@ -2075,6 +2075,7 @@
       delete strategy._newName;
       delete strategy._sourceName;
       delete strategy._startingCapital;
+      delete strategy._walletAddress;
 
       const resp = await fetch('/api/portfolios', {
         method: 'POST',
