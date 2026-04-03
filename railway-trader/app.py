@@ -254,6 +254,103 @@ def derive_creds():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/approve", methods=["POST"])
+@require_auth
+def approve():
+    """Approve Polymarket exchange contracts to spend USDC.
+
+    Sends on-chain approval transactions for:
+    - CTF Exchange (standard markets)
+    - Neg Risk Exchange (multi-outcome markets)
+    - Neg Risk Adapter
+
+    For both USDC.e and native USDC.
+    """
+    try:
+        from web3 import Web3
+
+        rpc_url = os.environ.get("POLYGON_RPC_URL", "https://polygon.llamarpc.com")
+        w3 = Web3(Web3.HTTPProvider(rpc_url))
+
+        if not w3.is_connected():
+            return jsonify({"error": "Cannot connect to Polygon RPC"}), 500
+
+        account = w3.eth.account.from_key(PRIVATE_KEY)
+        address = account.address
+
+        # ERC20 approve ABI
+        approve_abi = [{"inputs":[{"name":"spender","type":"address"},{"name":"amount","type":"uint256"}],"name":"approve","outputs":[{"name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"name":"owner","type":"address"},{"name":"spender","type":"address"}],"name":"allowance","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"name":"account","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"}]
+
+        # Token addresses
+        USDC_E = w3.to_checksum_address("0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174")
+        USDC_NATIVE = w3.to_checksum_address("0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359")
+
+        # Polymarket contract addresses
+        spenders = {
+            "CTF Exchange": w3.to_checksum_address("0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E"),
+            "Neg Risk Exchange": w3.to_checksum_address("0xC5d563A36AE78145C45a50134d48A1215220f80a"),
+            "Neg Risk Adapter": w3.to_checksum_address("0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296"),
+        }
+
+        MAX_UINT256 = 2**256 - 1
+        results = []
+
+        for token_addr, token_name in [(USDC_E, "USDC.e"), (USDC_NATIVE, "USDC")]:
+            contract = w3.eth.contract(address=token_addr, abi=approve_abi)
+            bal = contract.functions.balanceOf(address).call()
+
+            for spender_name, spender_addr in spenders.items():
+                current_allowance = contract.functions.allowance(address, spender_addr).call()
+
+                if current_allowance >= MAX_UINT256 // 2:
+                    results.append({
+                        "token": token_name,
+                        "spender": spender_name,
+                        "status": "already_approved",
+                        "allowance": str(current_allowance),
+                    })
+                    continue
+
+                # Send approve transaction
+                nonce = w3.eth.get_transaction_count(address)
+                tx = contract.functions.approve(spender_addr, MAX_UINT256).build_transaction({
+                    "from": address,
+                    "nonce": nonce,
+                    "gasPrice": w3.eth.gas_price,
+                    "gas": 60000,
+                    "chainId": 137,
+                })
+
+                signed = account.sign_transaction(tx)
+                tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
+                receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=60)
+
+                results.append({
+                    "token": token_name,
+                    "spender": spender_name,
+                    "status": "approved" if receipt["status"] == 1 else "failed",
+                    "tx_hash": tx_hash.hex(),
+                    "gas_used": receipt["gasUsed"],
+                })
+
+        # Check balances after approval
+        usdc_e_contract = w3.eth.contract(address=USDC_E, abi=approve_abi)
+        usdc_contract = w3.eth.contract(address=USDC_NATIVE, abi=approve_abi)
+
+        return jsonify({
+            "address": address,
+            "approvals": results,
+            "balances": {
+                "usdc_e": str(usdc_e_contract.functions.balanceOf(address).call() / 1e6),
+                "usdc_native": str(usdc_contract.functions.balanceOf(address).call() / 1e6),
+                "pol": str(w3.eth.get_balance(address) / 1e18),
+            },
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port, debug=True)
