@@ -131,6 +131,55 @@ class handler(BaseHTTPRequestHandler):
                 self._respond(200, data)
                 return
 
+            # Capital mode — returns capital info alongside trades
+            if params.get("capital", [None])[0] == "true" and portfolio_id:
+                # Fetch portfolio capital settings
+                portfolio = supabase_query(
+                    f"portfolios?id=eq.{portfolio_id}&select=starting_capital_usd,unlimited_capital"
+                )
+                starting = float((portfolio[0] if portfolio else {}).get("starting_capital_usd", 0) or 0)
+                unlimited = bool((portfolio[0] if portfolio else {}).get("unlimited_capital", False))
+
+                # Fetch open trades for deployed capital
+                open_trades = supabase_query(
+                    f"paper_trades?status=eq.open&portfolio_id=eq.{portfolio_id}&select=total_cost_usd"
+                )
+                deployed = sum(float(t.get("total_cost_usd", 0) or 0) for t in open_trades)
+
+                # Fetch resolved trades for realized P&L
+                resolved_trades = supabase_query(
+                    f"paper_trades?status=in.(won,lost)&portfolio_id=eq.{portfolio_id}&select=profit_usd"
+                )
+                realized_pnl = sum(float(t.get("profit_usd", 0) or 0) for t in resolved_trades)
+
+                current = starting + realized_pnl
+                available = current - deployed
+                utilization_pct = (deployed / current * 100) if current > 0 else 0.0
+
+                # Fetch the actual trades list
+                status = params.get("status", [None])[0]
+                limit = int(params.get("limit", ["100"])[0])
+                tq = f"paper_trades?select=*&order=created_at.desc{pf_filter}"
+                if status:
+                    tq += f"&status=eq.{status}"
+                tq += f"&limit={limit}"
+                trades = supabase_query(tq)
+
+                data = {
+                    "capital": {
+                        "starting": round(starting, 2),
+                        "unlimited": unlimited,
+                        "deployed": round(deployed, 2),
+                        "realized_pnl": round(realized_pnl, 2),
+                        "current": round(current, 2),
+                        "available": round(available, 2),
+                        "utilization_pct": round(utilization_pct, 2),
+                    },
+                    "trades": trades,
+                }
+                self._respond(200, data)
+                return
+
             # Summary mode
             if params.get("summary", [None])[0] == "true":
                 all_trades = supabase_query(
