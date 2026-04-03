@@ -296,6 +296,31 @@ def get_web3():
     return None, None
 
 
+@app.route("/set-allowances", methods=["POST"])
+@require_auth
+def set_allowances():
+    """Use py_clob_client's built-in method to set token allowances."""
+    try:
+        client = get_client()
+
+        # Set allowance for collateral (USDC.e)
+        result_collateral = client.update_balance_allowance(
+            params=BalanceAllowanceParams(asset_type=AssetType.COLLATERAL)
+        )
+
+        # Check balance after
+        bal = client.get_balance_allowance(
+            params=BalanceAllowanceParams(asset_type=AssetType.COLLATERAL)
+        )
+
+        return jsonify({
+            "collateral_result": result_collateral,
+            "balance_after": bal,
+        })
+    except Exception as e:
+        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+
+
 @app.route("/approve", methods=["POST"])
 @require_auth
 def approve():
