@@ -10,6 +10,7 @@ import time
 import urllib.request
 import urllib.error
 import urllib.parse
+from datetime import datetime, timezone
 from paper_trading import (
     compute_position_from_book_levels,
     _supabase_request,
@@ -23,6 +24,89 @@ LIVE_TRADING_ENABLED = os.environ.get("LIVE_TRADING_ENABLED", "false").lower() =
 
 # Polymarket fee rate (1.25% on all trades)
 POLYMARKET_FEE_RATE = 0.0125
+
+
+def _log_execution(supabase_url, headers, trade_id=None, portfolio_id=None,
+                   action="", request_payload=None, response_payload=None,
+                   error_message=None, duration_ms=None):
+    """Write an entry to the execution_log table."""
+    try:
+        row = {
+            "action": action,
+            "request_payload": request_payload,
+            "response_payload": response_payload,
+            "error_message": error_message,
+            "duration_ms": duration_ms,
+        }
+        if trade_id:
+            row["trade_id"] = trade_id
+        if portfolio_id:
+            row["portfolio_id"] = portfolio_id
+
+        url = f"{supabase_url}/rest/v1/execution_log"
+        _supabase_request(url, [row], headers)
+    except Exception as log_err:
+        print(f"[LIVE LOG] Failed to write log: {log_err}")
+
+
+def _check_trading_hours(strategy):
+    """Check if current UTC time is within allowed trading hours.
+
+    Strategy can include:
+        "trading_hours": {
+            "enabled": true,
+            "timezone": "UTC",
+            "allowed_windows": [{"start": "06:00", "end": "22:00"}],
+            "blackout_windows": [{"start": "14:00", "end": "14:30"}]
+        }
+
+    Logic:
+        1. If trading_hours not present or not enabled, allow all times.
+        2. If allowed_windows is set, current time must be in at least one window.
+        3. If blackout_windows is set, current time must NOT be in any blackout window.
+        Blackout takes priority over allowed.
+
+    Returns:
+        (allowed: bool, reason: str)
+    """
+    trading_hours = strategy.get("trading_hours")
+    if not trading_hours or not trading_hours.get("enabled", False):
+        return True, "no restrictions"
+
+    now = datetime.now(timezone.utc)
+    current_minutes = now.hour * 60 + now.minute
+    current_time_str = now.strftime("%H:%M")
+
+    def _parse_time(t):
+        """Parse 'HH:MM' to minutes since midnight."""
+        parts = t.strip().split(":")
+        return int(parts[0]) * 60 + int(parts[1])
+
+    def _in_window(start_str, end_str):
+        """Check if current time is in [start, end). Handles overnight spans."""
+        start = _parse_time(start_str)
+        end = _parse_time(end_str)
+        if start <= end:
+            return start <= current_minutes < end
+        else:
+            # Overnight: e.g. 22:00 - 06:00
+            return current_minutes >= start or current_minutes < end
+
+    # Check blackout first (takes priority)
+    blackout_windows = trading_hours.get("blackout_windows", [])
+    for bw in blackout_windows:
+        if _in_window(bw.get("start", "00:00"), bw.get("end", "00:00")):
+            return False, f"blackout window {bw['start']}-{bw['end']} (now={current_time_str} UTC)"
+
+    # Check allowed windows
+    allowed_windows = trading_hours.get("allowed_windows", [])
+    if allowed_windows:
+        for aw in allowed_windows:
+            if _in_window(aw.get("start", "00:00"), aw.get("end", "23:59")):
+                return True, f"in allowed window {aw['start']}-{aw['end']} (now={current_time_str} UTC)"
+        return False, f"outside all allowed windows (now={current_time_str} UTC)"
+
+    return True, "no restrictions"
 
 
 def execute_live_trades(opps, scan_id, supabase_url, supabase_service_key,
@@ -46,6 +130,24 @@ def execute_live_trades(opps, scan_id, supabase_url, supabase_service_key,
         "Content-Type": "application/json",
         "Prefer": "return=representation",
     }
+
+    pf_name = (portfolio or {}).get("name", str(portfolio_id))
+    strategy = (portfolio or {}).get("strategy", {})
+
+    # --- Check trading hours ---
+    hours_ok, hours_reason = _check_trading_hours(strategy)
+    if not hours_ok:
+        msg = f"[LIVE] Skipping {pf_name} — {hours_reason}"
+        print(msg)
+        _log_execution(supabase_url, headers, portfolio_id=portfolio_id,
+                       action="trading_hours_blocked",
+                       response_payload={"reason": hours_reason, "opps_count": len(opps)})
+        return
+
+    _log_execution(supabase_url, headers, portfolio_id=portfolio_id,
+                   action="scan_start",
+                   request_payload={"scan_id": scan_id, "opps_count": len(opps),
+                                    "trading_hours": hours_reason})
 
     # --- Capital management (same as paper_trading) ---
     use_capital_mgmt = (
