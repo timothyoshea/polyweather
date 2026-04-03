@@ -2054,10 +2054,14 @@
             <span style="color:var(--text2);">Blackouts:</span>
             <span style="color:var(--amber);margin-left:6px;">${th.blackout_windows.map(w => w.start + '-' + w.end).join(', ')}</span>
           </div>` : ''}
+          <div style="border-top:1px solid var(--card-border);margin-top:4px;padding-top:12px;">
+            <span style="color:var(--text2);">Wallet:</span>
+            <span style="color:var(--text);margin-left:6px;font-family:var(--mono);font-size:11px;">${s._walletAddress ? s._walletAddress.slice(0,6) + '...' + s._walletAddress.slice(-4) : 'Not set'}</span>
+          </div>
         </div>
       </div>
       <div style="margin-top:16px;padding:12px 16px;background:rgba(255,193,7,0.06);border:1px solid rgba(255,193,7,0.15);border-radius:8px;font-size:12px;color:var(--amber);">
-        This portfolio will place real orders on Polymarket with real USDC. Trades run automatically on each scanner cycle. You can deactivate it at any time from Settings.
+        This portfolio will place real orders on Polymarket with real USDC. Trades run automatically on each scanner cycle (every 10 minutes). You can deactivate it at any time from Settings.
       </div>
     `;
   }
