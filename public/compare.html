@@ -242,10 +242,24 @@
 // ── Portfolio dropdown (for navigation consistency) ──
 let portfolios = [];
 
-function onSidebarPortfolioChange() {
-  const sidebarSel = document.getElementById('sidebar-pf-select');
-  if (sidebarSel && sidebarSel.value) {
-    localStorage.setItem('pw-portfolio-id', sidebarSel.value);
+function selectPortfolio(id) {
+  localStorage.setItem('pw-portfolio-id', id);
+  const nameEl = document.getElementById('portfolio-name-display');
+  const p = portfolios.find(p => p.id === id);
+  if (nameEl) nameEl.textContent = p ? (p.name || p.id) : id;
+  document.getElementById('portfolio-picker').style.display = 'none';
+  updatePickerList(id);
+}
+
+function updatePickerList(currentId) {
+  const list = document.getElementById('portfolio-picker-list');
+  if (list) {
+    list.innerHTML = portfolios.map(p =>
+      `<div style="padding:8px 12px;cursor:pointer;border-radius:6px;font-size:13px;color:${p.id === currentId ? 'var(--cyan)' : 'var(--text)'};font-weight:${p.id === currentId ? '600' : '400'};"
+        onmouseover="this.style.background='rgba(79,195,247,0.08)'"
+        onmouseout="this.style.background=''"
+        onclick="selectPortfolio('${p.id}')">${p.name || p.id}</div>`
+    ).join('');
   }
 }
 
@@ -255,19 +269,15 @@ async function loadCompareData() {
     const resp = await fetch('/api/portfolios');
     portfolios = await resp.json();
 
-    // Populate sidebar dropdown
-    const sidebarSel = document.getElementById('sidebar-pf-select');
-    if (sidebarSel) {
-      sidebarSel.innerHTML = '<option value="">All Portfolios</option>';
-      portfolios.forEach(p => {
-        const opt = document.createElement('option');
-        opt.value = p.id;
-        opt.textContent = p.name;
-        sidebarSel.appendChild(opt);
-      });
-      const saved = localStorage.getItem('pw-portfolio-id');
-      if (saved) sidebarSel.value = saved;
+    // Populate top-bar picker
+    const saved = localStorage.getItem('pw-portfolio-id');
+    const currentId = saved || (portfolios.length > 0 ? portfolios[0].id : '');
+    const nameEl = document.getElementById('portfolio-name-display');
+    if (portfolios.length > 0) {
+      const current = portfolios.find(p => p.id === currentId) || portfolios[0];
+      if (nameEl) nameEl.textContent = current.name || current.id;
     }
+    updatePickerList(currentId);
 
     // Fetch trades for each portfolio
     const allData = await Promise.all(portfolios.map(async (p) => {
