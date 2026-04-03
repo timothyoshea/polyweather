@@ -514,13 +514,6 @@ async function loadPortfolios() {
   }
 }
 
-function onSidebarPortfolioChange() {
-  const sidebarSel = document.getElementById('sidebar-pf-select');
-  if (!sidebarSel) return;
-  $('#portfolio-select').value = sidebarSel.value;
-  onPortfolioChange();
-}
-
 function updatePnlPortfolioDisplay() {
   const sel = $('#portfolio-select');
   const nameEl = $('#portfolio-name-display');
