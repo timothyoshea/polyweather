@@ -498,7 +498,7 @@ function renderTable(metrics) {
       const isBest = col.best && metrics.length > 1 && val === bestValues[col.key];
       const bestCls = isBest ? ' best-col' : '';
 
-      return '<td class="' + cls + bestCls + '">' + col.format(val) + '</td>';
+      return '<td class="' + cls + bestCls + '">' + col.format(val, m) + '</td>';
     }).join('') + '</tr>';
   }).join('');
 }
