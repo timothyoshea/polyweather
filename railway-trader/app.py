@@ -269,11 +269,30 @@ def approve():
     try:
         from web3 import Web3
 
-        rpc_url = os.environ.get("POLYGON_RPC_URL", "https://polygon.llamarpc.com")
-        w3 = Web3(Web3.HTTPProvider(rpc_url))
+        rpc_urls = [
+            os.environ.get("POLYGON_RPC_URL", ""),
+            "https://polygon-bor-rpc.publicnode.com",
+            "https://polygon.drpc.org",
+            "https://1rpc.io/matic",
+            "https://rpc-mainnet.matic.quiknode.pro",
+        ]
 
-        if not w3.is_connected():
-            return jsonify({"error": "Cannot connect to Polygon RPC"}), 500
+        w3 = None
+        connected_rpc = None
+        for rpc_url in rpc_urls:
+            if not rpc_url:
+                continue
+            try:
+                candidate = Web3(Web3.HTTPProvider(rpc_url, request_kwargs={"timeout": 10}))
+                candidate.eth.block_number  # Force a real call
+                w3 = candidate
+                connected_rpc = rpc_url
+                break
+            except Exception:
+                continue
+
+        if w3 is None:
+            return jsonify({"error": "Cannot connect to any Polygon RPC", "tried": [r for r in rpc_urls if r]}), 500
 
         account = w3.eth.account.from_key(PRIVATE_KEY)
         address = account.address
