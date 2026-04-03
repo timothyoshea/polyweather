@@ -63,6 +63,8 @@ class handler(BaseHTTPRequestHandler):
                 "description": body.get("description", ""),
                 "strategy": body.get("strategy", {}),
                 "active": body.get("active", True),
+                "starting_capital_usd": body.get("starting_capital_usd", 0),
+                "unlimited_capital": body.get("unlimited_capital", True),
             }
             result = _request(
                 f"{SUPABASE_URL}/rest/v1/portfolios",
