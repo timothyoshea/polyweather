@@ -992,6 +992,34 @@ function renderSummary(resolved) {
   const profit = resolved.reduce((s, t) => s + (t.profit_usd || 0), 0);
   const roi = invested > 0 ? (profit / invested * 100) : 0;
 
+  // Capital & open trades info
+  const openTrades = filteredTrades.filter(t => t.status === 'open');
+  const openCount = openTrades.length;
+  const deployed = openTrades.reduce((s, t) => s + (t.total_cost_usd || 0), 0);
+
+  // Get portfolio capital info
+  const pf = analysisAllPortfolios.find(p => p.id === currentPortfolioId) || {};
+  const startingCapital = Number(pf.starting_capital_usd) || 0;
+  const unlimited = !!pf.unlimited_capital;
+  const currentValue = startingCapital + profit;
+  const available = currentValue - deployed;
+
+  let capitalRow = '';
+  if (startingCapital > 0 || !unlimited) {
+    capitalRow = `<div class="summary-row" style="margin-top:8px;">
+      <div class="summary-card"><div class="summary-label">Starting Capital</div><div class="summary-value">$${startingCapital.toLocaleString()}</div></div>
+      <div class="summary-card"><div class="summary-label">Current Value</div><div class="summary-value ${currentValue >= startingCapital ? 'profit-pos' : 'profit-neg'}">$${currentValue.toFixed(2)}</div></div>
+      <div class="summary-card"><div class="summary-label">Deployed</div><div class="summary-value" style="color:var(--amber)">$${deployed.toFixed(2)}</div></div>
+      <div class="summary-card"><div class="summary-label">Available</div><div class="summary-value">$${available.toFixed(2)}</div></div>
+      <div class="summary-card"><div class="summary-label">Open Trades</div><div class="summary-value" style="color:var(--cyan)">${openCount}</div></div>
+    </div>`;
+  } else if (openCount > 0) {
+    capitalRow = `<div class="summary-row" style="margin-top:8px;">
+      <div class="summary-card"><div class="summary-label">Open Trades</div><div class="summary-value" style="color:var(--cyan)">${openCount}</div></div>
+      <div class="summary-card"><div class="summary-label">Deployed</div><div class="summary-value" style="color:var(--amber)">$${deployed.toFixed(2)}</div></div>
+    </div>`;
+  }
+
   return `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
     <div></div>
     <button class="export-btn" onclick="exportCSV()">Export CSV</button>
@@ -1004,7 +1032,7 @@ function renderSummary(resolved) {
     <div class="summary-card"><div class="summary-label">Invested</div><div class="summary-value">$${invested.toFixed(2)}</div></div>
     <div class="summary-card"><div class="summary-label">Profit</div><div class="summary-value ${profit >= 0 ? 'profit-pos' : 'profit-neg'}">${profit >= 0 ? '+' : ''}$${profit.toFixed(2)}</div></div>
     <div class="summary-card"><div class="summary-label">ROI</div><div class="summary-value ${roi >= 0 ? 'profit-pos' : 'profit-neg'}">${roi.toFixed(1)}%</div></div>
-  </div>`;
+  </div>${capitalRow}`;
 }
 
 // ── Breakdown Panel ────────────────────────
