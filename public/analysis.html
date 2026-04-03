@@ -916,7 +916,7 @@ function render() {
   const resolved = filteredTrades.filter(t => t.status === 'won' || t.status === 'lost');
 
   if (allTrades.length === 0) {
-    app.innerHTML = '<div class="empty-state">No trades found.</div>';
+    app.innerHTML = '<div class="empty-state">No trades found for this portfolio.</div>';
     return;
   }
 
