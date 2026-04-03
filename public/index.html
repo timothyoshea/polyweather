@@ -1503,12 +1503,16 @@
     // Update picker list
     const list = document.getElementById('portfolio-picker-list');
     if (list) {
-      list.innerHTML = allPortfolios.map(p =>
-        `<div style="padding:8px 12px;cursor:pointer;border-radius:6px;font-size:13px;color:${p.id === activePortfolioId ? 'var(--cyan)' : 'var(--text)'};font-weight:${p.id === activePortfolioId ? '600' : '400'};transition:background 0.15s;"
+      list.innerHTML = allPortfolios.map(p => {
+        const isLive = p.trade_mode === 'live';
+        const badge = isLive
+          ? '<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(0,230,118,0.15);color:var(--green);margin-left:6px;">LIVE</span>'
+          : '';
+        return `<div style="padding:8px 12px;cursor:pointer;border-radius:6px;font-size:13px;color:${p.id === activePortfolioId ? 'var(--cyan)' : 'var(--text)'};font-weight:${p.id === activePortfolioId ? '600' : '400'};transition:background 0.15s;display:flex;align-items:center;"
           onmouseover="this.style.background='rgba(79,195,247,0.08)'"
           onmouseout="this.style.background=''"
-          onclick="selectPortfolio('${p.id}')">${p.name || p.id}</div>`
-      ).join('');
+          onclick="selectPortfolio('${p.id}')">${p.name || p.id}${badge}</div>`;
+      }).join('');
     }
   }
 
