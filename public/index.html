@@ -1338,6 +1338,57 @@
   <div id="content">
   </div>
 </div>
+
+<!-- ── Help & Guide ──────────────────────────── -->
+<div style="background:var(--card);border:1px solid var(--card-border);border-radius:10px;margin:20px 24px;padding:20px 24px;">
+  <h3 onclick="document.getElementById('help-content').style.display=document.getElementById('help-content').style.display==='none'?'block':'none'" style="font-size:15px;font-weight:600;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:space-between;margin:0;">
+    Help &amp; Guide
+    <span style="font-size:12px;color:var(--text2);">Click to expand</span>
+  </h3>
+  <div id="help-content" style="display:none;margin-top:16px;font-size:13px;line-height:1.7;color:var(--text2);">
+
+    <h4 style="color:var(--cyan);font-size:14px;font-weight:600;margin:0 0 6px 0;">What PolyWeather Does</h4>
+    <ul style="margin:0 0 16px 18px;padding:0;">
+      <li>Scans Polymarket weather temperature prediction markets every 10 minutes</li>
+      <li>Compares market prices against multi-model weather forecasts (Open-Meteo, NOAA)</li>
+      <li>Identifies pricing edges and opens paper trades automatically</li>
+    </ul>
+
+    <h4 style="color:var(--cyan);font-size:14px;font-weight:600;margin:0 0 6px 0;">Bet Types</h4>
+    <ul style="margin:0 0 16px 18px;padding:0;">
+      <li><strong style="color:var(--green);">Sure Bets</strong> &mdash; High probability (&gt;92%), low price &mdash; nearly certain outcomes</li>
+      <li><strong style="color:var(--cyan);">Edge Bets</strong> &mdash; Moderate probability with significant edge over market price</li>
+      <li><strong style="color:#90caf9;">Safe NOs</strong> &mdash; High-probability NO bets where the market is overpricing YES</li>
+    </ul>
+
+    <h4 style="color:var(--cyan);font-size:14px;font-weight:600;margin:0 0 6px 0;">Portfolio System</h4>
+    <ul style="margin:0 0 16px 18px;padding:0;">
+      <li>Multiple portfolios with separate strategies and capital management</li>
+      <li>Each portfolio can have its own allowed sides, bet types, blocked cities</li>
+      <li>Capital management enforces position sizing, utilization limits, and correlated exposure caps</li>
+    </ul>
+
+    <h4 style="color:var(--cyan);font-size:14px;font-weight:600;margin:0 0 6px 0;">Key Pages</h4>
+    <ul style="margin:0 0 16px 18px;padding:0;">
+      <li><strong style="color:var(--text);">Dashboard</strong> &mdash; Live trades table, scan controls (in Settings)</li>
+      <li><strong style="color:var(--text);">P&amp;L</strong> &mdash; Profit/loss tracking with date filters and capital status</li>
+      <li><strong style="color:var(--text);">Analysis</strong> &mdash; AI-powered trade analysis with Claude Opus, breakdowns, pattern detection</li>
+      <li><strong style="color:var(--text);">Compare</strong> &mdash; Side-by-side portfolio performance comparison</li>
+      <li><strong style="color:var(--text);">Settings</strong> &mdash; Scanner tools, portfolio creation, strategy editor</li>
+    </ul>
+
+    <h4 style="color:var(--cyan);font-size:14px;font-weight:600;margin:0 0 6px 0;">Understanding the Trade Table</h4>
+    <ul style="margin:0 0 0 18px;padding:0;">
+      <li><strong style="color:var(--text);">Edge</strong> &mdash; How much better our forecast is vs market price (higher = better)</li>
+      <li><strong style="color:var(--text);">Confidence</strong> &mdash; Model agreement score (higher = more reliable)</li>
+      <li><strong style="color:var(--text);">Half-Kelly</strong> &mdash; Suggested position size as % of bankroll</li>
+      <li><strong style="color:var(--text);">Entry Price</strong> &mdash; VWAP across filled book levels</li>
+      <li><strong style="color:var(--text);">Mark-to-Market ($)</strong> &mdash; Unrealized P&amp;L based on current market price</li>
+    </ul>
+
+  </div>
+</div>
+
 </div><!-- end scanner-section -->
 
 <div id="dashboard-section" style="display:none;">
