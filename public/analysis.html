@@ -1783,6 +1783,13 @@ function escHtml(s) {
 function renderMarkdown(text) {
   if (!text) return '';
 
+  // Pre-process: extract suggested-portfolio blocks
+  let suggestedPortfolio = null;
+  text = text.replace(/```suggested-portfolio\n([\s\S]*?)```/g, (_, json) => {
+    suggestedPortfolio = json.trim();
+    return '__SUGGESTED_PORTFOLIO__';
+  });
+
   // Pre-process: protect code blocks
   const codeBlocks = [];
   text = text.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
