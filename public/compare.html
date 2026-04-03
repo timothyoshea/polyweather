@@ -306,19 +306,19 @@ function escHtml(s) {
 
 // ── Metric Computation ──
 function computeMetrics(portfolio, trades) {
-  const closed = trades.filter(t => t.status === 'closed' || t.status === 'resolved');
-  const open = trades.filter(t => t.status === 'open' || t.status === 'active');
+  const closed = trades.filter(t => t.status === 'won' || t.status === 'lost');
+  const open = trades.filter(t => t.status === 'open');
 
-  const won = closed.filter(t => (t.profit || 0) > 0);
-  const lost = closed.filter(t => (t.profit || 0) < 0);
-  const totalInvested = closed.reduce((s, t) => s + (t.cost || t.amount || 0), 0);
-  const totalProfit = closed.reduce((s, t) => s + (t.profit || 0), 0);
+  const won = closed.filter(t => t.status === 'won');
+  const lost = closed.filter(t => t.status === 'lost');
+  const totalInvested = closed.reduce((s, t) => s + (Number(t.total_cost_usd) || 0), 0);
+  const totalProfit = closed.reduce((s, t) => s + (Number(t.profit_usd) || 0), 0);
   const winRate = closed.length > 0 ? (won.length / closed.length) * 100 : 0;
   const roi = totalInvested > 0 ? (totalProfit / totalInvested) * 100 : 0;
   const avgTradeSize = closed.length > 0 ? totalInvested / closed.length : 0;
 
   // Best / worst trade
-  const profits = closed.map(t => t.profit || 0);
+  const profits = closed.map(t => Number(t.profit_usd) || 0);
   const bestTrade = profits.length > 0 ? Math.max(...profits) : 0;
   const worstTrade = profits.length > 0 ? Math.min(...profits) : 0;
 
@@ -336,6 +336,15 @@ function computeMetrics(portfolio, trades) {
   // Sharpe-like ratio
   const sharpe = computeSharpe(closed);
 
+  // Capital fields
+  const deployed = open.reduce((s, t) => s + (Number(t.total_cost_usd) || 0), 0);
+  const realizedPnl = totalProfit;
+  const unlimitedCapital = !!portfolio.unlimited_capital;
+  const startingCapital = Number(portfolio.starting_capital_usd) || 0;
+  const currentValue = startingCapital + realizedPnl;
+  const available = currentValue - deployed;
+  const utilizationPct = (!unlimitedCapital && currentValue > 0) ? (deployed / currentValue * 100) : 0;
+
   return {
     name: portfolio.name,
     totalTrades: closed.length,
@@ -351,7 +360,13 @@ function computeMetrics(portfolio, trades) {
     bestTrade,
     worstTrade,
     ageDays,
-    sharpe
+    sharpe,
+    startingCapital,
+    unlimitedCapital,
+    currentValue,
+    deployed,
+    available,
+    utilizationPct
   };
 }
 
