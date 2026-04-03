@@ -1300,6 +1300,78 @@
     <div id="all-trades-history" style="font-size:13px;color:var(--text2);">Click Load to view all trades across every portfolio.</div>
   </div>
 
+  <!-- Help & Guide -->
+  <div style="background:var(--card);border:1px solid var(--card-border);border-radius:10px;margin:20px 24px;padding:20px 24px;">
+    <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;color:var(--text);display:flex;align-items:center;gap:8px;"><span style="font-size:16px;opacity:0.7;">&#x2753;</span> Help & Guide</h3>
+
+    <div style="display:flex;flex-direction:column;gap:16px;">
+
+      <!-- How It Works -->
+      <details style="cursor:pointer;">
+        <summary style="font-size:13px;font-weight:600;color:var(--cyan);padding:4px 0;">How PolyWeather Works</summary>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6;padding:10px 0 0 4px;">
+          PolyWeather scans Polymarket weather temperature markets every 10 minutes. It compares multi-model weather forecasts against market prices to find edges, then opens trades automatically based on your portfolio rules.
+          <br><br>
+          <strong style="color:var(--text);">The cycle:</strong> Scan markets &#x2192; Forecast temperatures &#x2192; Find edges &#x2192; Open trades &#x2192; Resolve when market settles
+        </div>
+      </details>
+
+      <!-- Bet Types -->
+      <details style="cursor:pointer;">
+        <summary style="font-size:13px;font-weight:600;color:var(--cyan);padding:4px 0;">Bet Types Explained</summary>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6;padding:10px 0 0 4px;">
+          <strong style="color:var(--green);">Sure Bet</strong> — High probability (>92%), low price. The forecast is very confident the outcome will happen, and the market hasn't priced it in yet. Low risk, low return.<br><br>
+          <strong style="color:var(--amber);">Edge Bet</strong> — Moderate probability with a significant edge (>8%) over market price. Higher risk, higher potential return. These rely on forecast accuracy.<br><br>
+          <strong style="color:var(--cyan);">Safe NO</strong> — Betting that something WON'T happen. The forecast says probability is very high (>97%), so the NO side is very cheap. You buy NO at 3-10 cents and collect $1 if the event doesn't happen.
+        </div>
+      </details>
+
+      <!-- Portfolio Types -->
+      <details style="cursor:pointer;">
+        <summary style="font-size:13px;font-weight:600;color:var(--cyan);padding:4px 0;">Paper vs Live Portfolios</summary>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6;padding:10px 0 0 4px;">
+          <strong style="color:var(--text);">Paper portfolios</strong> simulate trades without real money. Use these to test strategies and build confidence.<br><br>
+          <strong style="color:var(--green);">Live portfolios</strong> place real orders on Polymarket using USDC.e. Create a live portfolio from Settings by clicking "Create Live Portfolio" — this walks you through confirming every setting before going live.<br><br>
+          Paper and live portfolios are completely separate. Your paper portfolios continue tracking independently.
+        </div>
+      </details>
+
+      <!-- Trading Rules -->
+      <details style="cursor:pointer;">
+        <summary style="font-size:13px;font-weight:600;color:var(--cyan);padding:4px 0;">Understanding Trading Rules</summary>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6;padding:10px 0 0 4px;">
+          <strong style="color:var(--text);">Allowed Bet Types / Sides / Bands</strong> — Filter which trades the portfolio takes. E.g. NO-only portfolios only bet against outcomes.<br><br>
+          <strong style="color:var(--text);">Capital Management</strong> — Controls risk. Max single trade caps position size. Max utilization prevents deploying all capital at once. City exposure limits prevent concentration in one market.<br><br>
+          <strong style="color:var(--text);">Trading Hours</strong> — Restrict when trades can be placed (UTC). Use allowed windows to trade only during active market hours, or blackout windows to avoid specific times.
+        </div>
+      </details>
+
+      <!-- Key Metrics -->
+      <details style="cursor:pointer;">
+        <summary style="font-size:13px;font-weight:600;color:var(--cyan);padding:4px 0;">Key Metrics</summary>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6;padding:10px 0 0 4px;">
+          <strong style="color:var(--text);">Edge</strong> — Difference between our forecast probability and market price. Higher = more potential profit.<br><br>
+          <strong style="color:var(--text);">Confidence</strong> — How much agreement there is between weather models. Higher = more reliable forecast.<br><br>
+          <strong style="color:var(--text);">EV/Dollar</strong> — Expected value per dollar invested. Combines edge and price to show return efficiency.<br><br>
+          <strong style="color:var(--text);">Half Kelly</strong> — Suggested position size using half-Kelly criterion. Balances growth vs risk.
+        </div>
+      </details>
+
+      <!-- Pages -->
+      <details style="cursor:pointer;">
+        <summary style="font-size:13px;font-weight:600;color:var(--cyan);padding:4px 0;">Dashboard Pages</summary>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6;padding:10px 0 0 4px;">
+          <strong style="color:var(--text);">Dashboard</strong> — Open trades, current opportunities, and quick stats for the selected portfolio.<br><br>
+          <strong style="color:var(--text);">P&L</strong> — Profit & loss charts, cumulative returns, and closed trade history with date filtering.<br><br>
+          <strong style="color:var(--text);">Analysis</strong> — Breakdowns by city, bet type, side, and more. Statistical significance testing. AI-powered insights.<br><br>
+          <strong style="color:var(--text);">Compare</strong> — Side-by-side performance comparison across all portfolios.<br><br>
+          <strong style="color:var(--text);">Settings</strong> — Scanner controls, portfolio management, trading rules, and this help guide.
+        </div>
+      </details>
+
+    </div>
+  </div>
+
 </div><!-- end settings-section -->
 
 <div id="scanner-section">
