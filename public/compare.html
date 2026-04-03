@@ -406,7 +406,7 @@ function computeMaxDrawdown(closedTrades) {
 
   let cumPnl = 0, peak = 0, maxDd = 0;
   sorted.forEach(t => {
-    cumPnl += (t.profit || 0);
+    cumPnl += (Number(t.profit_usd) || 0);
     if (cumPnl > peak) peak = cumPnl;
     const dd = peak - cumPnl;
     if (dd > maxDd) maxDd = dd;
