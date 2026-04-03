@@ -134,8 +134,8 @@ Rules:
         user_content += "\n\nAnalyze these results. Focus on what's working vs what's not, and give me clear DO and DON'T instructions."
 
     body = json.dumps({
-        "model": "claude-sonnet-4-20250514",
-        "max_tokens": 4096,
+        "model": "claude-opus-4-6",
+        "max_tokens": 8192,
         "system": system_prompt,
         "messages": [{"role": "user", "content": user_content}],
     }).encode("utf-8")
