@@ -237,26 +237,11 @@
 // ── Portfolio dropdown (for navigation consistency) ──
 let portfolios = [];
 
-async function loadPortfolios() {
-  try {
-    const resp = await fetch('/api/portfolios');
-    portfolios = await resp.json();
-    const sel = document.getElementById('portfolio-select');
-    sel.innerHTML = '<option value="" disabled selected>All Portfolios</option>';
-    portfolios.forEach(p => {
-      const opt = document.createElement('option');
-      opt.value = p.id;
-      opt.textContent = p.name;
-      sel.appendChild(opt);
-    });
-  } catch (e) {
-    console.error('Failed to load portfolios:', e);
+function onSidebarPortfolioChange() {
+  const sidebarSel = document.getElementById('sidebar-pf-select');
+  if (sidebarSel && sidebarSel.value) {
+    localStorage.setItem('pw-portfolio-id', sidebarSel.value);
   }
-}
-
-function onPortfolioChange() {
-  // On compare page, portfolio dropdown is mainly for nav consistency
-  // Could filter to single portfolio view, but we show all by default
 }
 
 // ── Main data loading ──
@@ -265,15 +250,19 @@ async function loadCompareData() {
     const resp = await fetch('/api/portfolios');
     portfolios = await resp.json();
 
-    // Populate dropdown
-    const sel = document.getElementById('portfolio-select');
-    sel.innerHTML = '<option value="" disabled selected>All Portfolios</option>';
-    portfolios.forEach(p => {
-      const opt = document.createElement('option');
-      opt.value = p.id;
-      opt.textContent = p.name;
-      sel.appendChild(opt);
-    });
+    // Populate sidebar dropdown
+    const sidebarSel = document.getElementById('sidebar-pf-select');
+    if (sidebarSel) {
+      sidebarSel.innerHTML = '<option value="">All Portfolios</option>';
+      portfolios.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.name;
+        sidebarSel.appendChild(opt);
+      });
+      const saved = localStorage.getItem('pw-portfolio-id');
+      if (saved) sidebarSel.value = saved;
+    }
 
     // Fetch trades for each portfolio
     const allData = await Promise.all(portfolios.map(async (p) => {
