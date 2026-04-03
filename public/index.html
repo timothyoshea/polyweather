@@ -2714,11 +2714,12 @@
   // Store current trades for snapshot access
   var _currentTrades = [];
 
-  // ── Init: Load portfolios on page load ──────
-  loadPortfolios();
-  const initTab = localStorage.getItem('pw-tab') || 'dashboard';
-  localStorage.removeItem('pw-tab');
-  switchTab(initTab);
+  // ── Init: Load portfolios first, then switch tab ──────
+  loadPortfolios().then(() => {
+    const initTab = localStorage.getItem('pw-tab') || 'dashboard';
+    localStorage.removeItem('pw-tab');
+    switchTab(initTab);
+  });
 </script>
 
 <!-- Snapshot Modal -->
