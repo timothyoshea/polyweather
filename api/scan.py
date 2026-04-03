@@ -116,10 +116,36 @@ def run_scan_and_save(mode="all"):
             })
         supabase_insert("opportunities", opp_rows)
 
-        # Open paper trades (best-effort, don't break scan on failure)
+        # Open paper trades for each active portfolio
         try:
             from paper_trading import open_paper_trades
-            open_paper_trades(opps, scan_id, SUPABASE_URL, SUPABASE_SERVICE_KEY)
+            import urllib.request as ur
+            import copy
+
+            # Fetch all active portfolios
+            pf_url = f"{SUPABASE_URL}/rest/v1/portfolios?active=eq.true&select=*"
+            pf_headers = {
+                "apikey": SUPABASE_SERVICE_KEY,
+                "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
+            }
+            pf_req = ur.Request(pf_url, headers=pf_headers, method="GET")
+            with ur.urlopen(pf_req, timeout=10) as pf_resp:
+                portfolios = json.loads(pf_resp.read().decode("utf-8"))
+
+            if portfolios:
+                for pf in portfolios:
+                    try:
+                        pf_opps = copy.deepcopy(opps)
+                        open_paper_trades(
+                            pf_opps, scan_id, SUPABASE_URL, SUPABASE_SERVICE_KEY,
+                            portfolio_id=pf["id"], portfolio=pf
+                        )
+                        print(f"[INFO] Opened trades for portfolio: {pf.get('name', pf['id'])}")
+                    except Exception as pf_err:
+                        print(f"[WARN] Paper trading error for {pf.get('name')}: {pf_err}")
+            else:
+                # Fallback: no portfolios, open without portfolio context
+                open_paper_trades(opps, scan_id, SUPABASE_URL, SUPABASE_SERVICE_KEY)
         except Exception as e:
             print(f"[WARN] Paper trading error: {e}")
 
