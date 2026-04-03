@@ -165,7 +165,7 @@ Rules:
         method="POST",
     )
 
-    with urllib.request.urlopen(req, timeout=60) as resp:
+    with urllib.request.urlopen(req, timeout=120) as resp:
         data = json.loads(resp.read().decode("utf-8"))
         # Extract text from content blocks
         text_parts = [b["text"] for b in data.get("content", []) if b.get("type") == "text"]
