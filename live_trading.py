@@ -206,7 +206,10 @@ def execute_live_trades(opps, scan_id, supabase_url, supabase_service_key,
     allowed_cities = strategy.get("allowed_cities", [])
 
     count = 0
+    skipped = {"filter": 0, "liquidity": 0, "capital": 0, "duplicate": 0, "error": 0}
+
     for opp in opps:
+        opp_label = f"{opp.get('city','?')}/{opp.get('band_c','?')}/{opp.get('side','?')}"
         try:
             # Strategy filters
             opp_side = opp.get("side", "")
@@ -215,24 +218,32 @@ def execute_live_trades(opps, scan_id, supabase_url, supabase_service_key,
             opp_city = opp.get("city", "")
 
             if allowed_sides and opp_side not in allowed_sides:
+                skipped["filter"] += 1
                 continue
             if allowed_bet_types and opp_bet_type not in allowed_bet_types:
+                skipped["filter"] += 1
                 continue
             if allowed_band_types and opp_band_type not in allowed_band_types:
+                skipped["filter"] += 1
                 continue
             if blocked_cities and opp_city in blocked_cities:
+                skipped["filter"] += 1
                 continue
             if allowed_cities and opp_city not in allowed_cities:
+                skipped["filter"] += 1
                 continue
 
             liquidity = opp.get("liquidity")
             if not liquidity:
+                skipped["liquidity"] += 1
                 continue
 
             position = compute_position_from_book_levels(liquidity)
             if position is None:
+                skipped["liquidity"] += 1
                 continue
             if position["total_cost_usd"] < 5.0:
+                skipped["liquidity"] += 1
                 continue
 
             # Capital checks
@@ -255,13 +266,15 @@ def execute_live_trades(opps, scan_id, supabase_url, supabase_service_key,
 
                 max_deployed = current_capital * max_portfolio_util_pct / 100
                 if deployed + total_with_fees > max_deployed:
-                    print(f"[LIVE] SKIP {opp_city}/{opp.get('band_c')}: utilization limit")
+                    print(f"[LIVE] SKIP {opp_label}: utilization limit")
+                    skipped["capital"] += 1
                     continue
 
                 city_exp = city_exposure.get(opp_city, 0.0)
                 max_city = current_capital * max_corr_exposure_pct / 100
                 if city_exp + total_with_fees > max_city:
-                    print(f"[LIVE] SKIP {opp_city}/{opp.get('band_c')}: city exposure limit")
+                    print(f"[LIVE] SKIP {opp_label}: city exposure limit")
+                    skipped["capital"] += 1
                     continue
 
                 deployed += total_with_fees
@@ -270,7 +283,8 @@ def execute_live_trades(opps, scan_id, supabase_url, supabase_service_key,
             # Get token_id for the correct side
             token_id = opp.get("token_id", "")
             if not token_id:
-                print(f"[LIVE] SKIP {opp_city}/{opp.get('band_c')}: no token_id")
+                print(f"[LIVE] SKIP {opp_label}: no token_id")
+                skipped["error"] += 1
                 continue
 
             # 1. Write trade to Supabase with pending_execution status
@@ -311,15 +325,26 @@ def execute_live_trades(opps, scan_id, supabase_url, supabase_service_key,
                 trade_id = result[0].get("id") if result else None
             except urllib.error.HTTPError as e:
                 if e.code == 409:
-                    print(f"[LIVE] Trade already exists: {opp_city}/{opp.get('band_c')}/{opp_side}")
+                    print(f"[LIVE] Trade already exists: {opp_label}")
+                    skipped["duplicate"] += 1
                     continue
                 raise
 
             if not trade_id:
                 print(f"[LIVE] Failed to insert trade record")
+                skipped["error"] += 1
                 continue
 
+            _log_execution(supabase_url, headers, trade_id=trade_id, portfolio_id=portfolio_id,
+                           action="trade_inserted",
+                           request_payload={
+                               "opp": opp_label, "cost": cost, "shares": position["total_shares"],
+                               "price": position["entry_price"], "edge": opp.get("edge"),
+                               "bet_type": opp_bet_type, "token_id": token_id[:20] + "...",
+                           })
+
             # 2. Call Railway to execute
+            t_exec = time.time()
             try:
                 railway_payload = {
                     "trade_id": trade_id,
@@ -344,25 +369,66 @@ def execute_live_trades(opps, scan_id, supabase_url, supabase_service_key,
                 with urllib.request.urlopen(railway_req, timeout=30) as resp:
                     exec_result = json.loads(resp.read().decode("utf-8"))
 
+                exec_ms = int((time.time() - t_exec) * 1000)
+
                 if exec_result.get("success"):
-                    print(f"[LIVE] Executed: {opp_city}/{opp.get('band_c')}/{opp_side} "
+                    print(f"[LIVE] Executed: {opp_label} "
                           f"cost=${exec_result.get('net_cost_usd', 0):.2f} "
-                          f"fees=${exec_result.get('fees_usd', 0):.2f}")
+                          f"fees=${exec_result.get('fees_usd', 0):.2f} "
+                          f"({exec_ms}ms)")
                     count += 1
+
+                    # Update trade status to open
+                    open_url = f"{supabase_url}/rest/v1/paper_trades?id=eq.{trade_id}"
+                    _supabase_request(open_url, {
+                        "status": "open",
+                        "execution_details": {
+                            "order_id": exec_result.get("order_id"),
+                            "net_cost_usd": exec_result.get("net_cost_usd"),
+                            "fees_usd": exec_result.get("fees_usd"),
+                            "executed_at": datetime.now(timezone.utc).isoformat(),
+                        },
+                    }, headers, method="PATCH")
+
+                    _log_execution(supabase_url, headers, trade_id=trade_id, portfolio_id=portfolio_id,
+                                   action="trade_executed",
+                                   request_payload=railway_payload,
+                                   response_payload=exec_result,
+                                   duration_ms=exec_ms)
                 else:
                     error = exec_result.get("error", "unknown")
-                    print(f"[LIVE] Execution failed: {opp_city}: {error}")
+                    print(f"[LIVE] Execution failed: {opp_label}: {error}")
                     # Mark trade as failed
                     fail_url = f"{supabase_url}/rest/v1/paper_trades?id=eq.{trade_id}"
                     _supabase_request(fail_url, {"status": "void", "execution_details": {"error": error}},
                                       headers, method="PATCH")
 
+                    _log_execution(supabase_url, headers, trade_id=trade_id, portfolio_id=portfolio_id,
+                                   action="trade_failed",
+                                   request_payload=railway_payload,
+                                   response_payload=exec_result,
+                                   error_message=error, duration_ms=exec_ms)
+
             except Exception as railway_err:
+                exec_ms = int((time.time() - t_exec) * 1000)
                 print(f"[LIVE] Railway call failed: {railway_err}")
-                # Trade stays as pending_execution — can be retried
+                _log_execution(supabase_url, headers, trade_id=trade_id, portfolio_id=portfolio_id,
+                               action="railway_error",
+                               request_payload=railway_payload,
+                               error_message=str(railway_err), duration_ms=exec_ms)
 
         except Exception as e:
-            print(f"[LIVE] Error processing {opp.get('city')}: {e}")
+            print(f"[LIVE] Error processing {opp_label}: {e}")
+            skipped["error"] += 1
+            _log_execution(supabase_url, headers, portfolio_id=portfolio_id,
+                           action="opp_error",
+                           request_payload={"opp": opp_label},
+                           error_message=str(e))
             continue
 
-    print(f"[LIVE] Executed {count} live trades for portfolio {portfolio.get('name', portfolio_id)}")
+    summary = {
+        "executed": count, "total_opps": len(opps), "skipped": skipped,
+    }
+    print(f"[LIVE] Done: {count} executed, {skipped} skipped — portfolio {pf_name}")
+    _log_execution(supabase_url, headers, portfolio_id=portfolio_id,
+                   action="scan_complete", response_payload=summary)
