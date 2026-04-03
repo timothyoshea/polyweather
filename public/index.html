@@ -1591,8 +1591,84 @@
       const strategy = data.strategy || data;
       portfolioRules = strategy;
       renderRules(strategy);
+      updateTradeModeUI(data.trade_mode || 'paper', data.wallet_address);
     } catch (e) {
       console.error('Failed to load portfolio rules:', e);
+    }
+  }
+
+  function updateTradeModeUI(mode, walletAddr) {
+    const paperBtn = document.getElementById('mode-paper-btn');
+    const liveBtn = document.getElementById('mode-live-btn');
+    const status = document.getElementById('trade-mode-status');
+    const walletInfo = document.getElementById('live-wallet-info');
+
+    if (mode === 'live') {
+      liveBtn.style.background = 'rgba(0,230,118,0.15)';
+      liveBtn.style.borderColor = 'var(--green)';
+      liveBtn.style.color = 'var(--green)';
+      paperBtn.style.background = 'var(--card)';
+      paperBtn.style.borderColor = 'var(--card-border)';
+      paperBtn.style.color = 'var(--text2)';
+      status.innerHTML = '<span style="color:var(--green);font-weight:600;">LIVE TRADING ACTIVE</span>';
+      walletInfo.style.display = '';
+    } else {
+      paperBtn.style.background = 'rgba(79,195,247,0.15)';
+      paperBtn.style.borderColor = 'var(--cyan)';
+      paperBtn.style.color = 'var(--cyan)';
+      liveBtn.style.background = 'var(--card)';
+      liveBtn.style.borderColor = 'var(--card-border)';
+      liveBtn.style.color = 'var(--text2)';
+      status.innerHTML = '<span style="color:var(--cyan);">Paper trading (simulated)</span>';
+      walletInfo.style.display = 'none';
+    }
+
+    if (walletAddr) {
+      document.getElementById('wallet-addr').textContent = walletAddr.slice(0, 6) + '...' + walletAddr.slice(-4);
+      // Fetch wallet balance
+      fetch('/api/wallet?portfolio_id=' + encodeURIComponent(activePortfolioId))
+        .then(r => r.json())
+        .then(d => {
+          if (d.available && d.balance_usdc) {
+            const bal = (parseFloat(d.balance_usdc) / 1e6).toFixed(2);
+            document.getElementById('wallet-balance').textContent = '$' + bal;
+          } else {
+            document.getElementById('wallet-balance').textContent = d.message || '--';
+          }
+        })
+        .catch(() => {
+          document.getElementById('wallet-balance').textContent = '--';
+        });
+    }
+  }
+
+  async function setTradeMode(mode) {
+    if (!activePortfolioId) return;
+
+    if (mode === 'live') {
+      const confirmed = confirm(
+        'Switch to LIVE trading?\n\n' +
+        'This portfolio will place REAL orders on Polymarket using actual USDC.\n\n' +
+        'Make sure you have:\n' +
+        '- Funded your wallet with USDC.e\n' +
+        '- Reviewed your trading rules\n' +
+        '- Set trading hours if needed\n\n' +
+        'Continue?'
+      );
+      if (!confirmed) return;
+    }
+
+    try {
+      const resp = await fetch('/api/portfolios?id=' + encodeURIComponent(activePortfolioId), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trade_mode: mode }),
+      });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      // Reload to refresh UI
+      loadPortfolioRules(activePortfolioId);
+    } catch (e) {
+      alert('Failed to set trade mode: ' + e.message);
     }
   }
 
