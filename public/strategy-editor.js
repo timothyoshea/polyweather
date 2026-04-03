@@ -630,6 +630,9 @@ function renderStrategyEditor(containerId, strategy, portfolioId) {
   // Capital Allocation
   root.appendChild(_sectionCapitalAllocation(s, set));
 
+  // Trading Hours
+  root.appendChild(_sectionTradingHours(s, set));
+
   // Notes
   root.appendChild(_sectionNotes(s, set));
 
