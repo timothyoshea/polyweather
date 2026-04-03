@@ -507,7 +507,7 @@ const COLORS = [
 function renderChart(allData) {
   const datasets = allData.map(({ portfolio, trades }, i) => {
     const closed = trades
-      .filter(t => t.status === 'closed' || t.status === 'resolved')
+      .filter(t => t.status === 'won' || t.status === 'lost')
       .sort((a, b) => {
         const ta = new Date(a.resolved_at || a.closed_at || a.updated_at || a.created_at).getTime();
         const tb = new Date(b.resolved_at || b.closed_at || b.updated_at || b.created_at).getTime();
