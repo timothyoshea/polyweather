@@ -254,119 +254,229 @@ def derive_creds():
         return jsonify({"error": str(e)}), 500
 
 
+# --- Shared web3 helpers ---
+
+# Token addresses
+USDC_E_ADDR = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"
+USDC_NATIVE_ADDR = "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"
+
+# Polymarket contract addresses
+POLYMARKET_SPENDERS = {
+    "CTF Exchange": "0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E",
+    "Neg Risk Exchange": "0xC5d563A36AE78145C45a50134d48A1215220f80a",
+    "Neg Risk Adapter": "0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296",
+}
+
+ERC20_ABI = [
+    {"inputs":[{"name":"spender","type":"address"},{"name":"amount","type":"uint256"}],"name":"approve","outputs":[{"name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[{"name":"owner","type":"address"},{"name":"spender","type":"address"}],"name":"allowance","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"name":"account","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+]
+
+
+def get_web3():
+    """Connect to Polygon via the first working RPC."""
+    from web3 import Web3
+
+    rpc_urls = [
+        os.environ.get("POLYGON_RPC_URL", ""),
+        "https://polygon-bor-rpc.publicnode.com",
+        "https://polygon.drpc.org",
+        "https://1rpc.io/matic",
+    ]
+    for rpc_url in rpc_urls:
+        if not rpc_url:
+            continue
+        try:
+            w3 = Web3(Web3.HTTPProvider(rpc_url, request_kwargs={"timeout": 10}))
+            w3.eth.block_number
+            return w3, rpc_url
+        except Exception:
+            continue
+    return None, None
+
+
 @app.route("/approve", methods=["POST"])
 @require_auth
 def approve():
-    """Approve Polymarket exchange contracts to spend USDC.
-
-    Sends on-chain approval transactions for:
-    - CTF Exchange (standard markets)
-    - Neg Risk Exchange (multi-outcome markets)
-    - Neg Risk Adapter
-
-    For both USDC.e and native USDC.
-    """
+    """Approve Polymarket exchange contracts to spend USDC.e and native USDC."""
     try:
-        from web3 import Web3
-
-        rpc_urls = [
-            os.environ.get("POLYGON_RPC_URL", ""),
-            "https://polygon-bor-rpc.publicnode.com",
-            "https://polygon.drpc.org",
-            "https://1rpc.io/matic",
-            "https://rpc-mainnet.matic.quiknode.pro",
-        ]
-
-        w3 = None
-        connected_rpc = None
-        for rpc_url in rpc_urls:
-            if not rpc_url:
-                continue
-            try:
-                candidate = Web3(Web3.HTTPProvider(rpc_url, request_kwargs={"timeout": 10}))
-                candidate.eth.block_number  # Force a real call
-                w3 = candidate
-                connected_rpc = rpc_url
-                break
-            except Exception:
-                continue
-
+        w3, connected_rpc = get_web3()
         if w3 is None:
-            return jsonify({"error": "Cannot connect to any Polygon RPC", "tried": [r for r in rpc_urls if r]}), 500
+            return jsonify({"error": "Cannot connect to any Polygon RPC"}), 500
 
         account = w3.eth.account.from_key(PRIVATE_KEY)
         address = account.address
 
-        # ERC20 approve ABI
-        approve_abi = [{"inputs":[{"name":"spender","type":"address"},{"name":"amount","type":"uint256"}],"name":"approve","outputs":[{"name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"name":"owner","type":"address"},{"name":"spender","type":"address"}],"name":"allowance","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"name":"account","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"}]
-
-        # Token addresses
-        USDC_E = w3.to_checksum_address("0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174")
-        USDC_NATIVE = w3.to_checksum_address("0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359")
-
-        # Polymarket contract addresses
-        spenders = {
-            "CTF Exchange": w3.to_checksum_address("0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E"),
-            "Neg Risk Exchange": w3.to_checksum_address("0xC5d563A36AE78145C45a50134d48A1215220f80a"),
-            "Neg Risk Adapter": w3.to_checksum_address("0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296"),
-        }
+        tokens = [
+            (w3.to_checksum_address(USDC_E_ADDR), "USDC.e"),
+            (w3.to_checksum_address(USDC_NATIVE_ADDR), "USDC"),
+        ]
+        spenders = {k: w3.to_checksum_address(v) for k, v in POLYMARKET_SPENDERS.items()}
 
         MAX_UINT256 = 2**256 - 1
         results = []
 
-        for token_addr, token_name in [(USDC_E, "USDC.e"), (USDC_NATIVE, "USDC")]:
-            contract = w3.eth.contract(address=token_addr, abi=approve_abi)
-            bal = contract.functions.balanceOf(address).call()
+        for token_addr, token_name in tokens:
+            contract = w3.eth.contract(address=token_addr, abi=ERC20_ABI)
 
             for spender_name, spender_addr in spenders.items():
                 current_allowance = contract.functions.allowance(address, spender_addr).call()
 
                 if current_allowance >= MAX_UINT256 // 2:
-                    results.append({
-                        "token": token_name,
-                        "spender": spender_name,
-                        "status": "already_approved",
-                        "allowance": str(current_allowance),
-                    })
+                    results.append({"token": token_name, "spender": spender_name, "status": "already_approved"})
                     continue
 
-                # Send approve transaction
                 nonce = w3.eth.get_transaction_count(address, "pending")
                 tx = contract.functions.approve(spender_addr, MAX_UINT256).build_transaction({
-                    "from": address,
-                    "nonce": nonce,
-                    "gasPrice": w3.eth.gas_price,
-                    "gas": 60000,
-                    "chainId": 137,
+                    "from": address, "nonce": nonce,
+                    "gasPrice": w3.eth.gas_price, "gas": 60000, "chainId": 137,
                 })
-
                 signed = account.sign_transaction(tx)
                 tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
                 receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=60)
 
                 results.append({
-                    "token": token_name,
-                    "spender": spender_name,
+                    "token": token_name, "spender": spender_name,
                     "status": "approved" if receipt["status"] == 1 else "failed",
                     "tx_hash": tx_hash.hex(),
-                    "gas_used": receipt["gasUsed"],
                 })
 
-        # Check balances after approval
-        usdc_e_contract = w3.eth.contract(address=USDC_E, abi=approve_abi)
-        usdc_contract = w3.eth.contract(address=USDC_NATIVE, abi=approve_abi)
+        usdc_e = w3.eth.contract(address=w3.to_checksum_address(USDC_E_ADDR), abi=ERC20_ABI)
+        usdc_n = w3.eth.contract(address=w3.to_checksum_address(USDC_NATIVE_ADDR), abi=ERC20_ABI)
+
+        return jsonify({
+            "address": address, "rpc": connected_rpc, "approvals": results,
+            "balances": {
+                "usdc_e": str(usdc_e.functions.balanceOf(address).call() / 1e6),
+                "usdc_native": str(usdc_n.functions.balanceOf(address).call() / 1e6),
+                "pol": str(w3.eth.get_balance(address) / 1e18),
+            },
+        })
+    except Exception as e:
+        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+
+
+@app.route("/swap", methods=["POST"])
+@require_auth
+def swap():
+    """Swap native USDC to USDC.e via Uniswap V3 on Polygon.
+
+    Body: {"amount_usdc": 49.0}  (how much native USDC to swap)
+    Omit amount to swap entire native USDC balance.
+    """
+    try:
+        w3, connected_rpc = get_web3()
+        if w3 is None:
+            return jsonify({"error": "Cannot connect to any Polygon RPC"}), 500
+
+        account = w3.eth.account.from_key(PRIVATE_KEY)
+        address = account.address
+
+        usdc_native = w3.to_checksum_address(USDC_NATIVE_ADDR)
+        usdc_e = w3.to_checksum_address(USDC_E_ADDR)
+
+        usdc_contract = w3.eth.contract(address=usdc_native, abi=ERC20_ABI)
+        balance_raw = usdc_contract.functions.balanceOf(address).call()
+        balance_usdc = balance_raw / 1e6
+
+        data = request.get_json() or {}
+        amount_usdc = float(data.get("amount_usdc", balance_usdc))
+
+        if amount_usdc <= 0:
+            return jsonify({"error": "No amount to swap"}), 400
+        if amount_usdc > balance_usdc:
+            return jsonify({"error": f"Insufficient balance: have ${balance_usdc}, want ${amount_usdc}"}), 400
+
+        amount_raw = int(amount_usdc * 1e6)
+
+        # Uniswap V3 SwapRouter02 on Polygon
+        SWAP_ROUTER = w3.to_checksum_address("0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45")
+
+        # Step 1: Approve SwapRouter to spend native USDC
+        current_allowance = usdc_contract.functions.allowance(address, SWAP_ROUTER).call()
+        approvals = []
+        if current_allowance < amount_raw:
+            nonce = w3.eth.get_transaction_count(address, "pending")
+            approve_tx = usdc_contract.functions.approve(SWAP_ROUTER, 2**256 - 1).build_transaction({
+                "from": address, "nonce": nonce,
+                "gasPrice": w3.eth.gas_price, "gas": 60000, "chainId": 137,
+            })
+            signed = account.sign_transaction(approve_tx)
+            tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
+            receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=60)
+            approvals.append({"status": "approved" if receipt["status"] == 1 else "failed", "tx_hash": tx_hash.hex()})
+
+        # Step 2: Swap via exactInputSingle
+        # Uniswap V3 SwapRouter02 exactInputSingle ABI
+        swap_abi = [{"inputs":[{"components":[
+            {"name":"tokenIn","type":"address"},
+            {"name":"tokenOut","type":"address"},
+            {"name":"fee","type":"uint24"},
+            {"name":"recipient","type":"address"},
+            {"name":"amountIn","type":"uint256"},
+            {"name":"amountOutMinimum","type":"uint256"},
+            {"name":"sqrtPriceLimitX96","type":"uint160"}
+        ],"name":"params","type":"tuple"}],"name":"exactInputSingle","outputs":[{"name":"amountOut","type":"uint256"}],"stateMutability":"payable","type":"function"}]
+
+        router = w3.eth.contract(address=SWAP_ROUTER, abi=swap_abi)
+
+        # USDC/USDC.e should be ~1:1, set 0.5% slippage
+        min_out = int(amount_raw * 0.995)
+
+        # Try fee tiers: 100 (0.01%), 500 (0.05%)
+        swap_result = None
+        for fee_tier in [100, 500]:
+            try:
+                nonce = w3.eth.get_transaction_count(address, "pending")
+                swap_tx = router.functions.exactInputSingle((
+                    usdc_native,    # tokenIn
+                    usdc_e,         # tokenOut
+                    fee_tier,       # fee
+                    address,        # recipient
+                    amount_raw,     # amountIn
+                    min_out,        # amountOutMinimum
+                    0,              # sqrtPriceLimitX96 (0 = no limit)
+                )).build_transaction({
+                    "from": address, "nonce": nonce,
+                    "gasPrice": w3.eth.gas_price, "gas": 300000, "chainId": 137,
+                    "value": 0,
+                })
+                signed = account.sign_transaction(swap_tx)
+                tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
+                receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=90)
+
+                if receipt["status"] == 1:
+                    swap_result = {
+                        "status": "success",
+                        "fee_tier": fee_tier,
+                        "tx_hash": tx_hash.hex(),
+                        "gas_used": receipt["gasUsed"],
+                    }
+                    break
+                else:
+                    swap_result = {"status": "reverted", "fee_tier": fee_tier, "tx_hash": tx_hash.hex()}
+            except Exception as swap_err:
+                swap_result = {"status": "failed", "fee_tier": fee_tier, "error": str(swap_err)}
+                continue
+
+        # Check final balances
+        usdc_e_contract = w3.eth.contract(address=usdc_e, abi=ERC20_ABI)
+        final_usdc_e = usdc_e_contract.functions.balanceOf(address).call() / 1e6
+        final_usdc_native = usdc_contract.functions.balanceOf(address).call() / 1e6
 
         return jsonify({
             "address": address,
             "rpc": connected_rpc,
-            "approvals": results,
-            "balances": {
-                "usdc_e": str(usdc_e_contract.functions.balanceOf(address).call() / 1e6),
-                "usdc_native": str(usdc_contract.functions.balanceOf(address).call() / 1e6),
+            "swapped_amount": amount_usdc,
+            "approvals": approvals,
+            "swap": swap_result,
+            "balances_after": {
+                "usdc_e": str(final_usdc_e),
+                "usdc_native": str(final_usdc_native),
                 "pol": str(w3.eth.get_balance(address) / 1e18),
             },
         })
-
     except Exception as e:
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
 
