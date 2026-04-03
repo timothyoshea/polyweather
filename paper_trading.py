@@ -180,6 +180,41 @@ def open_paper_trades(opps, scan_id, supabase_url, supabase_service_key,
             if position["total_cost_usd"] < 5.0:
                 continue
 
+            # --- Capital checks ---
+            cost = position["total_cost_usd"]
+            if use_capital_mgmt:
+                # Cap position size
+                max_by_pct = current_capital * max_single_trade_pct / 100
+                capped_cost = min(cost, max_single_trade_usd, max_by_pct)
+                if capped_cost < cost:
+                    # Scale shares proportionally
+                    scale = capped_cost / cost if cost > 0 else 1
+                    position["total_cost_usd"] = round(capped_cost, 2)
+                    position["total_shares"] = round(position["total_shares"] * scale, 2)
+                    cost = capped_cost
+
+                # Check portfolio utilization
+                max_deployed = current_capital * max_portfolio_util_pct / 100
+                if deployed + cost > max_deployed:
+                    print(f"[CAPITAL] SKIP {opp.get('city')}/{opp.get('band_c')}: "
+                          f"deployed ${deployed:.2f} + ${cost:.2f} > max ${max_deployed:.2f} "
+                          f"({max_portfolio_util_pct}% utilization)")
+                    continue
+
+                # Check correlated (city) exposure
+                city_name = opp.get("city", "")
+                city_exp = city_exposure.get(city_name, 0.0)
+                max_city = current_capital * max_corr_exposure_pct / 100
+                if city_exp + cost > max_city:
+                    print(f"[CAPITAL] SKIP {city_name}/{opp.get('band_c')}: "
+                          f"city exposure ${city_exp:.2f} + ${cost:.2f} > max ${max_city:.2f} "
+                          f"({max_corr_exposure_pct}% correlated)")
+                    continue
+
+                # Update running totals for subsequent iterations
+                deployed += cost
+                city_exposure[city_name] = city_exp + cost
+
             trade_row = {
                 "city": opp.get("city", ""),
                 "date": opp.get("date", ""),
