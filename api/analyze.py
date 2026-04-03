@@ -202,7 +202,7 @@ def call_claude(trades_json, user_question=None, breakdowns=None, date_range=Non
         api_messages = [{"role": "user", "content": user_content}]
 
     body = json.dumps({
-        "model": "claude-opus-4-6",
+        "model": "claude-sonnet-4-20250514",
         "max_tokens": 8192,
         "system": SYSTEM_PROMPT,
         "messages": api_messages,
