@@ -1445,6 +1445,35 @@ function buildBreakdowns(resolved) {
 let chatMessages = [];       // {role, content} array for API
 let chatInitialContent = ''; // first user message with trade data
 
+async function createSuggestedPortfolio(jsonStr) {
+  try {
+    const settings = JSON.parse(jsonStr);
+    const payload = {
+      name: settings.name || 'AI Suggested',
+      starting_capital_usd: settings.starting_capital_usd || 10000,
+      unlimited_capital: false,
+      active: true,
+      strategy: settings.strategy || {},
+    };
+    const res = await fetch('/api/portfolios', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const result = await res.json();
+    const name = result.name || payload.name;
+    // Show confirmation in chat
+    appendChatBubble('assistant',
+      '**Portfolio "' + name + '" created successfully!** It will start receiving trades on the next scan cycle (every 10 minutes).\n\nYou can view it on the [Compare page](/compare.html) or switch to it in the portfolio dropdown.'
+    );
+    // Refresh portfolio dropdown
+    if (typeof loadPortfolios === 'function') loadPortfolios();
+  } catch (e) {
+    appendChatBubble('assistant', 'Error creating portfolio: ' + e.message);
+  }
+}
+
 function clearChat() {
   chatMessages = [];
   chatInitialContent = '';
