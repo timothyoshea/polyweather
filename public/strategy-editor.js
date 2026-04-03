@@ -405,6 +405,12 @@ function renderStrategyEditor(containerId, strategy, portfolioId) {
   // Position Sizing
   root.appendChild(_sectionPositionSizing(s, set));
 
+  // Capital Management
+  root.appendChild(_sectionCapitalManagement(s, set));
+
+  // Capital Allocation
+  root.appendChild(_sectionCapitalAllocation(s, set));
+
   // Notes
   root.appendChild(_sectionNotes(s, set));
 
