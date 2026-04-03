@@ -1345,15 +1345,17 @@ function renderAISection() {
     <div class="ai-top-bar">
       <div class="ai-section-title">&#129302; AI Analysis</div>
       <div class="ai-top-actions">
+        <button class="ai-btn-secondary" onclick="clearChat()" id="ai-clear-btn" style="display:none">New Chat</button>
         <button class="ai-btn" id="ai-btn" onclick="generateAI()">Analyze: ${label}</button>
         <button class="ai-btn-secondary" onclick="toggleAIHistory()">History</button>
       </div>
     </div>
+    <div class="ai-chat-thread" id="ai-chat-thread"></div>
+    <div class="ai-result" id="ai-result"></div>
     <div class="ai-followup" style="display:none" id="ai-followup">
-      <input class="ai-input" id="ai-question" placeholder="Ask a follow-up question about your trades..." onkeydown="if(event.key==='Enter')askFollowup()">
+      <input class="ai-input" id="ai-question" placeholder="Ask a follow-up question..." onkeydown="if(event.key==='Enter')askFollowup()">
       <button class="ai-btn" onclick="askFollowup()" style="padding:10px 16px;">Ask</button>
     </div>
-    <div class="ai-result" id="ai-result"></div>
     <div class="ai-history" id="ai-history" style="display:none"></div>
   </div>`;
 }
