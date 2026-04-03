@@ -67,9 +67,7 @@ def get_analysis_history(limit=20, portfolio_id=None):
         return []
 
 
-def call_claude(trades_json, user_question=None, breakdowns=None, date_range=None):
-    """Send trade data to Claude API for analysis."""
-    system_prompt = """You are an expert quantitative trading analyst reviewing paper trading results from a weather prediction market (Polymarket). These are weather temperature bets — the system forecasts temperatures using weather models and bets when it finds edges against market prices.
+SYSTEM_PROMPT = """You are an expert quantitative trading analyst reviewing paper trading results from a weather prediction market (Polymarket). These are weather temperature bets — the system forecasts temperatures using weather models and bets when it finds edges against market prices.
 
 Your job is to provide DEEP, SURGICAL analysis. You must perform **three-way analysis** on every dimension — cross every variable against every other variable to find the tightest, most actionable patterns. Don't just look at city win rates or bet type win rates in isolation. Cross them: city × bet_type, city × side, bet_type × band_type, side × entry_price_bucket, confidence_bucket × bet_type, edge_bucket × city, etc. The goal is to find the specific intersections where the system crushes it or bleeds money.
 
@@ -115,18 +113,21 @@ Rules:
 - Be specific with numbers — cite actual cities, bet types, win rates, profits, ROI.
 - Use markdown tables when comparing categories. Include a "Sig." column showing p-value significance level.
 - Go deep. Cross every dimension. Find the tightest patterns. No surface-level observations.
-- Bold the most important numbers and conclusions."""
+- Bold the most important numbers and conclusions.
 
+When the user asks follow-up questions, you have the full trade data and your prior analysis in context. Answer directly and specifically — reference the data, dig deeper into whatever they ask about."""
+
+
+def build_initial_user_content(trades_json, breakdowns=None, date_range=None, user_question=None):
+    """Build the first user message with trade data and breakdowns."""
     period_note = f" (time period: {date_range})" if date_range else ""
     user_content = f"Here are my paper trading results — {len(trades_json)} closed trades{period_note}:\n\n"
 
-    # Add overall stats for baseline
     total = len(trades_json)
     won = sum(1 for t in trades_json if t.get("status") == "won")
     baseline_wr = round(won / total * 100, 1) if total > 0 else 0
     user_content += f"**Overall baseline: {won}/{total} wins = {baseline_wr}% win rate** (use this as the null hypothesis for binomial significance tests)\n\n"
 
-    # Add breakdowns summary first (more useful than raw trades)
     if breakdowns:
         user_content += "## Performance Breakdowns\n\n"
         for label, data in breakdowns.items():
@@ -139,7 +140,6 @@ Rules:
                     user_content += f"| {row.get('group','')} | {row.get('count',0)} | {row.get('won',0)} | {row.get('lost',0)} | {row.get('win_rate',0)}% | ${row.get('invested',0)} | ${row.get('profit',0)} | {row.get('roi',0)}% |\n"
             user_content += "\n"
 
-    # Add raw trades
     user_content += f"## Raw Trade Data ({len(trades_json)} trades)\n\n```json\n{json.dumps(trades_json, indent=1)}\n```"
 
     if user_question:
@@ -147,11 +147,24 @@ Rules:
     else:
         user_content += "\n\nAnalyze these results. Focus on what's working vs what's not, and give me clear DO and DON'T instructions."
 
+    return user_content
+
+
+def call_claude(trades_json, user_question=None, breakdowns=None, date_range=None, messages=None):
+    """Send trade data to Claude API for analysis. Supports multi-turn conversation."""
+    if messages:
+        # Multi-turn: use provided message history
+        api_messages = messages
+    else:
+        # Single turn: build initial message
+        user_content = build_initial_user_content(trades_json, breakdowns, date_range, user_question)
+        api_messages = [{"role": "user", "content": user_content}]
+
     body = json.dumps({
         "model": "claude-opus-4-6",
         "max_tokens": 8192,
-        "system": system_prompt,
-        "messages": [{"role": "user", "content": user_content}],
+        "system": SYSTEM_PROMPT,
+        "messages": api_messages,
     }).encode("utf-8")
 
     req = urllib.request.Request(
