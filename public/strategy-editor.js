@@ -423,6 +423,128 @@ function _sectionCapitalAllocation(s, set) {
   return sec;
 }
 
+function _sectionTradingHours(s, set) {
+  const sec = _el('div', { className: 'se-section' });
+  sec.appendChild(_el('h3', { textContent: 'Trading Hours (UTC)' }));
+
+  const th = s.trading_hours || {};
+
+  // Enable toggle
+  const enableWrap = _el('div', { className: 'se-field full' });
+  const enableLabel = _el('label', {});
+  enableLabel.style.cssText = 'display:flex;align-items:center;gap:8px;font-size:13px;color:#e0e0e0;cursor:pointer;';
+  const enableCb = _el('input', { type: 'checkbox' });
+  enableCb.checked = th.enabled || false;
+  enableCb.style.cssText = 'accent-color:#4fc3f7;width:16px;height:16px;cursor:pointer;';
+  enableLabel.appendChild(enableCb);
+  enableLabel.appendChild(document.createTextNode('Enable trading hours restrictions'));
+  enableWrap.appendChild(enableLabel);
+  sec.appendChild(enableWrap);
+
+  // Content wrapper (hidden when disabled)
+  const content = _el('div', {});
+  content.style.display = th.enabled ? '' : 'none';
+
+  // Helper to render window list
+  function _renderWindows(title, windowsKey, container) {
+    container.innerHTML = '';
+    const windows = th[windowsKey] || [];
+
+    const header = _el('div', {});
+    header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;';
+    header.appendChild(_el('label', { textContent: title }));
+    header.querySelector('label').style.cssText = 'font-size:12px;color:#888;font-family:"JetBrains Mono",monospace;';
+    const addBtn = _el('button', { textContent: '+ Add' });
+    addBtn.style.cssText = 'background:#1a1a2e;border:1px solid #1e1e2e;border-radius:6px;padding:4px 12px;color:#4fc3f7;font-size:12px;cursor:pointer;font-family:"JetBrains Mono",monospace;';
+    addBtn.addEventListener('click', () => {
+      if (!th[windowsKey]) th[windowsKey] = [];
+      th[windowsKey].push({ start: '00:00', end: '23:59' });
+      if (!s.trading_hours) s.trading_hours = {};
+      Object.assign(s.trading_hours, th);
+      set('trading_hours', { ...s.trading_hours });
+      _renderWindows(title, windowsKey, container);
+    });
+    header.appendChild(addBtn);
+    container.appendChild(header);
+
+    for (let i = 0; i < windows.length; i++) {
+      const row = _el('div', {});
+      row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:6px;';
+
+      const startInp = _el('input', { type: 'text', value: windows[i].start || '00:00', placeholder: 'HH:MM' });
+      startInp.style.cssText = 'background:#0a0a0f;border:1px solid #1e1e2e;border-radius:6px;padding:6px 8px;color:#e0e0e0;font-family:"JetBrains Mono",monospace;font-size:13px;width:80px;text-align:center;';
+      startInp.addEventListener('input', () => {
+        th[windowsKey][i].start = startInp.value;
+        if (!s.trading_hours) s.trading_hours = {};
+        Object.assign(s.trading_hours, th);
+        set('trading_hours', { ...s.trading_hours });
+      });
+
+      const endInp = _el('input', { type: 'text', value: windows[i].end || '23:59', placeholder: 'HH:MM' });
+      endInp.style.cssText = startInp.style.cssText;
+      endInp.addEventListener('input', () => {
+        th[windowsKey][i].end = endInp.value;
+        if (!s.trading_hours) s.trading_hours = {};
+        Object.assign(s.trading_hours, th);
+        set('trading_hours', { ...s.trading_hours });
+      });
+
+      const delBtn = _el('button', { textContent: 'x' });
+      delBtn.style.cssText = 'background:none;border:1px solid #333;border-radius:4px;color:#f44;font-size:12px;cursor:pointer;padding:4px 8px;';
+      delBtn.addEventListener('click', () => {
+        th[windowsKey].splice(i, 1);
+        if (!s.trading_hours) s.trading_hours = {};
+        Object.assign(s.trading_hours, th);
+        set('trading_hours', { ...s.trading_hours });
+        _renderWindows(title, windowsKey, container);
+      });
+
+      row.appendChild(startInp);
+      row.appendChild(_el('span', { textContent: 'to', className: '' }));
+      row.querySelector('span').style.cssText = 'color:#888;font-size:12px;';
+      row.appendChild(endInp);
+      row.appendChild(delBtn);
+      container.appendChild(row);
+    }
+
+    if (windows.length === 0) {
+      const hint = _el('div', { textContent: windowsKey === 'allowed_windows' ? 'No allowed windows = trade any time' : 'No blackout windows' });
+      hint.style.cssText = 'color:#555;font-size:12px;font-style:italic;font-family:"JetBrains Mono",monospace;';
+      container.appendChild(hint);
+    }
+  }
+
+  // Allowed windows
+  const allowedDiv = _el('div', { className: 'se-field full' });
+  allowedDiv.style.marginTop = '12px';
+  _renderWindows('Allowed Windows (trade only during these times)', 'allowed_windows', allowedDiv);
+  content.appendChild(allowedDiv);
+
+  // Blackout windows
+  const blackoutDiv = _el('div', { className: 'se-field full' });
+  blackoutDiv.style.marginTop = '12px';
+  _renderWindows('Blackout Windows (never trade during these times)', 'blackout_windows', blackoutDiv);
+  content.appendChild(blackoutDiv);
+
+  // Hint
+  const hint = _el('div', { textContent: 'All times are UTC. Blackout takes priority over allowed. Overnight spans (e.g. 22:00 to 06:00) are supported.' });
+  hint.style.cssText = 'color:#555;font-size:11px;margin-top:12px;font-family:"JetBrains Mono",monospace;';
+  content.appendChild(hint);
+
+  sec.appendChild(content);
+
+  // Toggle visibility
+  enableCb.addEventListener('change', () => {
+    th.enabled = enableCb.checked;
+    if (!s.trading_hours) s.trading_hours = {};
+    Object.assign(s.trading_hours, th);
+    set('trading_hours', { ...s.trading_hours });
+    content.style.display = enableCb.checked ? '' : 'none';
+  });
+
+  return sec;
+}
+
 function _sectionNotes(s, set) {
   const sec = _el('div', { className: 'se-section' });
   sec.appendChild(_el('h3', { textContent: 'Notes' }));
