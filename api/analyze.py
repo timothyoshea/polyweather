@@ -152,9 +152,11 @@ def build_initial_user_content(trades_json, breakdowns=None, date_range=None, us
 
 def call_claude(trades_json, user_question=None, breakdowns=None, date_range=None, messages=None):
     """Send trade data to Claude API for analysis. Supports multi-turn conversation."""
-    if messages:
-        # Multi-turn: use provided message history
-        api_messages = messages
+    if messages and len(messages) >= 2:
+        # Multi-turn: rebuild the first user message with trade data context,
+        # then keep the rest of the conversation as-is
+        initial_content = build_initial_user_content(trades_json, breakdowns, date_range)
+        api_messages = [{"role": "user", "content": initial_content}] + messages[1:]
     else:
         # Single turn: build initial message
         user_content = build_initial_user_content(trades_json, breakdowns, date_range, user_question)
