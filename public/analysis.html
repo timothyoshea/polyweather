@@ -1650,6 +1650,10 @@ async function askFollowup() {
         ]
       })
     });
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(res.status === 504 ? 'Request timed out — try a shorter question.' : 'Server error ' + res.status + ': ' + errText.slice(0, 200));
+    }
     const data = await res.json();
     const answer = data.analysis || data.text || data.message || JSON.stringify(data);
 
