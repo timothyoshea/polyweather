@@ -1731,17 +1731,42 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
     const container = document.getElementById('wallet-list');
     if (!container) return;
     try {
-      const res = await fetch('/api/wallets');
-      const data = await res.json();
-      const wallets = data.wallets || [];
+      // Fetch wallets and portfolios in parallel
+      const [walletsRes, portfoliosRes] = await Promise.all([
+        fetch('/api/wallets'),
+        fetch('/api/portfolios'),
+      ]);
+      const walletsData = await walletsRes.json();
+      const portfoliosData = await portfoliosRes.json();
+
+      // wallets API returns an array directly
+      const wallets = Array.isArray(walletsData) ? walletsData : (walletsData.wallets || []);
+      const portfolios = Array.isArray(portfoliosData) ? portfoliosData : [];
+
+      // Build map: wallet_address → list of portfolio names using it
+      const walletUsage = {};
+      for (const p of portfolios) {
+        if (p.wallet_address) {
+          const addr = p.wallet_address.toLowerCase();
+          if (!walletUsage[addr]) walletUsage[addr] = [];
+          const badge = p.trade_mode === 'live' ? ' (LIVE)' : '';
+          walletUsage[addr].push(p.name + badge);
+        }
+      }
+
       if (wallets.length === 0) {
         container.innerHTML = '<span style="color:var(--text2);">No wallets registered yet.</span>';
         return;
       }
+
       let html = '<div style="display:flex;flex-direction:column;gap:8px;">';
       for (const w of wallets) {
         const addr = w.address || '';
         const truncated = addr.length > 10 ? addr.slice(0, 6) + '...' + addr.slice(-4) : addr;
+        const usage = walletUsage[addr.toLowerCase()] || [];
+        const inUse = usage.length > 0;
+
+        // Fetch balance from Railway
         let balanceHtml = '<span style="color:var(--text2);">--</span>';
         try {
           const bRes = await fetch(RAILWAY_URL + '/wallets/balance?address=' + encodeURIComponent(addr), {
@@ -1749,16 +1774,32 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
           });
           if (bRes.ok) {
             const bData = await bRes.json();
-            const bal = bData.balance != null ? parseFloat(bData.balance).toFixed(4) : '--';
-            balanceHtml = '<span style="color:var(--green);font-family:var(--mono);">' + bal + ' USDC</span>';
+            const bal = bData.balance != null ? parseFloat(bData.balance).toFixed(2) : '--';
+            balanceHtml = '<span style="color:var(--green);font-family:var(--mono);">$' + bal + '</span>';
           }
         } catch (e) {
           console.warn('Failed to fetch balance for', addr, e);
         }
-        html += '<div style="display:flex;align-items:center;gap:12px;padding:8px 12px;background:var(--bg);border-radius:6px;border:1px solid var(--card-border);">'
-          + '<span style="width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;flex-shrink:0;"></span>'
-          + '<span style="font-weight:600;color:var(--text);font-size:13px;min-width:100px;">' + (w.label || 'Unnamed') + '</span>'
-          + '<span style="font-family:var(--mono);font-size:12px;color:var(--text2);">' + truncated + '</span>'
+
+        // Usage badges
+        let usageHtml = '';
+        if (inUse) {
+          usageHtml = usage.map(name =>
+            '<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(79,195,247,0.1);color:var(--cyan);white-space:nowrap;">' + name + '</span>'
+          ).join(' ');
+        } else {
+          usageHtml = '<span style="font-size:10px;color:var(--text2);font-style:italic;">Not in use</span>';
+        }
+
+        const statusColor = inUse ? 'var(--green)' : 'var(--text2)';
+
+        html += '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg);border-radius:8px;border:1px solid var(--card-border);flex-wrap:wrap;">'
+          + '<span style="width:8px;height:8px;border-radius:50%;background:' + statusColor + ';display:inline-block;flex-shrink:0;"></span>'
+          + '<div style="display:flex;flex-direction:column;gap:2px;min-width:120px;">'
+          + '<span style="font-weight:600;color:var(--text);font-size:13px;">' + (w.label || 'Unnamed') + '</span>'
+          + '<span style="font-family:var(--mono);font-size:11px;color:var(--text2);">' + truncated + '</span>'
+          + '</div>'
+          + '<div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">' + usageHtml + '</div>'
           + '<span style="margin-left:auto;">' + balanceHtml + '</span>'
           + '</div>';
       }
