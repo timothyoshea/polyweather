@@ -325,13 +325,18 @@ def _fetch_midpoint(token_id):
 def _fetch_midpoints_batch(token_ids):
     """Fetch midpoints for a list of token_ids. Returns {token_id: float}."""
     midpoints = {}
+    errors = 0
     for tid in token_ids:
         try:
             mid = _fetch_midpoint(tid)
             if mid is not None:
                 midpoints[tid] = mid
-        except Exception:
-            pass  # Skip failures, will retry next cycle
+        except Exception as e:
+            errors += 1
+            if errors <= 2:  # Log first 2 errors only
+                _log(f"Midpoint fetch failed for {str(tid)[:20]}...: {e}")
+    if errors > 0:
+        _log(f"Midpoint batch: {len(midpoints)} ok, {errors} failed out of {len(token_ids)}")
     return midpoints
 
 
