@@ -81,44 +81,44 @@ class handler(BaseHTTPRequestHandler):
                         print(f"[WARN] Failed to fetch midpoint for {tid}: {e}")
                         midpoint_cache[tid] = None
 
-            # 3. Update each trade with fresh mkt_p and calculate unrealized P&L
+            # 3. Calculate unrealized P&L using live prices
+            # IMPORTANT: We do NOT update mkt_p in Supabase — trade snapshots
+            # are immutable for historical analysis. Live prices are returned
+            # alongside original trade data for comparison.
             updated_trades = []
             for t in trades:
                 tid = t.get("token_id")
                 midpoint = midpoint_cache.get(tid) if tid else None
 
-                if midpoint is not None:
-                    # midpoint is 0-1 scale, mkt_p is 0-100 scale
-                    new_mkt_p = round(midpoint * 100, 2)
-
-                    # Update mkt_p in Supabase
-                    try:
-                        supabase_patch(
-                            f"paper_trades?id=eq.{t['id']}",
-                            {"mkt_p": new_mkt_p},
-                        )
-                        t["mkt_p"] = new_mkt_p
-                    except Exception as e:
-                        print(f"[WARN] Failed to update mkt_p for trade {t['id']}: {e}")
-
-                # Calculate unrealized P&L
                 total_shares = float(t.get("total_shares", 0) or 0)
                 total_cost = float(t.get("total_cost_usd", 0) or 0)
-                mkt_p = float(t.get("mkt_p", 0) or 0)
+                original_mkt_p = float(t.get("mkt_p", 0) or 0)
 
-                # token_id is side-specific: YES trades store YES token,
-                # NO trades store NO token. The midpoint is already for the
-                # correct token, so value = shares * midpoint for both sides.
-                current_value = total_shares * (mkt_p / 100)
+                if midpoint is not None:
+                    live_price = round(midpoint * 100, 2)
+                else:
+                    live_price = original_mkt_p
 
-                unrealized_pnl = current_value - total_cost
+                # token_id is side-specific: midpoint is already the correct
+                # price for both YES and NO tokens
+                current_value = total_shares * (live_price / 100)
+                entry_value = total_cost
+
+                unrealized_pnl = current_value - entry_value
                 unrealized_pnl_pct = (
-                    (unrealized_pnl / total_cost * 100) if total_cost > 0 else 0.0
+                    (unrealized_pnl / entry_value * 100) if entry_value > 0 else 0.0
                 )
 
+                # Price movement since entry
+                entry_price = float(t.get("entry_price", 0) or 0)
+                price_move = live_price - (entry_price * 100) if entry_price else 0
+
+                t["live_price"] = live_price
+                t["original_mkt_p"] = original_mkt_p
                 t["current_value"] = round(current_value, 4)
                 t["unrealized_pnl"] = round(unrealized_pnl, 4)
                 t["unrealized_pnl_pct"] = round(unrealized_pnl_pct, 2)
+                t["price_move"] = round(price_move, 2)
                 updated_trades.append(t)
 
             self._respond(
