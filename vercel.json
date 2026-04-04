@@ -21,11 +21,11 @@
   "crons": [
     {
       "path": "/api/scan?mode=tomorrow",
-      "schedule": "*/10 * * * *"
+      "schedule": "*/5 * * * *"
     },
     {
       "path": "/api/scan?mode=all",
-      "schedule": "*/10 * * * *"
+      "schedule": "*/5 * * * *"
     },
     {
       "path": "/api/resolve",
