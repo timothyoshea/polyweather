@@ -257,9 +257,8 @@ def execute_live_trades(opps, scan_id, supabase_url, supabase_service_key,
             # Capital checks
             cost = position["total_cost_usd"]
 
-            # Account for fees in capital calculations
-            fees = cost * POLYMARKET_FEE_RATE
-            total_with_fees = cost + fees
+            # GTC limit orders are maker orders = 0% fee on Polymarket
+            # No fee buffer needed in capital calculations
 
             if use_capital_mgmt:
                 max_by_pct = current_capital * max_single_trade_pct / 100
@@ -269,11 +268,9 @@ def execute_live_trades(opps, scan_id, supabase_url, supabase_service_key,
                     position["total_cost_usd"] = round(capped_cost, 2)
                     position["total_shares"] = round(position["total_shares"] * scale, 2)
                     cost = capped_cost
-                    fees = cost * POLYMARKET_FEE_RATE
-                    total_with_fees = cost + fees
 
                 max_deployed = current_capital * max_portfolio_util_pct / 100
-                if deployed + total_with_fees > max_deployed:
+                if deployed + cost > max_deployed:
                     print(f"[LIVE] SKIP {opp_label}: utilization limit")
                     skipped["capital"] += 1
                     continue
