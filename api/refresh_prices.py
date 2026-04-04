@@ -106,13 +106,10 @@ class handler(BaseHTTPRequestHandler):
                 total_cost = float(t.get("total_cost_usd", 0) or 0)
                 mkt_p = float(t.get("mkt_p", 0) or 0)
 
-                # For YES side: value = shares * midpoint price
-                # For NO side: value = shares * (1 - midpoint price)
-                side = t.get("side", "YES")
-                if side == "NO":
-                    current_value = total_shares * ((100 - mkt_p) / 100)
-                else:
-                    current_value = total_shares * (mkt_p / 100)
+                # token_id is side-specific: YES trades store YES token,
+                # NO trades store NO token. The midpoint is already for the
+                # correct token, so value = shares * midpoint for both sides.
+                current_value = total_shares * (mkt_p / 100)
 
                 unrealized_pnl = current_value - total_cost
                 unrealized_pnl_pct = (
