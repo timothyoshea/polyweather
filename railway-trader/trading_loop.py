@@ -61,7 +61,9 @@ def _log(msg):
 
 def _http_get(url, headers=None, timeout=15):
     """GET request returning parsed JSON."""
-    req = urllib.request.Request(url, headers=headers or {}, method="GET")
+    hdrs = headers or {}
+    hdrs.setdefault("User-Agent", "PolyWeather/1.0")
+    req = urllib.request.Request(url, headers=hdrs, method="GET")
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
