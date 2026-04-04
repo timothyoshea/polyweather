@@ -29,19 +29,6 @@ def supabase_get(path):
         return json.loads(resp.read().decode("utf-8"))
 
 
-def supabase_patch(path, data):
-    """PATCH update to Supabase REST API."""
-    url = f"{SUPABASE_URL}/rest/v1/{path}"
-    headers = {
-        "apikey": SUPABASE_SERVICE_KEY,
-        "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
-        "Content-Type": "application/json",
-        "Prefer": "return=minimal",
-    }
-    body = json.dumps(data).encode("utf-8")
-    req = urllib.request.Request(url, data=body, headers=headers, method="PATCH")
-    urllib.request.urlopen(req, timeout=10)
-
 
 def fetch_midpoint(token_id):
     """Fetch current midpoint price from Polymarket CLOB."""
