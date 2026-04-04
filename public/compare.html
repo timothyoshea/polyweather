@@ -180,6 +180,11 @@
 </style>
 </head>
 <body>
+<script>
+fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({action:'check'}) })
+  .then(r => r.json()).then(d => { if (!d.authenticated) window.location.href = '/login.html'; })
+  .catch(() => { window.location.href = '/login.html'; });
+</script>
 
 <!-- ── Sidebar ─────────────────────────────────── -->
 <nav class="sidebar">
