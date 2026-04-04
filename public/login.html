@@ -29,21 +29,22 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 20px;
   }
   .login-card {
     background: var(--card);
     border: 1px solid var(--card-border);
     border-radius: 16px;
     padding: 40px 36px;
-    max-width: 400px;
-    width: 90%;
+    max-width: 420px;
+    width: 100%;
     box-shadow: 0 20px 60px rgba(0,0,0,0.5);
   }
   .logo {
-    font-size: 24px;
+    font-size: 28px;
     font-weight: 700;
     text-align: center;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
   }
   .logo span { color: var(--cyan); }
   .subtitle {
@@ -52,17 +53,14 @@
     color: var(--text2);
     margin-bottom: 32px;
   }
-  .field {
-    margin-bottom: 16px;
-  }
-  .field label {
+  label {
     display: block;
     font-size: 12px;
     color: var(--text2);
     margin-bottom: 6px;
     font-family: var(--mono);
   }
-  .field input {
+  input[type="email"], input[type="text"] {
     width: 100%;
     background: var(--bg);
     border: 1px solid var(--card-border);
@@ -73,19 +71,20 @@
     font-size: 14px;
     outline: none;
     transition: border-color 0.15s;
+    margin-bottom: 16px;
   }
-  .field input:focus {
-    border-color: var(--cyan);
-  }
-  .field input.code-input {
-    font-size: 24px;
-    letter-spacing: 8px;
+  input:focus { border-color: var(--cyan); }
+  .code-input {
+    font-size: 28px !important;
+    letter-spacing: 10px;
     text-align: center;
     font-weight: 600;
+    padding: 14px !important;
   }
   .btn {
+    display: block;
     width: 100%;
-    padding: 12px;
+    padding: 13px;
     border: none;
     border-radius: 8px;
     font-size: 14px;
@@ -93,24 +92,20 @@
     cursor: pointer;
     font-family: var(--sans);
     transition: opacity 0.15s;
-    margin-top: 8px;
-  }
-  .btn:hover { opacity: 0.85; }
-  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .btn-primary {
     background: var(--cyan);
     color: #0a0a0f;
   }
+  .btn:hover { opacity: 0.85; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .msg {
     font-size: 12px;
     text-align: center;
-    margin-top: 12px;
+    margin-top: 14px;
     font-family: var(--mono);
     min-height: 18px;
   }
   .msg.error { color: var(--red); }
   .msg.success { color: var(--green); }
-  .msg.info { color: var(--text2); }
   .back-link {
     text-align: center;
     margin-top: 16px;
@@ -122,7 +117,15 @@
     cursor: pointer;
   }
   .back-link a:hover { color: var(--cyan); }
-  #step-code { display: none; }
+  .hidden { display: none !important; }
+  .sent-info {
+    text-align: center;
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+  .sent-info strong { color: var(--text); }
 </style>
 </head>
 <body>
@@ -132,45 +135,44 @@
 
   <!-- Step 1: Email -->
   <div id="step-email">
-    <div class="field">
-      <label>Email address</label>
-      <input type="email" id="email-input" placeholder="you@example.com" autocomplete="email" autofocus>
-    </div>
-    <button class="btn btn-primary" id="send-btn" onclick="sendCode()">Send Code</button>
+    <label>Email address</label>
+    <input type="email" id="email-input" placeholder="you@example.com" autocomplete="email" autofocus>
+    <button class="btn" id="send-btn" onclick="sendCode()">Send Login Code</button>
     <div class="msg" id="email-msg"></div>
   </div>
 
-  <!-- Step 2: Code -->
-  <div id="step-code">
-    <div style="font-size:13px;color:var(--text2);margin-bottom:16px;text-align:center;">
-      Enter the 6-digit code sent to<br><strong id="sent-to-email" style="color:var(--text);"></strong>
+  <!-- Step 2: Code (hidden initially) -->
+  <div id="step-code" class="hidden">
+    <div class="sent-info">
+      We sent a 6-digit code to<br><strong id="sent-to-email"></strong>
     </div>
-    <div class="field">
-      <input type="text" id="code-input" class="code-input" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="one-time-code">
-    </div>
-    <button class="btn btn-primary" id="verify-btn" onclick="verifyCode()">Verify & Sign In</button>
+    <label>Enter code</label>
+    <input type="text" id="code-input" class="code-input" placeholder="------" maxlength="6" inputmode="numeric" autocomplete="one-time-code">
+    <button class="btn" id="verify-btn" onclick="verifyCode()">Sign In</button>
     <div class="msg" id="code-msg"></div>
     <div class="back-link"><a onclick="showEmailStep()">Use a different email</a></div>
   </div>
 </div>
 
 <script>
-  // Check if already logged in
-  fetch('/api/auth', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'check' }),
-  })
-  .then(r => r.json())
-  .then(d => {
-    if (d.authenticated) window.location.href = '/';
-  });
+  // Check if already logged in — redirect to home
+  (async function() {
+    try {
+      const r = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'check' }),
+      });
+      const d = await r.json();
+      if (d.authenticated) window.location.href = '/';
+    } catch(e) { /* not logged in, show form */ }
+  })();
 
   let userEmail = '';
 
   function showEmailStep() {
-    document.getElementById('step-email').style.display = '';
-    document.getElementById('step-code').style.display = 'none';
+    document.getElementById('step-email').classList.remove('hidden');
+    document.getElementById('step-code').classList.add('hidden');
     document.getElementById('email-msg').textContent = '';
   }
 
@@ -187,8 +189,8 @@
 
     btn.disabled = true;
     btn.textContent = 'Sending...';
-    msg.className = 'msg info';
     msg.textContent = '';
+    msg.className = 'msg';
 
     try {
       const resp = await fetch('/api/auth', {
@@ -201,8 +203,9 @@
       if (resp.ok && data.sent) {
         userEmail = email;
         document.getElementById('sent-to-email').textContent = email;
-        document.getElementById('step-email').style.display = 'none';
-        document.getElementById('step-code').style.display = '';
+        document.getElementById('step-email').classList.add('hidden');
+        document.getElementById('step-code').classList.remove('hidden');
+        document.getElementById('code-input').value = '';
         document.getElementById('code-input').focus();
       } else {
         msg.className = 'msg error';
@@ -213,7 +216,7 @@
       msg.textContent = 'Network error. Try again.';
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Send Code';
+      btn.textContent = 'Send Login Code';
     }
   }
 
@@ -222,7 +225,7 @@
     const msg = document.getElementById('code-msg');
     const code = document.getElementById('code-input').value.trim();
 
-    if (!code || code.length !== 6) {
+    if (!code || code.length < 6) {
       msg.className = 'msg error';
       msg.textContent = 'Enter the 6-digit code';
       return;
@@ -231,6 +234,7 @@
     btn.disabled = true;
     btn.textContent = 'Verifying...';
     msg.textContent = '';
+    msg.className = 'msg';
 
     try {
       const resp = await fetch('/api/auth', {
@@ -248,21 +252,21 @@
         msg.className = 'msg error';
         msg.textContent = data.error || 'Invalid code';
         btn.disabled = false;
-        btn.textContent = 'Verify & Sign In';
+        btn.textContent = 'Sign In';
       }
     } catch (e) {
       msg.className = 'msg error';
       msg.textContent = 'Network error. Try again.';
       btn.disabled = false;
-      btn.textContent = 'Verify & Sign In';
+      btn.textContent = 'Sign In';
     }
   }
 
   // Submit on Enter
-  document.getElementById('email-input').addEventListener('keydown', e => {
+  document.getElementById('email-input').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') sendCode();
   });
-  document.getElementById('code-input').addEventListener('keydown', e => {
+  document.getElementById('code-input').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') verifyCode();
   });
 </script>
