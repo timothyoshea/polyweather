@@ -23,12 +23,16 @@ from py_clob_client.clob_types import (
 )
 from py_clob_client.constants import POLYGON
 from py_clob_client.order_builder.constants import BUY, SELL
+from wallet_manager import WalletManager
 
 app = Flask(__name__)
 
 # --- Config ---
 PRIVATE_KEY = os.environ.get("POLYMARKET_PRIVATE_KEY", "")
 API_SECRET = os.environ.get("API_SECRET", "")
+
+# Multi-wallet manager
+wallet_mgr = WalletManager()
 
 # Optional: saved CLOB API creds for faster startup
 CLOB_API_KEY = os.environ.get("CLOB_API_KEY", "")
