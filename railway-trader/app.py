@@ -635,6 +635,35 @@ def swap():
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
 
 
+# ---------------------------------------------------------------------------
+# Trading loop (background thread)
+# ---------------------------------------------------------------------------
+from trading_loop import TradingLoop
+
+_trading_loop = TradingLoop(app)
+_trading_loop.start()
+
+
+@app.route("/loop-status", methods=["GET"])
+@require_auth
+def loop_status():
+    return jsonify(_trading_loop.status())
+
+
+@app.route("/loop-control", methods=["POST"])
+@require_auth
+def loop_control():
+    data = request.get_json() or {}
+    action = data.get("action")
+    if action == "stop":
+        _trading_loop.stop()
+    elif action == "start":
+        _trading_loop.start()
+    elif action == "pause":
+        _trading_loop.pause()
+    return jsonify(_trading_loop.status())
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port, debug=True)
