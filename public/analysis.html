@@ -75,7 +75,45 @@
 
   @media (max-width: 768px) {
     .sidebar { display: none; }
-    .main-content { margin-left: 0; }
+    .main-content { margin-left: 0; padding-bottom: 70px; }
+  }
+  .mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--card);
+    border-top: 1px solid var(--card-border);
+    z-index: 500;
+    padding: 6px 0 env(safe-area-inset-bottom, 6px);
+  }
+  .mobile-nav-inner {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+  .mobile-nav a, .mobile-nav button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    background: none;
+    border: none;
+    color: var(--text2);
+    font-size: 10px;
+    font-family: var(--sans);
+    cursor: pointer;
+    padding: 6px 8px;
+    text-decoration: none;
+    transition: color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mobile-nav a:hover, .mobile-nav button:hover { color: var(--text); }
+  .mobile-nav .active { color: var(--cyan); }
+  .mobile-nav .nav-icon { font-size: 18px; }
+  @media (max-width: 768px) {
+    .mobile-nav { display: block; }
   }
 
   .portfolio-select {
