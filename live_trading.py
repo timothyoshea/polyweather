@@ -7,10 +7,13 @@ Reuses filtering and capital management logic from paper_trading.py.
 import os
 import json
 import time
+import smtplib
 import urllib.request
 import urllib.error
 import urllib.parse
 from datetime import datetime, timezone
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from paper_trading import (
     compute_position_from_book_levels,
     _supabase_request,
