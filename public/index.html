@@ -1465,6 +1465,17 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
 
 </div><!-- end settings-section -->
 
+<!-- ── Portfolio Overview Dashboard ─────────────── -->
+<div id="portfolio-overview" style="margin-bottom:16px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <h3 style="font-size:15px;font-weight:600;color:var(--text);margin:0;">All Portfolios</h3>
+    <button onclick="loadPortfolioOverview()" style="background:none;border:1px solid var(--card-border);color:var(--text2);padding:4px 12px;border-radius:6px;font-size:11px;cursor:pointer;font-family:var(--sans);">Refresh</button>
+  </div>
+  <div id="portfolio-overview-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">
+    <div style="color:var(--text2);font-size:13px;padding:20px;text-align:center;">Loading portfolios...</div>
+  </div>
+</div>
+
 <div id="scanner-section">
 
 <!-- ── Stats Bar (shown after scan) ──────────── -->
