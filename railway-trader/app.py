@@ -167,7 +167,8 @@ def execute():
         if size <= 0:
             return jsonify({"success": False, "error": f"invalid size: {size}"}), 400
 
-        client = get_client()
+        wallet_address = data.get("wallet_address")
+        client = get_client(wallet_address)
         side = BUY if side_str == "BUY" else SELL
 
         order_args = OrderArgs(
