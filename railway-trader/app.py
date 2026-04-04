@@ -186,23 +186,72 @@ def execute():
         }
         ot = ot_map.get(order_type, OrderType.GTC)
 
+        # Snapshot USDC balance before trade
+        try:
+            bal_before = client.get_balance_allowance(
+                params=BalanceAllowanceParams(asset_type=AssetType.COLLATERAL)
+            )
+            usdc_before = float(bal_before.get("balance", "0")) / 1e6
+        except Exception:
+            usdc_before = None
+
         signed_order = client.create_order(order_args)
         result = client.post_order(signed_order, orderType=ot)
 
-        # Calculate costs for the response
-        net_cost_usd = round(price * size, 2)
-        fees_usd = round(net_cost_usd * 0.0125, 2)
+        order_id = result.get("orderID", result.get("order_id", ""))
+        order_status = result.get("status", "")
 
-        print(f"[EXECUTE] {side_str} {size} shares @ {price} = ${net_cost_usd} "
-              f"(fees: ${fees_usd}) token={token_id[:16]}...")
+        # Poll for fill data — wait briefly then check order + balance
+        import time
+        time.sleep(2)
+
+        # Get actual fill details from the order
+        actual_fill = None
+        try:
+            if order_id:
+                order_info = client.get_order(order_id)
+                actual_fill = {
+                    "order_id": order_id,
+                    "status": order_info.get("status", order_status),
+                    "original_size": order_info.get("original_size"),
+                    "size_matched": order_info.get("size_matched", "0"),
+                    "price": order_info.get("price"),
+                    "side": order_info.get("side"),
+                    "associate_trades": order_info.get("associate_trades", []),
+                }
+        except Exception as fill_err:
+            actual_fill = {"error": str(fill_err), "order_id": order_id}
+
+        # Snapshot USDC balance after trade
+        try:
+            bal_after = client.get_balance_allowance(
+                params=BalanceAllowanceParams(asset_type=AssetType.COLLATERAL)
+            )
+            usdc_after = float(bal_after.get("balance", "0")) / 1e6
+        except Exception:
+            usdc_after = None
+
+        # Calculate actual cost from balance change
+        actual_cost = None
+        if usdc_before is not None and usdc_after is not None:
+            actual_cost = round(usdc_before - usdc_after, 6)
+
+        # Estimated cost as fallback
+        estimated_cost = round(price * size, 2)
+
+        print(f"[EXECUTE] {side_str} {size} shares @ {price} "
+              f"estimated=${estimated_cost} actual=${actual_cost} "
+              f"status={order_status} token={token_id[:16]}...")
 
         return jsonify({
             "success": True,
-            "order_id": result.get("orderID", result.get("order_id", "")),
-            "status": result.get("status", ""),
-            "net_cost_usd": net_cost_usd,
-            "fees_usd": fees_usd,
-            "total_cost_usd": round(net_cost_usd + fees_usd, 2),
+            "order_id": order_id,
+            "status": order_status,
+            "estimated_cost_usd": estimated_cost,
+            "actual_cost_usd": actual_cost,
+            "usdc_before": usdc_before,
+            "usdc_after": usdc_after,
+            "fill_data": actual_fill,
             "result": result,
         })
 
