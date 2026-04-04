@@ -18,7 +18,7 @@ SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "").strip()
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "").strip()
 
 # Only these emails can log in
-ALLOWED_EMAILS = {"toshea@gmail.com"}
+ALLOWED_EMAILS = {"toshea@gmail.com", "tim@theboost.ai"}
 
 
 def _supabase_auth_request(path, data):
