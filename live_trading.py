@@ -356,6 +356,14 @@ def execute_live_trades(opps, scan_id, supabase_url, supabase_service_key,
                 deployed += cost
                 city_exposure[opp_city] = city_exp + cost
 
+            # Polymarket minimums: 5 shares AND $1 marketable order
+            if position["total_shares"] < 5.0:
+                skipped["liquidity"] += 1
+                continue
+            if position["total_cost_usd"] < 1.10:
+                skipped["liquidity"] += 1
+                continue
+
             # Get token_id for the correct side
             token_id = opp.get("token_id", "")
             if not token_id:
