@@ -103,10 +103,37 @@ class handler(BaseHTTPRequestHandler):
         except Exception as e:
             self._respond(500, {"error": str(e)})
 
+    def do_DELETE(self):
+        try:
+            params = parse_qs(urlparse(self.path).query)
+            portfolio_id = params.get("id", [None])[0]
+            if not portfolio_id:
+                self._respond(400, {"error": "id parameter required"})
+                return
+
+            # Delete associated trades first
+            _request(
+                f"{SUPABASE_URL}/rest/v1/paper_trades?portfolio_id=eq.{portfolio_id}",
+                method="DELETE",
+            )
+            # Delete associated analyses
+            _request(
+                f"{SUPABASE_URL}/rest/v1/ai_analyses?portfolio_id=eq.{portfolio_id}",
+                method="DELETE",
+            )
+            # Delete the portfolio
+            _request(
+                f"{SUPABASE_URL}/rest/v1/portfolios?id=eq.{portfolio_id}",
+                method="DELETE",
+            )
+            self._respond(200, {"deleted": True, "id": portfolio_id})
+        except Exception as e:
+            self._respond(500, {"error": str(e)})
+
     def do_OPTIONS(self):
         self.send_response(200)
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()
 
