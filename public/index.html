@@ -1289,6 +1289,38 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
     </div>
   </div>
 
+  <!-- Wallet Management -->
+  <div style="background:var(--card);border:1px solid var(--card-border);border-radius:10px;margin:20px 24px;padding:20px 24px;">
+    <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;color:var(--text);display:flex;align-items:center;gap:8px;">
+      <span style="font-size:16px;opacity:0.7;">&#x1F4B3;</span> Wallets
+    </h3>
+    <div id="wallet-list" style="font-size:13px;color:var(--text2);margin-bottom:12px;">Loading wallets...</div>
+    <button onclick="showAddWalletForm()" style="padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--mono);border:1px solid rgba(79,195,247,0.3);background:rgba(79,195,247,0.08);color:var(--cyan);transition:all 0.15s;">+ Add Wallet</button>
+    <div id="add-wallet-form" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--card-border);">
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div>
+          <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px;">Label</label>
+          <input id="wallet-label" type="text" placeholder="e.g. Main Trading Wallet" style="width:100%;padding:8px 12px;border-radius:6px;border:1px solid var(--card-border);background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;">
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px;">Wallet Address (0x...)</label>
+          <input id="wallet-address" type="text" placeholder="0x..." style="width:100%;padding:8px 12px;border-radius:6px;border:1px solid var(--card-border);background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px;">
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px;">Private Key</label>
+          <input id="wallet-privkey" type="password" placeholder="Enter private key" style="width:100%;padding:8px 12px;border-radius:6px;border:1px solid var(--card-border);background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px;">
+          <p style="font-size:11px;color:var(--amber);margin-top:6px;line-height:1.4;">
+            &#x26A0; Your private key is sent directly to the trading service via HTTPS. It is never stored in the browser or database.
+          </p>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:4px;">
+          <button onclick="submitNewWallet()" style="padding:8px 20px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--mono);border:1px solid rgba(0,230,118,0.3);background:rgba(0,230,118,0.1);color:var(--green);transition:all 0.15s;">Register Wallet</button>
+          <button onclick="document.getElementById('add-wallet-form').style.display='none'" style="padding:8px 20px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--mono);border:1px solid var(--card-border);background:transparent;color:var(--text2);transition:all 0.15s;">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Go Live -->
   <div id="go-live-card" style="background:var(--card);border:1px solid var(--card-border);border-radius:10px;margin:20px 24px;padding:20px 24px;">
     <div style="display:flex;justify-content:space-between;align-items:center;">
