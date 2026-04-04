@@ -491,6 +491,12 @@ def execute_live_trades(opps, scan_id, supabase_url, supabase_service_key,
                                    request_payload=railway_payload,
                                    response_payload=exec_result,
                                    duration_ms=exec_ms)
+
+                    # Send email notification
+                    try:
+                        _send_trade_alert(trade_row, pf_name)
+                    except Exception:
+                        pass  # Don't fail trade on notification error
                 else:
                     error = exec_result.get("error", "unknown")
                     print(f"[LIVE] Execution failed: {opp_label}: {error}")
