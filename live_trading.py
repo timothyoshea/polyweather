@@ -233,6 +233,14 @@ def execute_live_trades(opps, scan_id, supabase_url, supabase_service_key,
                 skipped["filter"] += 1
                 continue
 
+            # Entry price filter
+            min_entry = strategy.get("preferred_entry_price_min")
+            if min_entry is not None:
+                opp_entry = opp.get("entry_price") or (opp.get("mkt_p", 0) / 100 if opp.get("mkt_p") else None)
+                if opp_entry and float(opp_entry) < float(min_entry):
+                    skipped["filter"] += 1
+                    continue
+
             liquidity = opp.get("liquidity")
             if not liquidity:
                 skipped["liquidity"] += 1
