@@ -169,6 +169,13 @@ def _passes_strategy_filters(opp, strategy):
     if allowed_cities and opp_city not in allowed_cities:
         return False, f"city {opp_city} not in allowed_cities"
 
+    # Entry price filter
+    min_entry = strategy.get("preferred_entry_price_min")
+    if min_entry is not None:
+        entry_price = opp.get("entry_price") or opp.get("mkt_p", 0) / 100
+        if entry_price and float(entry_price) < float(min_entry):
+            return False, f"entry_price {entry_price} < min {min_entry}"
+
     return True, "ok"
 
 
