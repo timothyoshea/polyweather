@@ -700,10 +700,6 @@ def resolve_open_trades(supabase_url, supabase_service_key, city_geo):
                 "profit_usd": round(profit, 2),
                 "roi_pct": round(roi_pct, 2),
             }
-            if is_live and fees > 0:
-                exec_details = trade.get("execution_details") or {}
-                exec_details["resolution_fees_usd"] = round(fees, 4)
-                update_data["execution_details"] = exec_details
             if actual_temp is not None:
                 update_data["actual_temp_c"] = round(actual_temp, 1)
 
