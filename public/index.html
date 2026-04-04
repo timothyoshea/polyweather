@@ -1904,6 +1904,42 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
     }
   }
 
+  // Claude Code Chosen portfolio reasoning
+  const CLAUDE_PORTFOLIO_REASONING = {
+    "NO Edge Sniper": {
+      summary: "Targets the highest-ROI zone: NO edge bets with 15-35% edge",
+      keyStats: "Historical sweet spot: 15-20% edge = <strong style='color:var(--green);'>100% WR, +76% ROI</strong> (7 trades). 25-35% edge = 59-69% WR, still profitable.",
+      whyItWorks: "The forecast system excels at predicting when temperatures WON'T hit a specific band. Edge bets at 15-35% represent genuine mispricing. Above 40% edge, the market is usually right and we're wrong (-42% ROI).",
+      sizing: "Positions capped at <strong>$500</strong> because edge NO under $500 historically: 75% WR, +25.7% ROI. Larger positions ($1-2K) drop to 42% WR.",
+      blocked: "London (-$8,586 on edge NO), Wellington, Wuhan, Atlanta — all negative edge NO cities.",
+      risk: "Selective (fewer trades), 60% max utilization. Expects ~20-30 trades/week."
+    },
+    "Safe NO Fortress": {
+      summary: "Maximum safety: only safe_no bets with strict size caps",
+      keyStats: "Safe NO overall: <strong style='color:var(--green);'>110W/3L (97.3% WR)</strong>. Under $2K trades: <strong style='color:var(--green);'>51W/0L (100% WR)</strong>, +$1,290.",
+      whyItWorks: "Safe NO bets are near-certainties (97%+ forecast probability). The 3 historical losses were ALL large positions ($934-$6,699) in unreliable cities with low confidence. By capping size and requiring confidence >= 70, we eliminate the loss pattern entirely.",
+      sizing: "Max <strong>$1,500</strong> per trade. Even a rare loss only costs $1,500 vs the old pattern of $4-7K wipeouts. 90% utilization is safe at this win rate.",
+      blocked: "Singapore ($6,699 loss), Seoul ($3,999 loss), Istanbul ($934 loss) — the only 3 cities where safe_no has ever lost.",
+      risk: "Low returns per trade (2-3%). Relies on high volume. Expects ~40-60 trades/week."
+    },
+    "Balanced NO": {
+      summary: "Best risk-adjusted: combines safe_no stability with edge NO alpha",
+      keyStats: "Edge NO at conf 60-70: <strong style='color:var(--green);'>82% WR, +50% ROI</strong>. Safe NO at conf 70-80: <strong style='color:var(--green);'>100% WR, +2.4% ROI</strong>.",
+      whyItWorks: "Safe NO provides steady baseline returns while edge NO adds meaningful alpha. The surprise finding: lower confidence (60-70) edge NO bets are MORE profitable than high confidence ones (80-90 = -13% ROI). This portfolio captures that sweet spot.",
+      sizing: "<strong>$800</strong> max trade balances between optimal $500 (edge) and $1,500 (safe_no). 75% utilization leaves $2,500 reserve.",
+      blocked: "London, Singapore, Seoul, Istanbul, Wellington — the 5 worst cities across both bet types.",
+      risk: "Middle ground. Won't have the highest ROI or lowest drawdown, but should be the most consistent overall earner."
+    },
+    "City Alpha": {
+      summary: "Concentrated on 12 proven profitable cities only",
+      keyStats: "Beijing: <strong style='color:var(--green);'>+$10,643 (+36% ROI)</strong>. Miami: +11%. Munich: +11%. Toronto: +8%. San Francisco: +8%.",
+      whyItWorks: "Instead of blocking bad cities, this portfolio ONLY trades cities with demonstrated positive P&L. The forecast models are most accurate for these cities, giving the system a genuine structural edge. ~25 unprofitable cities are excluded.",
+      sizing: "<strong>$1,000</strong> max trade — slightly more aggressive because the city filter already reduces risk. 80% utilization.",
+      blocked: "N/A — uses allowed_cities whitelist instead: Beijing, Miami, Munich, Chicago, Toronto, San Francisco, Paris, Madrid, Chengdu, Dallas, NYC, Milan.",
+      risk: "Fewer opportunities (limited cities). If a reliable city's weather patterns shift, exposure is concentrated. But historically these cities produce the most accurate forecasts."
+    }
+  };
+
   async function loadPortfolioRules(portfolioId) {
     if (!portfolioId) return;
     try {
@@ -1913,8 +1949,36 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
       portfolioRules = strategy;
       renderRules(strategy);
       updateTradeModeUI(data.trade_mode || 'paper', data.wallet_address);
+      updateClaudeReasoning(data.name, data.description);
     } catch (e) {
       console.error('Failed to load portfolio rules:', e);
+    }
+  }
+
+  function updateClaudeReasoning(name, description) {
+    const panel = document.getElementById('claude-reasoning-panel');
+    const content = document.getElementById('claude-reasoning-content');
+    if (!panel || !content) return;
+
+    // Check if this is a Claude Code Chosen portfolio
+    const isClaude = (description || '').includes('Claude Code Chosen');
+    const reasoning = CLAUDE_PORTFOLIO_REASONING[name];
+
+    if (isClaude && reasoning) {
+      content.innerHTML = `
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;">${reasoning.summary}</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div><span style="color:var(--cyan);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Key Stats</span><br>${reasoning.keyStats}</div>
+          <div><span style="color:var(--cyan);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Why It Works</span><br>${reasoning.whyItWorks}</div>
+          <div><span style="color:var(--cyan);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Position Sizing</span><br>${reasoning.sizing}</div>
+          <div><span style="color:var(--cyan);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Blocked/Filtered</span><br>${reasoning.blocked}</div>
+          <div><span style="color:var(--amber);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Risk</span><br>${reasoning.risk}</div>
+        </div>
+        <div style="margin-top:10px;font-size:10px;color:var(--text2);font-style:italic;">Analysis based on 217 closed trades from Datagrab portfolio, 2026-04-04</div>
+      `;
+      panel.style.display = '';
+    } else {
+      panel.style.display = 'none';
     }
   }
 
