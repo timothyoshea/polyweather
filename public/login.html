@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PolyWeather — Login</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --card: #12121a;
+    --card-border: #1e1e2e;
+    --text: #e0e0e0;
+    --text2: #888;
+    --cyan: #4fc3f7;
+    --green: #00e676;
+    --amber: #ffc107;
+    --red: #ff5252;
+    --sans: 'Inter', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .login-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 40px 36px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .logo {
+    font-size: 24px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .logo span { color: var(--cyan); }
+  .subtitle {
+    text-align: center;
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 32px;
+  }
+  .field {
+    margin-bottom: 16px;
+  }
+  .field label {
+    display: block;
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 6px;
+    font-family: var(--mono);
+  }
+  .field input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .field input:focus {
+    border-color: var(--cyan);
+  }
+  .field input.code-input {
+    font-size: 24px;
+    letter-spacing: 8px;
+    text-align: center;
+    font-weight: 600;
+  }
+  .btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: var(--sans);
+    transition: opacity 0.15s;
+    margin-top: 8px;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary {
+    background: var(--cyan);
+    color: #0a0a0f;
+  }
+  .msg {
+    font-size: 12px;
+    text-align: center;
+    margin-top: 12px;
+    font-family: var(--mono);
+    min-height: 18px;
+  }
+  .msg.error { color: var(--red); }
+  .msg.success { color: var(--green); }
+  .msg.info { color: var(--text2); }
+  .back-link {
+    text-align: center;
+    margin-top: 16px;
+  }
+  .back-link a {
+    color: var(--text2);
+    font-size: 12px;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .back-link a:hover { color: var(--cyan); }
+  #step-code { display: none; }
+</style>
+</head>
+<body>
+<div class="login-card">
+  <div class="logo">Poly<span>Weather</span></div>
+  <div class="subtitle">Sign in with a one-time code</div>
+
+  <!-- Step 1: Email -->
+  <div id="step-email">
+    <div class="field">
+      <label>Email address</label>
+      <input type="email" id="email-input" placeholder="you@example.com" autocomplete="email" autofocus>
+    </div>
+    <button class="btn btn-primary" id="send-btn" onclick="sendCode()">Send Code</button>
+    <div class="msg" id="email-msg"></div>
+  </div>
+
+  <!-- Step 2: Code -->
+  <div id="step-code">
+    <div style="font-size:13px;color:var(--text2);margin-bottom:16px;text-align:center;">
+      Enter the 6-digit code sent to<br><strong id="sent-to-email" style="color:var(--text);"></strong>
+    </div>
+    <div class="field">
+      <input type="text" id="code-input" class="code-input" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="one-time-code">
+    </div>
+    <button class="btn btn-primary" id="verify-btn" onclick="verifyCode()">Verify & Sign In</button>
+    <div class="msg" id="code-msg"></div>
+    <div class="back-link"><a onclick="showEmailStep()">Use a different email</a></div>
+  </div>
+</div>
+
+<script>
+  // Check if already logged in
+  fetch('/api/auth', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'check' }),
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.authenticated) window.location.href = '/';
+  });
+
+  let userEmail = '';
+
+  function showEmailStep() {
+    document.getElementById('step-email').style.display = '';
+    document.getElementById('step-code').style.display = 'none';
+    document.getElementById('email-msg').textContent = '';
+  }
+
+  async function sendCode() {
+    const btn = document.getElementById('send-btn');
+    const msg = document.getElementById('email-msg');
+    const email = document.getElementById('email-input').value.trim().toLowerCase();
+
+    if (!email || !email.includes('@')) {
+      msg.className = 'msg error';
+      msg.textContent = 'Enter a valid email address';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+    msg.className = 'msg info';
+    msg.textContent = '';
+
+    try {
+      const resp = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'send-code', email }),
+      });
+      const data = await resp.json();
+
+      if (resp.ok && data.sent) {
+        userEmail = email;
+        document.getElementById('sent-to-email').textContent = email;
+        document.getElementById('step-email').style.display = 'none';
+        document.getElementById('step-code').style.display = '';
+        document.getElementById('code-input').focus();
+      } else {
+        msg.className = 'msg error';
+        msg.textContent = data.error || 'Failed to send code';
+      }
+    } catch (e) {
+      msg.className = 'msg error';
+      msg.textContent = 'Network error. Try again.';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Send Code';
+    }
+  }
+
+  async function verifyCode() {
+    const btn = document.getElementById('verify-btn');
+    const msg = document.getElementById('code-msg');
+    const code = document.getElementById('code-input').value.trim();
+
+    if (!code || code.length !== 6) {
+      msg.className = 'msg error';
+      msg.textContent = 'Enter the 6-digit code';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Verifying...';
+    msg.textContent = '';
+
+    try {
+      const resp = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'verify', email: userEmail, code }),
+      });
+      const data = await resp.json();
+
+      if (resp.ok && data.authenticated) {
+        msg.className = 'msg success';
+        msg.textContent = 'Signed in! Redirecting...';
+        setTimeout(() => { window.location.href = '/'; }, 500);
+      } else {
+        msg.className = 'msg error';
+        msg.textContent = data.error || 'Invalid code';
+        btn.disabled = false;
+        btn.textContent = 'Verify & Sign In';
+      }
+    } catch (e) {
+      msg.className = 'msg error';
+      msg.textContent = 'Network error. Try again.';
+      btn.disabled = false;
+      btn.textContent = 'Verify & Sign In';
+    }
+  }
+
+  // Submit on Enter
+  document.getElementById('email-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') sendCode();
+  });
+  document.getElementById('code-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') verifyCode();
+  });
+</script>
+</body>
+</html>
