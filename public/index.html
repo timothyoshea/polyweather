@@ -1265,7 +1265,10 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
       <span>Current portfolio: <strong id="settings-portfolio-name" style="color:var(--text);">--</strong></span>
       <span id="settings-portfolio-desc" style="margin-left:12px;"></span>
     </div>
-    <button class="log-btn" id="create-portfolio-toggle" onclick="document.getElementById('create-portfolio-form').style.display=document.getElementById('create-portfolio-form').style.display==='none'?'block':'none'">Create New Portfolio</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="log-btn" id="create-portfolio-toggle" onclick="document.getElementById('create-portfolio-form').style.display=document.getElementById('create-portfolio-form').style.display==='none'?'block':'none'">Create New Portfolio</button>
+      <button onclick="showDeletePortfolio()" style="padding:6px 14px;border-radius:6px;font-size:11px;cursor:pointer;font-family:var(--sans);border:1px solid rgba(255,82,82,0.3);background:rgba(255,82,82,0.08);color:var(--red);transition:all 0.15s;" onmouseover="this.style.background='rgba(255,82,82,0.15)'" onmouseout="this.style.background='rgba(255,82,82,0.08)'">Delete Portfolio</button>
+    </div>
     <div id="create-portfolio-form" style="display:none;margin-top:16px;background:rgba(10,10,15,0.6);border:1px solid var(--card-border);border-radius:8px;padding:16px;">
       <div style="margin-bottom:12px;">
         <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px;">Name</label>
