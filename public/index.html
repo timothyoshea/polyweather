@@ -1145,6 +1145,9 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
     <a class="sidebar-link" href="/compare.html">Compare</a>
     <button class="sidebar-link" onclick="switchTab('settings')">Settings</button>
   </div>
+  <div style="padding:0 16px 16px;">
+    <button onclick="fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'logout'})}).then(()=>window.location.href='/login.html')" style="background:none;border:1px solid var(--card-border);color:var(--text2);padding:6px 14px;border-radius:6px;font-size:11px;cursor:pointer;font-family:var(--sans);width:100%;transition:color 0.15s;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text2)'">Sign Out</button>
+  </div>
 </nav>
 
 <!-- ── Main Content ────────────────────────────── -->
