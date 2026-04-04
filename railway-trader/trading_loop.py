@@ -633,6 +633,8 @@ class TradingLoop:
         # Batch fetch midpoints
         try:
             self._midpoints = _fetch_midpoints_batch(list(token_ids))
+            if self._cycle_count % 100 == 0:  # Log every 100 cycles
+                _log(f"Midpoints: {len(self._midpoints)}/{len(token_ids)} tokens priced")
         except Exception as e:
             _log(f"Midpoint fetch error: {e}")
             return
