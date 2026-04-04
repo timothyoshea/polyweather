@@ -444,20 +444,62 @@ def _execute_trade(client, opp, position, portfolio_id):
         side=BUY,
     )
 
+    # Snapshot balance before
+    usdc_before = None
+    try:
+        bal = client.get_balance_allowance(
+            params=BalanceAllowanceParams(asset_type=AssetType.COLLATERAL)
+        )
+        usdc_before = float(bal.get("balance", "0")) / 1e6
+    except Exception:
+        pass
+
     signed_order = client.create_order(order_args)
     result = client.post_order(signed_order, orderType=OrderType.GTC)
 
     order_id = result.get("orderID", result.get("order_id", ""))
     status = result.get("status", "")
-    net_cost_usd = round(price * size, 2)
-    fees_usd = round(net_cost_usd * POLYMARKET_FEE_RATE, 2)
+
+    # Wait briefly for fill, then get actual data
+    import time as _time
+    _time.sleep(2)
+
+    # Get fill details
+    fill_data = None
+    try:
+        if order_id:
+            order_info = client.get_order(order_id)
+            fill_data = {
+                "status": order_info.get("status", status),
+                "size_matched": order_info.get("size_matched", "0"),
+                "price": order_info.get("price"),
+                "associate_trades": order_info.get("associate_trades", []),
+            }
+    except Exception:
+        pass
+
+    # Snapshot balance after
+    usdc_after = None
+    try:
+        bal = client.get_balance_allowance(
+            params=BalanceAllowanceParams(asset_type=AssetType.COLLATERAL)
+        )
+        usdc_after = float(bal.get("balance", "0")) / 1e6
+    except Exception:
+        pass
+
+    # Actual cost from balance change
+    actual_cost = round(usdc_before - usdc_after, 6) if usdc_before is not None and usdc_after is not None else None
+    estimated_cost = round(price * size, 2)
 
     return True, {
         "order_id": order_id,
         "status": status,
-        "net_cost_usd": net_cost_usd,
-        "fees_usd": fees_usd,
-        "total_cost_usd": round(net_cost_usd + fees_usd, 2),
+        "estimated_cost_usd": estimated_cost,
+        "actual_cost_usd": actual_cost,
+        "usdc_before": usdc_before,
+        "usdc_after": usdc_after,
+        "fill_data": fill_data,
     }
 
 
