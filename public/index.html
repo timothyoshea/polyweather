@@ -3567,12 +3567,12 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
         return;
       }
 
-      // Inject unrealized_pnl into the profit_usd and roi_pct fields for display
+      // Show unrealized P&L in profit columns, and add price comparison info
       profitable.forEach(function(t) {
-        t._original_profit = t.profit_usd;
-        t._original_roi = t.roi_pct;
         t.profit_usd = t.unrealized_pnl;
         t.roi_pct = t.unrealized_pnl_pct;
+        // Override status to show live price comparison
+        t._exit_info = true;
       });
 
       _showProfitableOnly = true;
@@ -3581,7 +3581,7 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
       btn.style.color = '#000';
       btn.textContent = 'Showing ' + profitable.length + ' Profitable Exits';
       btn.disabled = false;
-      renderTradeTable(profitable);
+      renderProfitableExitsTable(profitable);
     } catch(e) {
       console.error('Profitable exits error:', e);
       btn.style.background = 'var(--red)';
