@@ -3297,30 +3297,83 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
   }
 
   var _showProfitableOnly = false;
-  function toggleProfitableExits() {
-    _showProfitableOnly = !_showProfitableOnly;
+  var _profitableExitTrades = null;
+  async function toggleProfitableExits() {
     var btn = document.getElementById('profitable-exit-btn');
+
+    // If already showing profitable exits, toggle back to full list
     if (_showProfitableOnly) {
-      btn.style.background = 'var(--green)';
-      btn.style.color = '#000';
-      btn.textContent = 'Showing Profitable Exits';
-      // Filter to open trades with unrealized profit
-      var profitable = _currentTrades.filter(function(t) {
-        if (t.status !== 'open' || !t.mkt_p || !t.total_shares || !t.total_cost_usd) return false;
-        var currentValue = t.total_shares * (t.mkt_p / 100);
-        return currentValue > t.total_cost_usd;
-      });
-      profitable.sort(function(a, b) {
-        var aPnl = a.total_shares * (a.mkt_p / 100) - a.total_cost_usd;
-        var bPnl = b.total_shares * (b.mkt_p / 100) - b.total_cost_usd;
-        return bPnl - aPnl;
-      });
-      renderTradeTable(profitable);
-    } else {
+      _showProfitableOnly = false;
+      _profitableExitTrades = null;
       btn.style.background = '';
       btn.style.color = '';
       btn.textContent = 'Show Profitable Exits';
       loadTradeTable();
+      return;
+    }
+
+    // Fetch live prices from Polymarket
+    btn.style.background = 'var(--amber)';
+    btn.style.color = '#000';
+    btn.textContent = 'Scanning prices...';
+    btn.disabled = true;
+
+    try {
+      var url = '/api/refresh_prices';
+      if (activePortfolioId) url += '?portfolio_id=' + encodeURIComponent(activePortfolioId);
+      var resp = await fetch(url);
+      var data = await resp.json();
+
+      if (data.error) throw new Error(data.error);
+
+      var trades = data.trades || [];
+      // Filter to trades with positive unrealized P&L
+      var profitable = trades.filter(function(t) {
+        return t.unrealized_pnl > 0;
+      });
+      profitable.sort(function(a, b) {
+        return b.unrealized_pnl - a.unrealized_pnl;
+      });
+
+      if (profitable.length === 0) {
+        btn.style.background = 'var(--text2)';
+        btn.style.color = '#000';
+        btn.textContent = 'No Profitable Exits';
+        btn.disabled = false;
+        setTimeout(function() {
+          btn.style.background = '';
+          btn.style.color = '';
+          btn.textContent = 'Show Profitable Exits';
+        }, 3000);
+        return;
+      }
+
+      // Inject unrealized_pnl into the profit_usd and roi_pct fields for display
+      profitable.forEach(function(t) {
+        t._original_profit = t.profit_usd;
+        t._original_roi = t.roi_pct;
+        t.profit_usd = t.unrealized_pnl;
+        t.roi_pct = t.unrealized_pnl_pct;
+      });
+
+      _showProfitableOnly = true;
+      _profitableExitTrades = profitable;
+      btn.style.background = 'var(--green)';
+      btn.style.color = '#000';
+      btn.textContent = 'Showing ' + profitable.length + ' Profitable Exits';
+      btn.disabled = false;
+      renderTradeTable(profitable);
+    } catch(e) {
+      console.error('Profitable exits error:', e);
+      btn.style.background = 'var(--red)';
+      btn.style.color = '#fff';
+      btn.textContent = 'Error: ' + e.message;
+      btn.disabled = false;
+      setTimeout(function() {
+        btn.style.background = '';
+        btn.style.color = '';
+        btn.textContent = 'Show Profitable Exits';
+      }, 3000);
     }
   }
 
