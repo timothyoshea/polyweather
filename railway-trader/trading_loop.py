@@ -803,6 +803,12 @@ class TradingLoop:
                     if city_exp + total_with_fees > max_city:
                         continue
 
+                # Polymarket minimums: 5 shares AND $1 marketable order
+                if position["total_shares"] < 5.0:
+                    continue
+                if position["total_cost_usd"] < 1.10:
+                    continue
+
                 # Deduplication check
                 if _check_duplicate(opp, portfolio_id):
                     continue
