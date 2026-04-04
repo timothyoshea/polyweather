@@ -282,8 +282,8 @@ def execute_live_trades(opps, scan_id, supabase_url, supabase_service_key,
                     skipped["capital"] += 1
                     continue
 
-                deployed += total_with_fees
-                city_exposure[opp_city] = city_exp + total_with_fees
+                deployed += cost
+                city_exposure[opp_city] = city_exp + cost
 
             # Get token_id for the correct side
             token_id = opp.get("token_id", "")
