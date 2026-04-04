@@ -1726,6 +1726,103 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
     }
   }
 
+  // ── Wallet Management ───────────────────────
+  async function loadWalletList() {
+    const container = document.getElementById('wallet-list');
+    if (!container) return;
+    try {
+      const res = await fetch('/api/wallets');
+      const data = await res.json();
+      const wallets = data.wallets || [];
+      if (wallets.length === 0) {
+        container.innerHTML = '<span style="color:var(--text2);">No wallets registered yet.</span>';
+        return;
+      }
+      let html = '<div style="display:flex;flex-direction:column;gap:8px;">';
+      for (const w of wallets) {
+        const addr = w.address || '';
+        const truncated = addr.length > 10 ? addr.slice(0, 6) + '...' + addr.slice(-4) : addr;
+        let balanceHtml = '<span style="color:var(--text2);">--</span>';
+        try {
+          const bRes = await fetch(RAILWAY_URL + '/wallets/balance?address=' + encodeURIComponent(addr), {
+            headers: { 'Authorization': 'Bearer ' + RAILWAY_SECRET }
+          });
+          if (bRes.ok) {
+            const bData = await bRes.json();
+            const bal = bData.balance != null ? parseFloat(bData.balance).toFixed(4) : '--';
+            balanceHtml = '<span style="color:var(--green);font-family:var(--mono);">' + bal + ' USDC</span>';
+          }
+        } catch (e) {
+          console.warn('Failed to fetch balance for', addr, e);
+        }
+        html += '<div style="display:flex;align-items:center;gap:12px;padding:8px 12px;background:var(--bg);border-radius:6px;border:1px solid var(--card-border);">'
+          + '<span style="width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;flex-shrink:0;"></span>'
+          + '<span style="font-weight:600;color:var(--text);font-size:13px;min-width:100px;">' + (w.label || 'Unnamed') + '</span>'
+          + '<span style="font-family:var(--mono);font-size:12px;color:var(--text2);">' + truncated + '</span>'
+          + '<span style="margin-left:auto;">' + balanceHtml + '</span>'
+          + '</div>';
+      }
+      html += '</div>';
+      container.innerHTML = html;
+    } catch (e) {
+      console.error('Failed to load wallets:', e);
+      container.innerHTML = '<span style="color:var(--red);">Failed to load wallets.</span>';
+    }
+  }
+
+  function showAddWalletForm() {
+    const form = document.getElementById('add-wallet-form');
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+  }
+
+  async function submitNewWallet() {
+    const label = document.getElementById('wallet-label').value.trim();
+    const address = document.getElementById('wallet-address').value.trim();
+    const privkey = document.getElementById('wallet-privkey').value.trim();
+    if (!label || !address || !privkey) {
+      alert('Please fill in all fields.');
+      return;
+    }
+    if (!address.startsWith('0x') || address.length < 10) {
+      alert('Invalid wallet address. Must start with 0x.');
+      return;
+    }
+    try {
+      // 1. Send private key directly to Railway (never through Vercel/Supabase)
+      const railRes = await fetch(RAILWAY_URL + '/wallets/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + RAILWAY_SECRET
+        },
+        body: JSON.stringify({ address: address, private_key: privkey })
+      });
+      if (!railRes.ok) {
+        const err = await railRes.text();
+        throw new Error('Railway registration failed: ' + err);
+      }
+      // 2. Save label + address (NOT key) to Supabase via Vercel
+      const sbRes = await fetch('/api/wallets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label: label, address: address })
+      });
+      if (!sbRes.ok) {
+        const err = await sbRes.text();
+        console.warn('Supabase wallet save failed:', err);
+      }
+      // Clear form and reload
+      document.getElementById('wallet-label').value = '';
+      document.getElementById('wallet-address').value = '';
+      document.getElementById('wallet-privkey').value = '';
+      document.getElementById('add-wallet-form').style.display = 'none';
+      await loadWalletList();
+    } catch (e) {
+      console.error('Wallet registration error:', e);
+      alert('Failed to register wallet: ' + e.message);
+    }
+  }
+
   async function createNewPortfolio() {
     const name = document.getElementById('new-portfolio-name').value.trim();
     if (!name) { alert('Please enter a portfolio name.'); return; }
