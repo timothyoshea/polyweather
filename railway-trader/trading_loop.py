@@ -879,22 +879,41 @@ class TradingLoop:
                     exec_ms = int((time.time() - t_exec) * 1000)
 
                     if success:
-                        _log(f"EXECUTED: {opp_label} cost=${exec_result.get('net_cost_usd', 0):.2f} "
-                             f"fees=${exec_result.get('fees_usd', 0):.2f} ({exec_ms}ms) [{pf_name}]")
+                        actual_cost = exec_result.get("actual_cost_usd")
+                        estimated_cost = exec_result.get("estimated_cost_usd", cost)
+                        final_cost = actual_cost if actual_cost is not None else estimated_cost
+                        fill_data = exec_result.get("fill_data", {})
+                        size_matched = fill_data.get("size_matched", "0") if fill_data else "0"
+
+                        _log(f"EXECUTED: {opp_label} actual=${actual_cost} est=${estimated_cost} "
+                             f"matched={size_matched} ({exec_ms}ms) [{pf_name}]")
                         self._trades_placed += 1
 
-                        # Update to open
-                        open_url = f"{SUPABASE_URL}/rest/v1/paper_trades?id=eq.{trade_id}"
-                        _http_patch(open_url, {
+                        # Update with actual on-chain data
+                        trade_update = {
                             "status": "open",
                             "execution_details": {
                                 "order_id": exec_result.get("order_id"),
-                                "net_cost_usd": exec_result.get("net_cost_usd"),
-                                "fees_usd": exec_result.get("fees_usd"),
+                                "order_status": exec_result.get("status"),
+                                "estimated_cost_usd": estimated_cost,
+                                "actual_cost_usd": actual_cost,
+                                "usdc_before": exec_result.get("usdc_before"),
+                                "usdc_after": exec_result.get("usdc_after"),
+                                "fill_data": fill_data,
                                 "executed_at": datetime.now(timezone.utc).isoformat(),
                                 "source": "trading_loop",
                             },
-                        }, _supabase_headers())
+                        }
+                        # Override with actuals if available
+                        if actual_cost is not None and actual_cost > 0:
+                            trade_update["total_cost_usd"] = round(actual_cost, 4)
+                        if fill_data and fill_data.get("size_matched") and float(fill_data["size_matched"]) > 0:
+                            trade_update["total_shares"] = round(float(fill_data["size_matched"]), 4)
+                            if actual_cost and float(fill_data["size_matched"]) > 0:
+                                trade_update["entry_price"] = round(actual_cost / float(fill_data["size_matched"]), 6)
+
+                        open_url = f"{SUPABASE_URL}/rest/v1/paper_trades?id=eq.{trade_id}"
+                        _http_patch(open_url, trade_update, _supabase_headers())
 
                         _log_execution(
                             trade_id=trade_id, portfolio_id=portfolio_id,
@@ -903,11 +922,11 @@ class TradingLoop:
                             duration_ms=exec_ms,
                         )
 
-                        # Update deployed tracking for this cycle
+                        # Update deployed tracking with actual cost
                         if use_capital_mgmt:
-                            deployed += total_with_fees
+                            deployed += final_cost
                             opp_city = opp.get("city", "")
-                            city_exposure[opp_city] = city_exposure.get(opp_city, 0.0) + total_with_fees
+                            city_exposure[opp_city] = city_exposure.get(opp_city, 0.0) + final_cost
                     else:
                         error = exec_result.get("error", "unknown")
                         _log(f"Execution failed: {opp_label}: {error}")
