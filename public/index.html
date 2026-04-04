@@ -1927,6 +1927,46 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
     }
   }
 
+  function showDeletePortfolio() {
+    const form = document.getElementById('delete-portfolio-form');
+    const warning = document.getElementById('delete-portfolio-warning');
+    const confirmInput = document.getElementById('delete-portfolio-confirm');
+    const portfolio = allPortfolios.find(p => p.id === activePortfolioId);
+    if (!portfolio) { alert('No portfolio selected.'); return; }
+    const name = portfolio.name || 'Unknown';
+    const isLive = portfolio.trade_mode === 'live';
+    let msg = 'Delete portfolio "' + name + '"?';
+    if (isLive) {
+      msg = 'WARNING: "' + name + '" is a LIVE portfolio with real money. Are you absolutely sure?';
+    }
+    warning.textContent = msg;
+    confirmInput.value = '';
+    form.style.display = 'block';
+  }
+
+  async function executeDeletePortfolio() {
+    const confirmInput = document.getElementById('delete-portfolio-confirm');
+    if (confirmInput.value.trim() !== 'YES DELETE') {
+      alert('You must type "YES DELETE" to confirm deletion.');
+      return;
+    }
+    if (!activePortfolioId) { alert('No portfolio selected.'); return; }
+    try {
+      const resp = await fetch('/api/portfolios?id=' + encodeURIComponent(activePortfolioId), {
+        method: 'DELETE'
+      });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      document.getElementById('delete-portfolio-form').style.display = 'none';
+      await loadPortfolios();
+      if (allPortfolios.length > 0) {
+        document.getElementById('portfolio-select').value = allPortfolios[0].id;
+        switchPortfolio();
+      }
+    } catch (e) {
+      alert('Failed to delete portfolio: ' + e.message);
+    }
+  }
+
   // Claude Code Chosen portfolio reasoning
   const CLAUDE_PORTFOLIO_REASONING = {
     "NO Edge Sniper": {
