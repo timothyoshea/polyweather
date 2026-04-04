@@ -667,13 +667,20 @@ def resolve_open_trades(supabase_url, supabase_service_key, city_geo):
 
             total_cost = float(trade.get("total_cost_usd", 0))
             total_shares = float(trade.get("total_shares", 0))
+            is_live = trade.get("trade_mode") == "live"
+
+            # Polymarket charges 1.25% fee on payouts for live trades
+            fee_rate = 0.0125 if is_live else 0.0
 
             if outcome == "won":
-                payout = total_shares * 1.0
+                gross_payout = total_shares * 1.0
+                fees = gross_payout * fee_rate
+                payout = gross_payout - fees
                 profit = payout - total_cost
                 won += 1
             else:
                 payout = 0.0
+                fees = 0.0
                 profit = -total_cost
                 lost += 1
 
