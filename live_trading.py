@@ -277,7 +277,7 @@ def execute_live_trades(opps, scan_id, supabase_url, supabase_service_key,
 
                 city_exp = city_exposure.get(opp_city, 0.0)
                 max_city = current_capital * max_corr_exposure_pct / 100
-                if city_exp + total_with_fees > max_city:
+                if city_exp + cost > max_city:
                     print(f"[LIVE] SKIP {opp_label}: city exposure limit")
                     skipped["capital"] += 1
                     continue
