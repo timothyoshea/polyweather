@@ -1699,6 +1699,8 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
     }
     // Load capital status
     loadCapitalStatus();
+    // Load wallets
+    loadWalletList();
   }
 
   async function loadCapitalStatus() {
