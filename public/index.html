@@ -1572,6 +1572,11 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
 </div>
 
 <script>
+  // ── Railway Trading Service ──────────────────
+  // TODO: Move to config endpoint instead of hardcoding
+  const RAILWAY_URL = 'https://polyweather-trader-production.up.railway.app';
+  const RAILWAY_SECRET = '90ded7fa7a1acfa2312a99ab973b89455fc5f164560589a7d4a1a7be286f95ba';
+
   // ── State ────────────────────────────────────
   let currentMode = 'tomorrow';
   let allData = null;        // raw API response
