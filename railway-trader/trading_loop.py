@@ -767,7 +767,7 @@ class TradingLoop:
                     "total_shares": position["total_shares"],
                     "num_levels": position.get("num_levels"),
                     "my_p": my_p,
-                    "mkt_p": mkt_price * 100 if opp_side == "YES" else (1 - mkt_price) * 100,
+                    "mkt_p": mkt_price * 100,
                     "edge": round(realtime_edge, 2),
                     "confidence": opp.get("confidence"),
                     "ev_per_dollar": opp.get("ev_per_dollar"),
