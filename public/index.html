@@ -3517,6 +3517,67 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
 
   var _showProfitableOnly = false;
   var _profitableExitTrades = null;
+
+  function renderProfitableExitsTable(trades) {
+    const tbody = document.getElementById('trade-table-body');
+    if (!trades || !trades.length) {
+      tbody.innerHTML = '<tr><td colspan="18" style="text-align:center;color:var(--text2);padding:40px;">No profitable exits found.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = trades.map(function(t) {
+      const sideBadge = t.side === 'YES'
+        ? '<span class="badge badge-yes">YES</span>'
+        : '<span class="badge badge-no">NO</span>';
+
+      const entryPrice = (t.entry_price * 100).toFixed(1);
+      const livePrice = (t.live_price || 0).toFixed(1);
+      const priceMoveVal = t.price_move || 0;
+      const priceMove = priceMoveVal >= 0
+        ? '<span style="color:var(--green);">+' + priceMoveVal.toFixed(1) + '</span>'
+        : '<span style="color:var(--red);">' + priceMoveVal.toFixed(1) + '</span>';
+
+      const pnl = t.unrealized_pnl || 0;
+      const pnlStr = '<span style="color:var(--green);font-weight:600;">+$' + pnl.toFixed(2) + '</span>';
+
+      const roiVal = t.unrealized_pnl_pct || 0;
+      const roiStr = '<span style="color:var(--green);font-weight:600;">+' + roiVal.toFixed(1) + '%</span>';
+
+      const currentVal = (t.current_value || 0).toFixed(2);
+
+      const timeStr = t.created_at ? new Date(t.created_at).toLocaleString('en-GB', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '\u2014';
+
+      return '<tr style="border-bottom:1px solid rgba(255,255,255,0.03);">' +
+        '<td style="font-size:11px;color:var(--text2);">' + timeStr + '</td>' +
+        '<td>' + t.date + '</td>' +
+        '<td style="font-weight:600;">' + t.city + '</td>' +
+        '<td style="font-family:var(--mono);font-size:12px;">' + t.band_c + '</td>' +
+        '<td>' + sideBadge + '</td>' +
+        '<td style="font-size:11px;color:var(--text2);">' + (t.bet_type || '') + '</td>' +
+        '<td style="font-family:var(--mono);font-size:12px;">' +
+          '<span style="color:var(--text2);">' + entryPrice + '\u00A2</span>' +
+          ' <span style="font-size:10px;color:var(--text2);">\u2192</span> ' +
+          '<span style="color:var(--cyan);font-weight:600;">' + livePrice + '\u00A2</span>' +
+          ' <span style="font-size:10px;">(' + priceMove + ')</span>' +
+        '</td>' +
+        '<td style="font-family:var(--mono);font-size:12px;">$' + (t.total_cost_usd || 0).toFixed(2) + '</td>' +
+        '<td style="font-family:var(--mono);font-size:12px;">$' + currentVal + '</td>' +
+        '<td>' + pnlStr + '</td>' +
+        '<td>' + roiStr + '</td>' +
+        '<td style="font-size:11px;color:var(--text2);">' + ((t.edge || 0)).toFixed(1) + '%</td>' +
+        '<td style="font-size:11px;color:var(--text2);">' + (t.confidence || 0) + '</td>' +
+        '</tr>';
+    }).join('');
+
+    // Update the table header for the exits view
+    const thead = tbody.closest('table').querySelector('thead');
+    if (thead) {
+      thead.innerHTML = '<tr>' +
+        '<th>Time</th><th>Date</th><th>City</th><th>Band</th><th>Side</th><th>Type</th>' +
+        '<th>Entry \u2192 Live Price</th><th>Cost</th><th>Value Now</th><th>Unrealized P&L</th><th>ROI</th>' +
+        '<th>Edge</th><th>Conf</th></tr>';
+    }
+  }
   async function toggleProfitableExits() {
     var btn = document.getElementById('profitable-exit-btn');
 
