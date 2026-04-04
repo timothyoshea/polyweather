@@ -24,9 +24,77 @@ from paper_trading import (
 RAILWAY_URL = os.environ.get("RAILWAY_URL", "").rstrip("/")
 RAILWAY_API_SECRET = os.environ.get("RAILWAY_API_SECRET", "")
 LIVE_TRADING_ENABLED = os.environ.get("LIVE_TRADING_ENABLED", "false").lower() == "true"
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
 
 # Polymarket fee rate (1.25% on all trades)
 POLYMARKET_FEE_RATE = 0.0125
+
+DASHBOARD_URL = "https://polyweather.vercel.app"
+
+
+def _send_trade_alert(trade_data, portfolio_name):
+    """Send email notification when a live trade is executed."""
+    if not RESEND_API_KEY:
+        print("[LIVE ALERT] No RESEND_API_KEY set, skipping email")
+        return
+
+    try:
+        city = trade_data.get("city", "?")
+        band_c = trade_data.get("band_c", "?")
+        side = trade_data.get("side", "?")
+        cost = trade_data.get("total_cost_usd", 0)
+        shares = trade_data.get("total_shares", 0)
+        entry_price = trade_data.get("entry_price", 0)
+        edge = trade_data.get("edge", 0)
+        confidence = trade_data.get("confidence", "?")
+        bet_type = trade_data.get("bet_type", "?")
+        date = trade_data.get("date", "?")
+        trade_mode = trade_data.get("trade_mode", "live")
+
+        subject = f"Trade Executed: {city} {band_c} {side} — ${cost:.2f}"
+
+        html = f"""
+<html>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a2e; color: #e0e0e0; padding: 20px;">
+  <div style="max-width: 500px; margin: 0 auto; background: #16213e; border-radius: 8px; padding: 24px; border: 1px solid #0f3460;">
+    <h2 style="color: #00d2ff; margin-top: 0;">Trade Executed</h2>
+    <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+      <tr><td style="padding: 8px 0; color: #999;">City</td><td style="padding: 8px 0; text-align: right; font-weight: 600;">{city}</td></tr>
+      <tr><td style="padding: 8px 0; color: #999;">Date</td><td style="padding: 8px 0; text-align: right;">{date}</td></tr>
+      <tr><td style="padding: 8px 0; color: #999;">Band</td><td style="padding: 8px 0; text-align: right;">{band_c}</td></tr>
+      <tr><td style="padding: 8px 0; color: #999;">Side</td><td style="padding: 8px 0; text-align: right;">{side}</td></tr>
+      <tr><td style="padding: 8px 0; color: #999;">Type</td><td style="padding: 8px 0; text-align: right;">{bet_type}</td></tr>
+      <tr style="border-top: 1px solid #0f3460;"><td style="padding: 8px 0; color: #999;">Cost</td><td style="padding: 8px 0; text-align: right; font-weight: 600; color: #00d2ff;">${cost:.2f}</td></tr>
+      <tr><td style="padding: 8px 0; color: #999;">Shares</td><td style="padding: 8px 0; text-align: right;">{shares:.2f}</td></tr>
+      <tr><td style="padding: 8px 0; color: #999;">Entry Price</td><td style="padding: 8px 0; text-align: right;">{entry_price:.4f}</td></tr>
+      <tr><td style="padding: 8px 0; color: #999;">Edge</td><td style="padding: 8px 0; text-align: right;">{edge}</td></tr>
+      <tr><td style="padding: 8px 0; color: #999;">Confidence</td><td style="padding: 8px 0; text-align: right;">{confidence}</td></tr>
+    </table>
+    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #0f3460; font-size: 13px; color: #999;">
+      <strong>Portfolio:</strong> {portfolio_name} &nbsp;|&nbsp; <strong>Mode:</strong> {trade_mode}
+    </div>
+    <div style="margin-top: 16px;">
+      <a href="{DASHBOARD_URL}" style="color: #00d2ff; text-decoration: none;">View Dashboard &rarr;</a>
+    </div>
+  </div>
+</body>
+</html>
+"""
+
+        msg = MIMEMultipart("alternative")
+        msg["From"] = "PolyWeather Alerts <onboarding@resend.dev>"
+        msg["To"] = "tim@theboost.ai"
+        msg["Subject"] = subject
+        msg.attach(MIMEText(html, "html"))
+
+        with smtplib.SMTP("smtp.resend.com", 587) as server:
+            server.starttls()
+            server.login("resend", RESEND_API_KEY)
+            server.sendmail("onboarding@resend.dev", "tim@theboost.ai", msg.as_string())
+
+        print(f"[LIVE ALERT] Email sent: {subject}")
+    except Exception as e:
+        print(f"[LIVE ALERT] Failed to send email: {e}")
 
 
 def _log_execution(supabase_url, headers, trade_id=None, portfolio_id=None,
