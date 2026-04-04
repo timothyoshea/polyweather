@@ -252,6 +252,13 @@ def open_paper_trades(opps, scan_id, supabase_url, supabase_service_key,
             if allowed_cities and opp_city not in allowed_cities:
                 continue
 
+            # Entry price filter
+            min_entry = strategy.get("preferred_entry_price_min")
+            if min_entry is not None:
+                opp_entry = opp.get("entry_price") or (opp.get("mkt_p", 0) / 100 if opp.get("mkt_p") else None)
+                if opp_entry and float(opp_entry) < float(min_entry):
+                    continue
+
             liquidity = opp.get("liquidity")
             if not liquidity:
                 continue
