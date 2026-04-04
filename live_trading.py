@@ -377,23 +377,43 @@ def execute_live_trades(opps, scan_id, supabase_url, supabase_service_key,
                 exec_ms = int((time.time() - t_exec) * 1000)
 
                 if exec_result.get("success"):
+                    # Use actual on-chain cost if available, else estimated
+                    actual_cost = exec_result.get("actual_cost_usd")
+                    estimated_cost = exec_result.get("estimated_cost_usd", cost)
+                    final_cost = actual_cost if actual_cost is not None else estimated_cost
+
+                    fill_data = exec_result.get("fill_data", {})
+                    size_matched = fill_data.get("size_matched", "0") if fill_data else "0"
+
                     print(f"[LIVE] Executed: {opp_label} "
-                          f"cost=${exec_result.get('net_cost_usd', 0):.2f} "
-                          f"fees=${exec_result.get('fees_usd', 0):.2f} "
-                          f"({exec_ms}ms)")
+                          f"actual_cost=${actual_cost} estimated=${estimated_cost} "
+                          f"matched={size_matched} ({exec_ms}ms)")
                     count += 1
 
-                    # Update trade status to open
-                    open_url = f"{supabase_url}/rest/v1/paper_trades?id=eq.{trade_id}"
-                    _supabase_request(open_url, {
+                    # Update trade with actual execution data
+                    trade_update = {
                         "status": "open",
                         "execution_details": {
                             "order_id": exec_result.get("order_id"),
-                            "net_cost_usd": exec_result.get("net_cost_usd"),
-                            "fees_usd": exec_result.get("fees_usd"),
+                            "order_status": exec_result.get("status"),
+                            "estimated_cost_usd": estimated_cost,
+                            "actual_cost_usd": actual_cost,
+                            "usdc_before": exec_result.get("usdc_before"),
+                            "usdc_after": exec_result.get("usdc_after"),
+                            "fill_data": fill_data,
                             "executed_at": datetime.now(timezone.utc).isoformat(),
                         },
-                    }, headers, method="PATCH")
+                    }
+                    # Override cost/shares with actuals if we have them
+                    if actual_cost is not None and actual_cost > 0:
+                        trade_update["total_cost_usd"] = round(actual_cost, 4)
+                    if fill_data and fill_data.get("size_matched") and float(fill_data["size_matched"]) > 0:
+                        trade_update["total_shares"] = round(float(fill_data["size_matched"]), 4)
+                        if actual_cost and float(fill_data["size_matched"]) > 0:
+                            trade_update["entry_price"] = round(actual_cost / float(fill_data["size_matched"]), 6)
+
+                    open_url = f"{supabase_url}/rest/v1/paper_trades?id=eq.{trade_id}"
+                    _supabase_request(open_url, trade_update, headers, method="PATCH")
 
                     _log_execution(supabase_url, headers, trade_id=trade_id, portfolio_id=portfolio_id,
                                    action="trade_executed",
