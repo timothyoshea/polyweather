@@ -43,10 +43,27 @@ CLOB_API_PASSPHRASE = os.environ.get("CLOB_API_PASSPHRASE", "")
 _client = None
 
 
-def get_client():
-    """Get or create the authenticated CLOB client."""
+def get_client(wallet_address: str = None):
+    """Get or create the authenticated CLOB client.
+
+    If wallet_address is provided, returns that wallet's client from wallet_mgr.
+    Otherwise falls back to the singleton client or wallet_mgr default.
+    """
+    # If a specific wallet is requested, use wallet_mgr
+    if wallet_address:
+        client = wallet_mgr.get_client(wallet_address)
+        if client:
+            return client
+        raise RuntimeError(f"Wallet {wallet_address[:10]}... not registered")
+
     global _client
     if _client is not None:
+        return _client
+
+    # Try wallet_mgr default first
+    mgr_client = wallet_mgr.get_default_client()
+    if mgr_client:
+        _client = mgr_client
         return _client
 
     if not PRIVATE_KEY:
