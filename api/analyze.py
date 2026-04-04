@@ -265,29 +265,71 @@ class handler(BaseHTTPRequestHandler):
                 self._respond(400, {"error": "No closed trades to analyze"})
                 return
 
-            # Slim down trade data to reduce token usage
+            # Slim down trade data — include ALL analysis-relevant fields
             slim_trades = []
             for t in closed_trades:
+                # Extract time-of-day from created_at
+                hour_utc = None
+                day_of_week = None
+                created_at = t.get("created_at", "")
+                if created_at:
+                    try:
+                        dt = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+                        hour_utc = dt.hour
+                        day_of_week = dt.strftime("%A")
+                    except Exception:
+                        pass
+
+                # Extract forecast details
+                fd = t.get("forecast_details") or {}
+
                 slim_trades.append({
+                    # Core identifiers
                     "city": t.get("city"),
                     "date": t.get("date"),
                     "band_c": t.get("band_c"),
+                    "band_f": t.get("band_f"),
                     "band_type": t.get("band_type"),
                     "side": t.get("side"),
                     "bet_type": t.get("bet_type"),
                     "status": t.get("status"),
+                    # Pricing & position
                     "entry_price": t.get("entry_price"),
                     "total_cost_usd": t.get("total_cost_usd"),
                     "total_shares": t.get("total_shares"),
+                    "num_levels": t.get("num_levels"),
+                    # Probabilities & edge
                     "my_p": t.get("my_p"),
                     "mkt_p": t.get("mkt_p"),
                     "edge": t.get("edge"),
                     "confidence": t.get("confidence"),
+                    "ev_per_dollar": t.get("ev_per_dollar"),
+                    "half_kelly": t.get("half_kelly"),
+                    "empirical_p": t.get("empirical_p"),
+                    # Risk
                     "risk": t.get("risk"),
+                    # Outcome
                     "profit_usd": t.get("profit_usd"),
                     "roi_pct": t.get("roi_pct"),
+                    "payout_usd": t.get("payout_usd"),
+                    # Temperature data
                     "actual_temp_c": t.get("actual_temp_c"),
                     "forecast_c": t.get("forecast_c"),
+                    # Forecast model details
+                    "ensemble_mean": fd.get("ensemble_mean"),
+                    "ensemble_std": fd.get("ensemble_std"),
+                    "ensemble_min": fd.get("ensemble_min"),
+                    "ensemble_max": fd.get("ensemble_max"),
+                    "multi_model_spread": fd.get("multi_model_spread"),
+                    "horizon_days": fd.get("horizon_days"),
+                    "city_tier": fd.get("city_tier"),
+                    # Timing
+                    "hour_utc": hour_utc,
+                    "day_of_week": day_of_week,
+                    "created_at": created_at,
+                    # Trade mode
+                    "trade_mode": t.get("trade_mode"),
+                    "price_source": t.get("price_source"),
                 })
 
             portfolio_id = body.get("portfolio_id", None)
