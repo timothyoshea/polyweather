@@ -276,6 +276,58 @@ def derive_creds():
         return jsonify({"error": str(e)}), 500
 
 
+# --- Wallet management endpoints ---
+
+@app.route("/wallets/register", methods=["POST"])
+@require_auth
+def register_wallet():
+    """Register a new wallet. Body: {address, private_key, label}"""
+    data = request.get_json() or {}
+    address = data.get("address", "")
+    private_key = data.get("private_key", "")
+    label = data.get("label", "")
+    if not address or not private_key:
+        return jsonify({"error": "address and private_key required"}), 400
+    try:
+        wallet_mgr.register_wallet(address, private_key, label)
+        return jsonify({"registered": True, "address": address, "label": label})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/wallets/list", methods=["GET"])
+@require_auth
+def list_wallets():
+    """List all wallets (no keys exposed)."""
+    return jsonify({"wallets": wallet_mgr.list_wallets()})
+
+
+@app.route("/wallets/balance", methods=["GET"])
+@require_auth
+def wallet_balance():
+    """Get balance for a specific wallet. Query: ?address=0x..."""
+    address = request.args.get("address")
+    if not address:
+        return jsonify({"error": "address required"}), 400
+    try:
+        bal = wallet_mgr.get_balance(address)
+        return jsonify({"address": address, **bal})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/wallets/remove", methods=["POST"])
+@require_auth
+def remove_wallet():
+    """Remove a wallet. Body: {address}"""
+    data = request.get_json() or {}
+    address = data.get("address", "")
+    if not address:
+        return jsonify({"error": "address required"}), 400
+    wallet_mgr.remove_wallet(address)
+    return jsonify({"removed": True, "address": address})
+
+
 # --- Shared web3 helpers ---
 
 # Token addresses
