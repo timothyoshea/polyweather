@@ -702,11 +702,10 @@ class TradingLoop:
                     continue
 
                 # Calculate real-time edge
+                # token_id is side-specific: YES opps have YES token,
+                # NO opps have NO token. Midpoint is already the correct price.
                 opp_side = opp.get("side", "")
-                if opp_side == "YES":
-                    realtime_edge = my_p - (mkt_price * 100)
-                else:  # NO
-                    realtime_edge = my_p - ((1 - mkt_price) * 100)
+                realtime_edge = my_p - (mkt_price * 100)
 
                 # Must exceed minimum edge
                 if realtime_edge < MIN_EDGE_PP:
