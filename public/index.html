@@ -1287,6 +1287,18 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
       </div>
       <button class="scan-btn" onclick="createNewPortfolio()">Create Portfolio</button>
     </div>
+    <div id="delete-portfolio-form" style="display:none;margin-top:16px;background:rgba(255,82,82,0.06);border:1px solid rgba(255,82,82,0.25);border-radius:8px;padding:16px;">
+      <div style="font-size:13px;font-weight:600;color:var(--red);margin-bottom:8px;" id="delete-portfolio-warning"></div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:12px;">This will permanently delete the portfolio, all its trades, and all analyses. This cannot be undone.</div>
+      <div style="margin-bottom:12px;">
+        <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px;">Type <strong style="color:var(--red);">YES DELETE</strong> to confirm</label>
+        <input type="text" id="delete-portfolio-confirm" placeholder="YES DELETE" style="width:100%;max-width:300px;background:var(--bg);border:1px solid rgba(255,82,82,0.3);color:var(--text);padding:8px 12px;border-radius:6px;font-family:var(--sans);font-size:13px;">
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="executeDeletePortfolio()" style="padding:8px 16px;border-radius:6px;font-size:12px;cursor:pointer;font-family:var(--sans);border:1px solid rgba(255,82,82,0.4);background:rgba(255,82,82,0.15);color:var(--red);font-weight:600;">Delete Forever</button>
+        <button onclick="document.getElementById('delete-portfolio-form').style.display='none'" style="padding:8px 16px;border-radius:6px;font-size:12px;cursor:pointer;font-family:var(--sans);border:1px solid var(--card-border);background:var(--card);color:var(--text2);">Cancel</button>
+      </div>
+    </div>
   </div>
 
   <!-- Capital Status -->
