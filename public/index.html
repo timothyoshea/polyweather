@@ -1996,28 +1996,56 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
   }
 
   function renderWizardWallet(body) {
-    // Default wallet — in future each portfolio can have its own
-    const defaultWallet = '0xa3e4d2142A20f08C2D9e644b11E77A817ec03976';
-    if (!wizardStrategy._walletAddress) wizardStrategy._walletAddress = defaultWallet;
+    const knownWallets = [
+      { address: '0xa3e4d2142A20f08C2D9e644b11E77A817ec03976', label: 'Main Wallet' }
+    ];
+    if (!wizardStrategy._walletAddress) wizardStrategy._walletAddress = knownWallets[0].address;
+
+    const walletOptions = knownWallets.map(w =>
+      `<option value="${w.address}" ${wizardStrategy._walletAddress === w.address ? 'selected' : ''}>${w.label} (${w.address.slice(0,6)}...${w.address.slice(-4)})</option>`
+    ).join('');
 
     body.innerHTML = `
       <p style="color:var(--text2);font-size:13px;margin:0 0 16px;">Each live portfolio is linked to a wallet that holds USDC.e on Polygon. This wallet will be used to place and settle trades.</p>
 
-      <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:4px;font-family:var(--mono);">Wallet Address</label>
-      <input id="wiz-wallet-input" type="text" value="${wizardStrategy._walletAddress}"
-        onchange="wizardStrategy._walletAddress=this.value;wizCheckWallet();"
-        style="width:100%;box-sizing:border-box;background:var(--card);border:1px solid var(--card-border);border-radius:6px;padding:10px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;margin-bottom:16px;">
+      <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:4px;font-family:var(--mono);">Select Wallet</label>
+      <select id="wiz-wallet-select"
+        onchange="wizWalletSelected(this.value)"
+        style="width:100%;box-sizing:border-box;background:var(--card);border:1px solid var(--card-border);border-radius:6px;padding:10px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;margin-bottom:8px;cursor:pointer;">
+        ${walletOptions}
+        <option value="__new__">+ Add New Wallet</option>
+      </select>
+
+      <div id="wiz-wallet-new-row" style="display:none;margin-bottom:16px;">
+        <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:4px;font-family:var(--mono);">New Wallet Address</label>
+        <input id="wiz-wallet-new-input" type="text" placeholder="0x..."
+          style="width:100%;box-sizing:border-box;background:var(--card);border:1px solid var(--card-border);border-radius:6px;padding:10px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;"
+          onchange="wizardStrategy._walletAddress=this.value.trim();wizCheckWallet();">
+      </div>
 
       <div id="wiz-wallet-status" style="padding:16px;background:var(--card);border:1px solid var(--card-border);border-radius:8px;">
         <div style="color:var(--text2);font-size:13px;">Checking wallet balance...</div>
       </div>
 
       <div style="margin-top:14px;padding:10px 14px;background:rgba(79,195,247,0.06);border:1px solid rgba(79,195,247,0.12);border-radius:6px;font-size:12px;color:var(--text2);">
-        Each live portfolio has its own wallet. To use a different wallet, paste its Polygon address above. Make sure it has USDC.e funded and Polymarket contracts approved.
+        Each live portfolio has its own wallet. Make sure it has USDC.e funded and Polymarket contracts approved.
       </div>
     `;
 
     wizCheckWallet();
+  }
+
+  function wizWalletSelected(val) {
+    const newRow = document.getElementById('wiz-wallet-new-row');
+    if (val === '__new__') {
+      newRow.style.display = 'block';
+      document.getElementById('wiz-wallet-new-input').focus();
+      wizardStrategy._walletAddress = '';
+    } else {
+      newRow.style.display = 'none';
+      wizardStrategy._walletAddress = val;
+      wizCheckWallet();
+    }
   }
 
   function wizCheckWallet() {
