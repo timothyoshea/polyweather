@@ -251,8 +251,8 @@ def call_claude(trades_json, user_question=None, breakdowns=None, date_range=Non
         api_messages = [{"role": "user", "content": user_content}]
 
     body = json.dumps({
-        "model": "claude-sonnet-4-20250514",
-        "max_tokens": 8192,
+        "model": "claude-opus-4-20250514",
+        "max_tokens": 16384,
         "system": SYSTEM_PROMPT,
         "messages": api_messages,
     }).encode("utf-8")
