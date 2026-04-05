@@ -1003,3 +1003,7 @@ class TradingLoop:
                 self._errors_total += 1
                 _log(f"Error processing {opp_label}: {e}")
                 continue
+
+        # Log drop summary every 200 cycles
+        if self._cycle_count % 200 == 0:
+            _log(f"[{pf_name}] Drops: {_dbg_drops}")
