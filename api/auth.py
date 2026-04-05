@@ -188,6 +188,7 @@ class handler(BaseHTTPRequestHandler):
                 self.send_header("Content-Type", "application/json")
                 self.send_header("Access-Control-Allow-Origin", "*")
                 self.send_header("Set-Cookie", "pw_session=; Path=/; HttpOnly; Max-Age=0")
+                self.send_header("Set-Cookie", "pw_refresh=; Path=/; HttpOnly; Max-Age=0")
                 self.end_headers()
                 self.wfile.write(json.dumps({"logged_out": True}).encode())
 
