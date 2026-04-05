@@ -90,6 +90,15 @@ def _http_patch(url, data, headers=None, timeout=15):
         return json.loads(body) if body.strip() else {}
 
 
+def _http_request(url, method="GET", headers=None, timeout=15):
+    """Generic HTTP request."""
+    hdrs = headers or {}
+    hdrs.setdefault("User-Agent", "PolyWeather/1.0")
+    req = urllib.request.Request(url, headers=hdrs, method=method)
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return resp.read().decode("utf-8")
+
+
 def _supabase_headers():
     return {
         "apikey": SUPABASE_SERVICE_KEY,
