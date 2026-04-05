@@ -126,26 +126,62 @@ class handler(BaseHTTPRequestHandler):
             elif action == "check":
                 cookie_header = self.headers.get("Cookie", "")
                 token = None
+                refresh = None
                 for part in cookie_header.split(";"):
                     part = part.strip()
                     if part.startswith("pw_session="):
                         token = part[len("pw_session="):]
-                        break
+                    elif part.startswith("pw_refresh="):
+                        refresh = part[len("pw_refresh="):]
 
-                if not token:
+                if not token and not refresh:
                     self._respond(200, {"authenticated": False})
                     return
 
-                result = _verify_token(token)
-                if result.get("valid"):
-                    self._respond(200, {"authenticated": True, "email": result["email"]})
-                else:
-                    # Clear invalid cookie
-                    self.send_response(200)
-                    self.send_header("Content-Type", "application/json")
-                    self.send_header("Set-Cookie", "pw_session=; Path=/; HttpOnly; Max-Age=0")
-                    self.end_headers()
-                    self.wfile.write(json.dumps({"authenticated": False}).encode())
+                # Try the access token first
+                if token:
+                    result = _verify_token(token)
+                    if result.get("valid"):
+                        self._respond(200, {"authenticated": True, "email": result["email"]})
+                        return
+
+                # Access token expired — try refresh
+                if refresh:
+                    try:
+                        refresh_result = _supabase_auth_request("token?grant_type=refresh_token", {
+                            "refresh_token": refresh,
+                        })
+                        new_access = refresh_result.get("access_token")
+                        new_refresh = refresh_result.get("refresh_token", refresh)
+
+                        if new_access:
+                            # Verify the new token
+                            verify = _verify_token(new_access)
+                            if verify.get("valid"):
+                                # Set new cookies with refreshed tokens
+                                self.send_response(200)
+                                self.send_header("Content-Type", "application/json")
+                                self.send_header("Access-Control-Allow-Origin", "*")
+                                self.send_header("Set-Cookie",
+                                    f"pw_session={new_access}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000")
+                                self.send_header("Set-Cookie",
+                                    f"pw_refresh={new_refresh}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000")
+                                self.end_headers()
+                                self.wfile.write(json.dumps({
+                                    "authenticated": True,
+                                    "email": verify["email"],
+                                }).encode())
+                                return
+                    except Exception as refresh_err:
+                        print(f"[AUTH] Refresh failed: {refresh_err}")
+
+                # Both failed — clear cookies
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Set-Cookie", "pw_session=; Path=/; HttpOnly; Max-Age=0")
+                self.send_header("Set-Cookie", "pw_refresh=; Path=/; HttpOnly; Max-Age=0")
+                self.end_headers()
+                self.wfile.write(json.dumps({"authenticated": False}).encode())
 
             elif action == "logout":
                 self.send_response(200)
