@@ -3897,6 +3897,7 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
 
   function _getSortValue(t, key) {
     if (key === 'est_ret') {
+      if (t.ev_per_dollar != null) return t.ev_per_dollar * 100;
       if (t.my_p != null && t.total_cost_usd > 0 && t.total_shares > 0) {
         var prob = t.my_p / 100;
         return (prob * t.total_shares - t.total_cost_usd) / t.total_cost_usd * 100;
