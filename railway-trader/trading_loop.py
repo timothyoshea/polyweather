@@ -763,6 +763,7 @@ class TradingLoop:
 
         # Get CLOB client (lazy, once per cycle per portfolio)
         client = None
+        _dbg_drops = {"no_liq":0,"no_pos":0,"cost<5":0,"cap_scale":0,"util":0,"city":0,"shares<5":0,"cost<1.1":0,"dup":0,"attempt":0}
 
         for opp in opps:
             opp_label = f"{opp.get('city', '?')}/{opp.get('band_c', '?')}/{opp.get('side', '?')}"
