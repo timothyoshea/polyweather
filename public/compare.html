@@ -560,7 +560,7 @@ function renderTable(metrics) {
 
   // Body
   const body = document.getElementById('table-body');
-  body.innerHTML = metrics.map(m => {
+  body.innerHTML = sorted.map(m => {
     return '<tr style="cursor:pointer;" onclick="selectPortfolio(\'' + m.id + '\')">' + columns.map(col => {
       const val = m[col.key];
       let cls = '';
