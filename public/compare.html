@@ -540,9 +540,23 @@ function renderTable(metrics) {
     bestValues[col.key] = col.best === 'max' ? Math.max(...vals) : Math.min(...vals);
   });
 
-  // Header
+  // Sort metrics
+  const sorted = [...metrics].sort((a, b) => {
+    const av = a[_compareSortKey], bv = b[_compareSortKey];
+    if (typeof av === 'string' && typeof bv === 'string') {
+      return _compareSortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+    }
+    return _compareSortDir === 'asc' ? (av || 0) - (bv || 0) : (bv || 0) - (av || 0);
+  });
+
+  // Header with sort arrows
   const header = document.getElementById('table-header');
-  header.innerHTML = columns.map(c => '<th>' + c.label + '</th>').join('');
+  header.innerHTML = columns.map(c => {
+    const isActive = _compareSortKey === c.key;
+    const arrow = isActive ? (_compareSortDir === 'asc' ? ' \u25B2' : ' \u25BC') : '';
+    const style = isActive ? 'color:var(--cyan);cursor:pointer;' : 'cursor:pointer;';
+    return '<th style="' + style + '" onclick="sortCompare(\'' + c.key + '\')">' + c.label + arrow + '</th>';
+  }).join('');
 
   // Body
   const body = document.getElementById('table-body');
