@@ -3203,7 +3203,7 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
 
       <div class="cta-row">
         <a class="cta-btn ${o.side === 'YES' ? 'yes' : 'no'}" href="${esc(o.url)}" target="_blank" rel="noopener">
-          Buy ${o.side} on "${esc(o.question)}" at ${o.mkt_p.toFixed(1)}¢ <span class="cta-arrow">→</span> Polymarket
+          Buy ${o.side} on ${esc(o.question || o.city + ' ' + o.band_c + ' (' + o.date + ')')} at ${o.mkt_p.toFixed(1)}¢ <span class="cta-arrow">→</span> Polymarket
         </a>
       </div>
     </div>`;
