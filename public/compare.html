@@ -491,8 +491,10 @@ function computeSharpe(closedTrades) {
 // ── Render Table ──
 function renderTable(metrics) {
   const columns = [
-    { key: 'name', label: 'Portfolio', format: v => v, best: null },
-    { key: 'totalTrades', label: 'Trades', format: v => v.toLocaleString(), best: 'max' },
+    { key: 'name', label: 'Portfolio', format: (v, m) => v + (m.tradeMode === 'live' ? ' <span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(0,230,118,0.15);color:var(--green);">LIVE</span>' : ''), best: null },
+    { key: 'totalTrades', label: 'Total', format: v => v.toLocaleString(), best: 'max' },
+    { key: 'openTrades', label: 'Open', format: v => v.toLocaleString(), best: null },
+    { key: 'closedTrades', label: 'Closed', format: v => v.toLocaleString(), best: null },
     { key: 'won', label: 'Won', format: v => v.toLocaleString(), best: 'max' },
     { key: 'lost', label: 'Lost', format: v => v.toLocaleString(), best: 'min' },
     { key: 'winRate', label: 'Win %', format: v => v.toFixed(1) + '%', best: 'max' },
