@@ -740,6 +740,24 @@ class TradingLoop:
         opps = list(self._opportunities)  # shallow copy
         opps = _score_and_sort(opps, strategy)
 
+        # Debug: log evaluation summary every 200 cycles
+        if self._cycle_count % 200 == 0:
+            passed_filter = 0
+            has_midpoint = 0
+            has_edge = 0
+            for o in opps:
+                p, _ = _passes_strategy_filters(o, strategy)
+                if p:
+                    passed_filter += 1
+                    tid = o.get("token_id", "")
+                    if tid and tid in self._midpoints:
+                        has_midpoint += 1
+                        mp = self._midpoints[tid]
+                        e = (o.get("my_p") or 0) - (mp * 100)
+                        if e >= MIN_EDGE_PP:
+                            has_edge += 1
+            _log(f"[{pf_name}] Eval: {len(opps)} opps, {passed_filter} pass filters, {has_midpoint} have midpoint, {has_edge} have edge >= {MIN_EDGE_PP}pp")
+
         # Get CLOB client (lazy, once per cycle per portfolio)
         client = None
 
