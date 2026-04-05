@@ -395,7 +395,11 @@ function computeMetrics(portfolio, trades) {
 
   return {
     name: portfolio.name,
-    totalTrades: closed.length,
+    id: portfolio.id,
+    tradeMode: portfolio.trade_mode,
+    openTrades: open.length,
+    closedTrades: closed.length,
+    totalTrades: trades.length,
     won: won.length,
     lost: lost.length,
     winRate,
