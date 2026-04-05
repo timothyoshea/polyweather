@@ -3410,6 +3410,7 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
   function switchTab(tab) {
     document.getElementById('scanner-section').style.display = tab === 'dashboard' ? '' : 'none';
     document.getElementById('dashboard-section').style.display = tab === 'dashboard' ? '' : 'none';
+    document.getElementById('trade-history-section').style.display = tab === 'dashboard' ? '' : 'none';
     document.getElementById('settings-section').style.display = tab === 'settings' ? '' : 'none';
     document.querySelectorAll('.sidebar-link').forEach(t => t.classList.remove('active'));
     const activeTab = document.querySelector('.sidebar-link[onclick*="' + tab + '"]');
