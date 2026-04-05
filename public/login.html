@@ -148,6 +148,10 @@
     </div>
     <label>Enter code</label>
     <input type="text" id="code-input" class="code-input" placeholder="------" maxlength="6" inputmode="numeric" autocomplete="one-time-code">
+    <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);cursor:pointer;margin-top:12px;margin-bottom:12px;">
+      <input type="checkbox" id="remember-me" checked style="accent-color:var(--cyan);width:16px;height:16px;cursor:pointer;">
+      Remember this computer for 30 days
+    </label>
     <button class="btn" id="verify-btn" onclick="verifyCode()">Sign In</button>
     <div class="msg" id="code-msg"></div>
     <div class="back-link"><a onclick="showEmailStep()">Use a different email</a></div>
