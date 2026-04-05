@@ -3359,6 +3359,7 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
 
   // ── Tab Switching ─────────────────────────────
   function switchTab(tab) {
+    document.getElementById('portfolio-overview').style.display = tab === 'dashboard' ? '' : 'none';
     document.getElementById('scanner-section').style.display = tab === 'dashboard' ? '' : 'none';
     document.getElementById('dashboard-section').style.display = tab === 'dashboard' ? '' : 'none';
     document.getElementById('trade-history-section').style.display = tab === 'dashboard' ? '' : 'none';
