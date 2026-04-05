@@ -3440,7 +3440,8 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
     const status = document.getElementById('trade-filter-status').value;
     const type = document.getElementById('trade-filter-type').value;
     let url = '/api/trades?limit=200';
-    if (status) url += '&status=' + status;
+    if (status === 'closed') url += '&status=in.(won,lost)';
+    else if (status) url += '&status=' + status;
     if (type) url += '&bet_type=' + type;
     if (activePortfolioId) url += '&portfolio_id=' + activePortfolioId;
 
