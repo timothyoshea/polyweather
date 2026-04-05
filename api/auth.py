@@ -94,18 +94,21 @@ class handler(BaseHTTPRequestHandler):
                     })
 
                     access_token = result.get("access_token")
+                    refresh_token = result.get("refresh_token", "")
                     if not access_token:
                         self._respond(401, {"error": "Invalid code"})
                         return
 
-                    # Set session cookie
+                    # Set session cookies — both access and refresh token
                     remember = body.get("remember", False)
                     max_age = 2592000 if remember else 604800  # 30 days or 7 days
                     self.send_response(200)
                     self.send_header("Content-Type", "application/json")
                     self.send_header("Access-Control-Allow-Origin", "*")
-                    cookie = f"pw_session={access_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age={max_age}"
-                    self.send_header("Set-Cookie", cookie)
+                    self.send_header("Set-Cookie",
+                        f"pw_session={access_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age={max_age}")
+                    self.send_header("Set-Cookie",
+                        f"pw_refresh={refresh_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age={max_age}")
                     self.end_headers()
                     self.wfile.write(json.dumps({
                         "authenticated": True,
