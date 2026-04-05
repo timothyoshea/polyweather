@@ -3960,7 +3960,7 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
         const pnlSign = pnl >= 0 ? '+' : '';
 
         const isClaude = (pf.description || '').includes('Claude Code Chosen');
-        const claudeBadge = isClaude ? ' <span style="font-size:9px;padding:2px 5px;border-radius:3px;background:rgba(79,195,247,0.08);color:var(--cyan);">AI</span>' : '';
+        const claudeBadge = isClaude ? ' <span style="font-size:9px;padding:2px 5px;border-radius:3px;background:rgba(79,195,247,0.08);color:var(--cyan);">CC</span>' : '';
 
         return `<div style="background:${bgGrad};border:1px solid ${borderColor};border-radius:10px;padding:14px 16px;cursor:pointer;transition:border-color 0.15s;" onclick="selectPortfolio('${pf.id}')" onmouseover="this.style.borderColor='var(--cyan)'" onmouseout="this.style.borderColor='${borderColor}'">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
