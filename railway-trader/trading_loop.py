@@ -796,12 +796,12 @@ class TradingLoop:
                 # Check liquidity / position sizing
                 liquidity = opp.get("liquidity")
                 if not liquidity:
-                    continue
+                    _dbg_drops["no_liq"]+=1; continue
                 position = _compute_position(liquidity)
                 if position is None:
-                    continue
+                    _dbg_drops["no_pos"]+=1; continue
                 if position["total_cost_usd"] < 5.0:
-                    continue
+                    _dbg_drops["cost<5"]+=1; continue
 
                 cost = position["total_cost_usd"]
                 fees = cost * POLYMARKET_FEE_RATE
