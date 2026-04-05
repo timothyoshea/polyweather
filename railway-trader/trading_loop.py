@@ -793,8 +793,12 @@ class TradingLoop:
                 liquidity = opp.get("liquidity")
                 position = _compute_position(liquidity)
                 if position is None:
+                    if self._cycle_count % 200 == 0 and opp_label.startswith("Chengdu"):
+                        _log(f"[DEBUG] {opp_label} position=None, liquidity={type(liquidity)}")
                     continue
                 if position["total_cost_usd"] < 5.0:
+                    if self._cycle_count % 200 == 0 and opp_label.startswith("Chengdu"):
+                        _log(f"[DEBUG] {opp_label} cost={position['total_cost_usd']:.2f} < $5")
                     continue
 
                 cost = position["total_cost_usd"]
