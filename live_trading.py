@@ -508,14 +508,17 @@ def execute_live_trades(opps, scan_id, supabase_url, supabase_service_key,
                 else:
                     error = exec_result.get("error", "unknown")
                     print(f"[LIVE] Execution failed: {opp_label}: {error}")
-                    # Mark trade as failed
-                    fail_url = f"{supabase_url}/rest/v1/paper_trades?id=eq.{trade_id}"
-                    _supabase_request(fail_url, {"status": "void", "execution_details": {"error": error}},
-                                      headers, method="PATCH")
+                    # Delete the pending trade — don't leave void records
+                    try:
+                        del_url = f"{supabase_url}/rest/v1/paper_trades?id=eq.{trade_id}"
+                        del_req = urllib.request.Request(del_url, headers=headers, method="DELETE")
+                        urllib.request.urlopen(del_req, timeout=10)
+                    except Exception:
+                        pass
 
-                    _log_execution(supabase_url, headers, trade_id=trade_id, portfolio_id=portfolio_id,
+                    _log_execution(supabase_url, headers, trade_id=None, portfolio_id=portfolio_id,
                                    action="trade_failed",
-                                   request_payload=railway_payload,
+                                   request_payload={**railway_payload, "trade_id": trade_id},
                                    response_payload=exec_result,
                                    error_message=error, duration_ms=exec_ms)
 
