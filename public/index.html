@@ -3991,7 +3991,7 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
 
   // ── Init: Load portfolios first, then switch tab ──────
   loadPortfolios().then(() => {
-    const initTab = localStorage.getItem('pw-tab') || 'dashboard';
+    const initTab = localStorage.getItem('pw-tab') || 'trades';
     localStorage.removeItem('pw-tab');
     switchTab(initTab);
     loadPortfolioOverview();
