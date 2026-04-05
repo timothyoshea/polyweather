@@ -491,7 +491,22 @@ function computeSharpe(closedTrades) {
 }
 
 // ── Render Table ──
+let _compareMetrics = [];
+let _compareSortKey = 'totalProfit';
+let _compareSortDir = 'desc';
+
+function sortCompare(key) {
+  if (_compareSortKey === key) {
+    _compareSortDir = _compareSortDir === 'desc' ? 'asc' : 'desc';
+  } else {
+    _compareSortKey = key;
+    _compareSortDir = key === 'name' ? 'asc' : 'desc';
+  }
+  renderTable(_compareMetrics);
+}
+
 function renderTable(metrics) {
+  _compareMetrics = metrics;
   const columns = [
     { key: 'name', label: 'Portfolio', format: (v, m) => v + (m.tradeMode === 'live' ? ' <span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(0,230,118,0.15);color:var(--green);">LIVE</span>' : ''), best: null },
     { key: 'totalTrades', label: 'Total', format: v => v.toLocaleString(), best: 'max' },
