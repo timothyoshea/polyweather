@@ -742,21 +742,24 @@ class TradingLoop:
 
         # Debug: log evaluation summary every 200 cycles
         if self._cycle_count % 200 == 0:
-            passed_filter = 0
-            has_midpoint = 0
-            has_edge = 0
+            dbg = {"filter":0, "no_token":0, "no_midpoint":0, "no_edge":0, "no_liq":0, "no_pos":0, "cost_low":0, "shares_low":0, "cap":0, "dup":0, "ready":0}
             for o in opps:
                 p, _ = _passes_strategy_filters(o, strategy)
-                if p:
-                    passed_filter += 1
-                    tid = o.get("token_id", "")
-                    if tid and tid in self._midpoints:
-                        has_midpoint += 1
-                        mp = self._midpoints[tid]
-                        e = (o.get("my_p") or 0) - (mp * 100)
-                        if e >= MIN_EDGE_PP:
-                            has_edge += 1
-            _log(f"[{pf_name}] Eval: {len(opps)} opps, {passed_filter} pass filters, {has_midpoint} have midpoint, {has_edge} have edge >= {MIN_EDGE_PP}pp")
+                if not p: dbg["filter"]+=1; continue
+                tid = o.get("token_id", "")
+                if not tid: dbg["no_token"]+=1; continue
+                if tid not in self._midpoints: dbg["no_midpoint"]+=1; continue
+                mp = self._midpoints[tid]
+                e = (o.get("my_p") or 0) - (mp * 100)
+                if e < MIN_EDGE_PP: dbg["no_edge"]+=1; continue
+                liq = o.get("liquidity")
+                if not liq: dbg["no_liq"]+=1; continue
+                pos = _compute_position(liq)
+                if pos is None: dbg["no_pos"]+=1; continue
+                if pos["total_cost_usd"] < 5.0: dbg["cost_low"]+=1; continue
+                if pos["total_shares"] < 5.0: dbg["shares_low"]+=1; continue
+                dbg["ready"]+=1
+            _log(f"[{pf_name}] Eval: {len(opps)} opps → {dbg}")
 
         # Get CLOB client (lazy, once per cycle per portfolio)
         client = None
