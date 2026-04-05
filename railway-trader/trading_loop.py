@@ -702,6 +702,8 @@ class TradingLoop:
         # Check trading hours
         hours_ok, hours_reason = _check_trading_hours(strategy)
         if not hours_ok:
+            if self._cycle_count % 200 == 0:
+                _log(f"[{pf_name}] Hours blocked: {hours_reason}")
             return  # Silent skip — logged only on state change
 
         # Capital management setup
