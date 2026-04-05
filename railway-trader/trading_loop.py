@@ -967,15 +967,17 @@ class TradingLoop:
                         error = exec_result.get("error", "unknown")
                         _log(f"Execution failed: {opp_label}: {error}")
 
-                        fail_url = f"{SUPABASE_URL}/rest/v1/paper_trades?id=eq.{trade_id}"
-                        _http_patch(fail_url, {
-                            "status": "void",
-                            "execution_details": {"error": error},
-                        }, _supabase_headers())
+                        # Delete the pending trade — don't leave void records
+                        try:
+                            del_url = f"{SUPABASE_URL}/rest/v1/paper_trades?id=eq.{trade_id}"
+                            _http_request(del_url, method="DELETE", headers=_supabase_headers())
+                        except Exception:
+                            pass
 
                         _log_execution(
-                            trade_id=trade_id, portfolio_id=portfolio_id,
+                            trade_id=None, portfolio_id=portfolio_id,
                             action="trade_failed",
+                            request_payload={"opp": opp_label, "trade_id": trade_id},
                             response_payload=exec_result,
                             error_message=error, duration_ms=exec_ms,
                         )
@@ -984,18 +986,17 @@ class TradingLoop:
                     exec_ms = int((time.time() - t_exec) * 1000)
                     _log(f"CLOB execution error: {opp_label}: {exec_err}")
 
-                    fail_url = f"{SUPABASE_URL}/rest/v1/paper_trades?id=eq.{trade_id}"
+                    # Delete the pending trade — don't leave void records
                     try:
-                        _http_patch(fail_url, {
-                            "status": "void",
-                            "execution_details": {"error": str(exec_err)},
-                        }, _supabase_headers())
+                        del_url = f"{SUPABASE_URL}/rest/v1/paper_trades?id=eq.{trade_id}"
+                        _http_request(del_url, method="DELETE", headers=_supabase_headers())
                     except Exception:
                         pass
 
                     _log_execution(
-                        trade_id=trade_id, portfolio_id=portfolio_id,
+                        trade_id=None, portfolio_id=portfolio_id,
                         action="execution_error",
+                        request_payload={"opp": opp_label, "trade_id": trade_id},
                         error_message=str(exec_err), duration_ms=exec_ms,
                     )
 
