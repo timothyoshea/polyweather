@@ -98,11 +98,13 @@ class handler(BaseHTTPRequestHandler):
                         self._respond(401, {"error": "Invalid code"})
                         return
 
-                    # Set session cookie (httpOnly, secure, 7 days)
+                    # Set session cookie
+                    remember = body.get("remember", False)
+                    max_age = 2592000 if remember else 604800  # 30 days or 7 days
                     self.send_response(200)
                     self.send_header("Content-Type", "application/json")
                     self.send_header("Access-Control-Allow-Origin", "*")
-                    cookie = f"pw_session={access_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800"
+                    cookie = f"pw_session={access_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age={max_age}"
                     self.send_header("Set-Cookie", cookie)
                     self.end_headers()
                     self.wfile.write(json.dumps({
