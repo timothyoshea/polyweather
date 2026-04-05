@@ -165,6 +165,12 @@ class handler(BaseHTTPRequestHandler):
                 tq += f"&limit={limit}"
                 trades = supabase_query(tq)
 
+                # Count trades by status
+                open_count = len(open_trades)
+                won_count = len([t for t in resolved_trades if float(t.get("profit_usd", 0) or 0) > 0])
+                lost_count = len([t for t in resolved_trades if float(t.get("profit_usd", 0) or 0) <= 0])
+                total_count = open_count + won_count + lost_count
+
                 data = {
                     "capital": {
                         "starting": round(starting, 2),
@@ -174,6 +180,10 @@ class handler(BaseHTTPRequestHandler):
                         "current": round(current, 2),
                         "available": round(available, 2),
                         "utilization_pct": round(utilization_pct, 2),
+                        "total_trades": total_count,
+                        "open_trades": open_count,
+                        "won": won_count,
+                        "lost": lost_count,
                     },
                     "trades": trades,
                 }
