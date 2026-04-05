@@ -821,24 +821,25 @@ class TradingLoop:
 
                     max_deployed = current_capital * max_portfolio_util_pct / 100
                     if deployed + total_with_fees > max_deployed:
-                        continue
+                        _dbg_drops["util"]+=1; continue
 
                     opp_city = opp.get("city", "")
                     city_exp = city_exposure.get(opp_city, 0.0)
                     max_city = current_capital * max_corr_exposure_pct / 100
                     if city_exp + total_with_fees > max_city:
-                        continue
+                        _dbg_drops["city"]+=1; continue
 
                 # Polymarket minimums: 5 shares AND $1 marketable order
                 if position["total_shares"] < 5.0:
-                    continue
+                    _dbg_drops["shares<5"]+=1; continue
                 if position["total_cost_usd"] < 1.10:
-                    continue
+                    _dbg_drops["cost<1.1"]+=1; continue
 
                 # Deduplication check
                 if _check_duplicate(opp, portfolio_id):
-                    continue
+                    _dbg_drops["dup"]+=1; continue
 
+                _dbg_drops["attempt"]+=1
                 # --- Execute trade ---
                 _log(f"EDGE DETECTED: {opp_label} edge={realtime_edge:.1f}pp "
                      f"mkt={mkt_price:.4f} my_p={my_p:.1f} cost=${cost:.2f} [{pf_name}]")
