@@ -3496,18 +3496,21 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
         '<td>' + (t.confidence || '\u2014') + '</td>' +
         '<td>' + (t.my_p != null ? '<span style="color:var(--cyan)">' + t.my_p.toFixed(1) + '%</span>' : '\u2014') + '</td>' +
         '<td>' + (function() {
-          // Use snapshot data: ev_per_dollar for expected return
-          if (t.ev_per_dollar != null && t.ev_per_dollar !== 0) {
-            var estRet = t.ev_per_dollar * 100;
+          // Return if trade wins: (payout - cost) / cost * 100
+          // Payout = total_shares * $1, Cost = total_cost_usd
+          if (t.total_shares > 0 && t.total_cost_usd > 0) {
+            var estRet = ((t.total_shares - t.total_cost_usd) / t.total_cost_usd * 100);
             var color = estRet >= 0 ? 'var(--green)' : 'var(--red)';
             return '<span style="color:' + color + '">' + (estRet >= 0 ? '+' : '') + estRet.toFixed(1) + '%</span>';
           }
-          // Fallback: calculate from snapshot my_p
-          if (t.my_p != null && t.total_cost_usd > 0 && t.total_shares > 0) {
-            var prob = t.my_p / 100;
-            var estRet = ((prob * t.total_shares - t.total_cost_usd) / t.total_cost_usd * 100);
-            var color = estRet >= 0 ? 'var(--green)' : 'var(--red)';
-            return '<span style="color:' + color + '">' + (estRet >= 0 ? '+' : '') + estRet.toFixed(1) + '%</span>';
+          return '\u2014';
+        })() + '</td>' +
+        '<td>' + (function() {
+          // Estimated profit if trade wins: payout - cost
+          if (t.total_shares > 0 && t.total_cost_usd > 0) {
+            var estProfit = t.total_shares - t.total_cost_usd;
+            var color = estProfit >= 0 ? 'var(--green)' : 'var(--red)';
+            return '<span style="color:' + color + '">' + (estProfit >= 0 ? '+$' : '-$') + Math.abs(estProfit).toFixed(2) + '</span>';
           }
           return '\u2014';
         })() + '</td>' +
