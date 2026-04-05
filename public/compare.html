@@ -499,7 +499,7 @@ function renderTable(metrics) {
     { key: 'lost', label: 'Lost', format: v => v.toLocaleString(), best: 'min' },
     { key: 'winRate', label: 'Win %', format: v => v.toFixed(1) + '%', best: 'max' },
     { key: 'totalInvested', label: 'Invested', format: v => '$' + v.toFixed(2), best: null },
-    { key: 'totalProfit', label: 'Profit', format: v => '$' + v.toFixed(2), best: 'max' },
+    { key: 'totalProfit', label: 'P&L*', format: v => '$' + v.toFixed(2), best: 'max' },
     { key: 'roi', label: 'ROI %', format: v => v.toFixed(1) + '%', best: 'max' },
     { key: 'maxCapital', label: 'Max Capital', format: v => '$' + v.toFixed(2), best: null },
     { key: 'maxDrawdown', label: 'Max DD %', format: v => v.toFixed(1) + '%', best: 'min' },
