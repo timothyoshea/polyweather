@@ -9,6 +9,10 @@
     "api/analyze.py": {
       "maxDuration": 300,
       "memory": 512
+    },
+    "api/dashboard_analysis.py": {
+      "maxDuration": 300,
+      "memory": 512
     }
   },
   "rewrites": [
