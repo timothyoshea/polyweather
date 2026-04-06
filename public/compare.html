@@ -414,6 +414,10 @@ function computeMetrics(portfolio, trades) {
   const available = currentValue - deployed;
   const utilizationPct = (!unlimitedCapital && currentValue > 0) ? (deployed / currentValue * 100) : 0;
 
+  // Statistical reliability — binomial test against 50% baseline
+  const pValue = binomialPValue(won.length, closed.length, 0.5);
+  const reliability = closed.length < 5 ? 'Too few' : pValue < 0.01 ? 'Strong' : pValue < 0.05 ? 'Likely' : pValue < 0.10 ? 'Possible' : 'Inconclusive';
+
   return {
     name: portfolio.name,
     id: portfolio.id,
