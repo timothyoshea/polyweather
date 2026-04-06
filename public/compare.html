@@ -640,86 +640,95 @@ const COLORS = [
   '#ff6e40', '#64ffda', '#e040fb', '#ffab40', '#69f0ae'
 ];
 
+// Simple markdown to HTML
+function mdToHtml(md) {
+  return md
+    .replace(/^## (.*$)/gm, '<h3 style="color:var(--cyan);font-size:14px;font-weight:600;margin:16px 0 8px;">$1</h3>')
+    .replace(/^### (.*$)/gm, '<h4 style="color:var(--text);font-size:13px;font-weight:600;margin:12px 0 6px;">$1</h4>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong style="color:var(--text);">$1</strong>')
+    .replace(/\|(.*)\|/g, function(match) {
+      const cells = match.split('|').filter(c => c.trim());
+      if (cells.every(c => c.trim().match(/^[-:]+$/))) return '';
+      const tag = match.includes('---') ? 'th' : 'td';
+      return '<tr>' + cells.map(c => '<' + tag + ' style="padding:4px 8px;border:1px solid var(--card-border);font-size:11px;">' + c.trim() + '</' + tag + '>').join('') + '</tr>';
+    })
+    .replace(/(<tr>.*<\/tr>\n?)+/g, '<table style="border-collapse:collapse;margin:8px 0;width:100%;">$&</table>')
+    .replace(/\n/g, '<br>');
+}
+
 function renderAnalysis(metrics, allData) {
+  // Load latest saved analysis on page load
+  loadLatestAnalysis();
+}
+
+async function loadLatestAnalysis() {
   const el = document.getElementById('cc-analysis');
   const dateEl = document.getElementById('analysis-date');
+  const histSelect = document.getElementById('analysis-history-select');
   if (!el) return;
-  dateEl.textContent = 'Updated: ' + new Date().toLocaleString();
 
-  // Sort by ROI for ranking
-  const ranked = [...metrics].filter(m => m.closedTrades >= 5).sort((a, b) => b.roi - a.roi);
-  const profitable = ranked.filter(m => m.roi > 0);
-  const losing = ranked.filter(m => m.roi < 0);
+  try {
+    const resp = await fetch('/api/dashboard_analysis?limit=10');
+    const history = await resp.json();
 
-  // Identify safe_no vs edge performance
-  const safeNoData = allData.map(({ portfolio, trades }) => {
-    const sn = trades.filter(t => t.bet_type === 'safe_no' && (t.status === 'won' || t.status === 'lost'));
-    const snWon = sn.filter(t => t.status === 'won').length;
-    const snPnl = sn.reduce((s, t) => s + (Number(t.profit_usd) || 0), 0);
-    const edge = trades.filter(t => t.bet_type === 'edge' && (t.status === 'won' || t.status === 'lost'));
-    const eWon = edge.filter(t => t.status === 'won').length;
-    const ePnl = edge.reduce((s, t) => s + (Number(t.profit_usd) || 0), 0);
-    return { name: portfolio.name, snWon, snTotal: sn.length, snPnl: Math.round(snPnl), eWon, eTotal: edge.length, ePnl: Math.round(ePnl) };
-  }).filter(d => d.snTotal + d.eTotal >= 5);
+    if (history && history.length > 0) {
+      // Show latest
+      const latest = history[0];
+      el.innerHTML = mdToHtml(latest.analysis || '');
+      dateEl.textContent = 'Analysed: ' + new Date(latest.created_at).toLocaleString();
 
-  // Count overall safe_no vs edge
-  let totalSnWon = 0, totalSnLost = 0, totalSnPnl = 0, totalEWon = 0, totalELost = 0, totalEPnl = 0;
-  safeNoData.forEach(d => {
-    totalSnWon += d.snWon; totalSnLost += d.snTotal - d.snWon; totalSnPnl += d.snPnl;
-    totalEWon += d.eWon; totalELost += d.eTotal - d.eWon; totalEPnl += d.ePnl;
-  });
-
-  const snWR = totalSnWon + totalSnLost > 0 ? (totalSnWon / (totalSnWon + totalSnLost) * 100).toFixed(0) : '?';
-  const eWR = totalEWon + totalELost > 0 ? (totalEWon / (totalEWon + totalELost) * 100).toFixed(0) : '?';
-
-  let html = '';
-
-  // Key finding
-  html += '<div style="margin-bottom:12px;"><strong style="color:var(--text);">Key Finding:</strong> ';
-  if (totalSnPnl > 0 && totalEPnl < 0) {
-    html += 'Safe NO bets are <span style="color:var(--green);">profitable</span> (' + snWR + '% WR, +$' + totalSnPnl + ') while Edge bets are <span style="color:var(--red);">losing money</span> (' + eWR + '% WR, $' + totalEPnl + '). ';
-    html += 'Portfolios with <strong>only safe_no</strong> are outperforming mixed strategies.';
-  } else if (totalSnPnl > 0 && totalEPnl > 0) {
-    html += 'Both Safe NO (+$' + totalSnPnl + ') and Edge (+$' + totalEPnl + ') bets are profitable.';
-  } else {
-    html += 'Safe NO: ' + snWR + '% WR ($' + totalSnPnl + '). Edge: ' + eWR + '% WR ($' + totalEPnl + ').';
-  }
-  html += '</div>';
-
-  // Top performers
-  if (profitable.length > 0) {
-    html += '<div style="margin-bottom:10px;"><strong style="color:var(--green);">Top Performers:</strong> ';
-    html += profitable.slice(0, 5).map(m =>
-      '<span style="color:var(--text);">' + m.name + '</span> (' + m.closedTrades + ' trades, ' + m.winRate.toFixed(0) + '% WR, <span style="color:var(--green);">+' + m.roi.toFixed(1) + '% ROI</span>)'
-    ).join(' · ');
-    html += '</div>';
-  }
-
-  // Underperformers
-  if (losing.length > 0) {
-    html += '<div style="margin-bottom:10px;"><strong style="color:var(--red);">Underperforming:</strong> ';
-    html += losing.slice(-5).reverse().map(m =>
-      '<span style="color:var(--text);">' + m.name + '</span> (' + m.closedTrades + ' trades, ' + m.winRate.toFixed(0) + '% WR, <span style="color:var(--red);">' + m.roi.toFixed(1) + '% ROI</span>)'
-    ).join(' · ');
-    html += '</div>';
-  }
-
-  // Recommendation
-  html += '<div style="margin-top:8px;padding:10px 14px;background:rgba(79,195,247,0.06);border-radius:6px;"><strong style="color:var(--cyan);">Recommendation:</strong> ';
-  if (profitable.length > 0 && profitable[0].reliability === 'Strong') {
-    html += 'Consider promoting <strong style="color:var(--text);">' + profitable[0].name + '</strong> to live trading — it has statistically significant results.';
-  } else if (profitable.length > 0) {
-    html += '<strong style="color:var(--text);">' + profitable[0].name + '</strong> leads on ROI but needs more trades for statistical confidence. ';
-    const safePfs = ranked.filter(m => m.winRate >= 95 && m.closedTrades >= 10);
-    if (safePfs.length > 0) {
-      html += 'Safe NO portfolios (' + safePfs.map(m => m.name).join(', ') + ') show the most reliable returns.';
+      // Populate history dropdown
+      histSelect.innerHTML = '<option value="">History (' + history.length + ')</option>' +
+        history.map((h, i) => '<option value="' + i + '">' + new Date(h.created_at).toLocaleDateString() + ' ' + new Date(h.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) + '</option>').join('');
+      histSelect._data = history;
+    } else {
+      el.innerHTML = '<span style="color:var(--text2);">No analysis yet. Click "Update Analysis" to run Claude Opus on your portfolio data.</span>';
     }
-  } else {
-    html += 'No portfolios are profitable yet. Review edge bet strategy — edge bets are the primary loss driver across all portfolios.';
+  } catch (e) {
+    el.innerHTML = '<span style="color:var(--text2);">Click "Update Analysis" to generate.</span>';
   }
-  html += '</div>';
+}
 
-  el.innerHTML = html;
+function loadAnalysisById(idx) {
+  const sel = document.getElementById('analysis-history-select');
+  const history = sel._data;
+  if (!history || idx === '') return;
+  const entry = history[parseInt(idx)];
+  if (!entry) return;
+  document.getElementById('cc-analysis').innerHTML = mdToHtml(entry.analysis || '');
+  document.getElementById('analysis-date').textContent = 'Analysed: ' + new Date(entry.created_at).toLocaleString();
+}
+
+async function runDashboardAnalysis() {
+  const btn = document.getElementById('run-analysis-btn');
+  const el = document.getElementById('cc-analysis');
+  const dateEl = document.getElementById('analysis-date');
+
+  btn.disabled = true;
+  btn.textContent = 'Analysing with Opus...';
+  btn.style.background = 'rgba(255,193,7,0.15)';
+  btn.style.color = 'var(--amber)';
+  el.innerHTML = '<span style="color:var(--amber);">Running Claude Opus analysis on all portfolios... this takes 30-60 seconds.</span>';
+
+  try {
+    const resp = await fetch('/api/dashboard_analysis', { method: 'POST' });
+    const data = await resp.json();
+
+    if (data.error) throw new Error(data.error);
+
+    el.innerHTML = mdToHtml(data.analysis || '');
+    dateEl.textContent = 'Analysed: ' + new Date().toLocaleString();
+
+    // Reload history
+    loadLatestAnalysis();
+  } catch (e) {
+    el.innerHTML = '<span style="color:var(--red);">Analysis failed: ' + e.message + '</span>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Update Analysis';
+    btn.style.background = 'rgba(79,195,247,0.08)';
+    btn.style.color = 'var(--cyan)';
+  }
 }
 
 function renderChart(allData) {
