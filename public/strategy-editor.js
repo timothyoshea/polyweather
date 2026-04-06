@@ -612,7 +612,7 @@ function renderStrategyEditor(containerId, strategy, portfolioId) {
     _sectionThresholds(
       'Safe NO Thresholds',
       'safe_no',
-      ['min_prob', 'max_no_price', 'min_no_price', 'min_return', 'min_confidence'],
+      ['min_prob', 'max_no_price', 'min_no_price', 'min_return', 'min_confidence', 'max_confidence'],
       s,
       set
     )
