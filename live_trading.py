@@ -312,6 +312,36 @@ def execute_live_trades(opps, scan_id, supabase_url, supabase_service_key,
                     skipped["filter"] += 1
                     continue
 
+            # Max confidence filter (per bet type)
+            opp_confidence = opp.get("confidence", 0) or 0
+            if opp_bet_type == "edge":
+                max_conf = strategy.get("edge_bet", {}).get("max_confidence")
+                if max_conf is not None and opp_confidence > float(max_conf):
+                    skipped["filter"] += 1
+                    continue
+            elif opp_bet_type == "safe_no":
+                max_conf = strategy.get("safe_no", {}).get("max_confidence")
+                if max_conf is not None and opp_confidence > float(max_conf):
+                    skipped["filter"] += 1
+                    continue
+
+            # Max edge filter (edge bets only)
+            if opp_bet_type == "edge":
+                max_edge = strategy.get("edge_bet", {}).get("max_edge")
+                opp_edge = opp.get("edge", 0) or 0
+                if max_edge is not None and opp_edge > float(max_edge) * 100:
+                    skipped["filter"] += 1
+                    continue
+
+            # Ensemble std filter
+            ens_std_min = strategy.get("ensemble_std_min")
+            if ens_std_min is not None:
+                fd = opp.get("forecast_details") or {}
+                ens_std = fd.get("ensemble_std")
+                if ens_std is not None and float(ens_std) < float(ens_std_min):
+                    skipped["filter"] += 1
+                    continue
+
             liquidity = opp.get("liquidity")
             if not liquidity:
                 skipped["liquidity"] += 1
