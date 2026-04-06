@@ -161,9 +161,11 @@ def build_analysis_prompt():
         if city_stats:
             top_cities = sorted(city_stats.items(), key=lambda x: x[1]["pnl"], reverse=True)[:5]
             worst_cities = sorted(city_stats.items(), key=lambda x: x[1]["pnl"])[:3]
-            prompt += f"**Best cities:** {', '.join(f'{c} ({d[\"won\"]}W/{d[\"lost\"]}L ${d[\"pnl\"]:.0f})' for c, d in top_cities)}\n"
-            if any(d["pnl"] < 0 for _, d in worst_cities):
-                prompt += f"**Worst cities:** {', '.join(f'{c} (${d[\"pnl\"]:.0f})' for c, d in worst_cities if d['pnl'] < 0)}\n"
+            top_str = ", ".join(c + " (" + str(d["won"]) + "W/" + str(d["lost"]) + "L $" + str(round(d["pnl"])) + ")" for c, d in top_cities)
+            prompt += "**Best cities:** " + top_str + "\n"
+            worst_str = ", ".join(c + " ($" + str(round(d["pnl"])) + ")" for c, d in worst_cities if d["pnl"] < 0)
+            if worst_str:
+                prompt += "**Worst cities:** " + worst_str + "\n"
 
         prompt += "\n"
 
