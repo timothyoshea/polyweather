@@ -713,6 +713,130 @@ def loop_control():
     return jsonify(_trading_loop.status())
 
 
+@app.route("/redeem", methods=["POST"])
+@require_auth
+def redeem():
+    """Redeem resolved winning positions for USDC.
+
+    Body: {"condition_id": "0x..."} to redeem one, or {"all": true} to redeem all.
+    Calls redeemPositions on the CTF Exchange contract.
+    """
+    try:
+        from web3 import Web3
+
+        data = request.get_json() or {}
+
+        rpc_urls = [
+            os.environ.get("POLYGON_RPC_URL", ""),
+            "https://polygon-bor-rpc.publicnode.com",
+            "https://polygon.drpc.org",
+        ]
+        w3 = None
+        for rpc_url in rpc_urls:
+            if not rpc_url:
+                continue
+            try:
+                w3 = Web3(Web3.HTTPProvider(rpc_url, request_kwargs={"timeout": 10}))
+                w3.eth.block_number
+                break
+            except Exception:
+                continue
+        if w3 is None:
+            return jsonify({"error": "Cannot connect to Polygon RPC"}), 500
+
+        account = w3.eth.account.from_key(PRIVATE_KEY)
+        address = account.address
+
+        # CTF Exchange contract for redeemPositions
+        CTF_EXCHANGE = w3.to_checksum_address("0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E")
+        USDC_E = w3.to_checksum_address("0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174")
+
+        # redeemPositions ABI
+        redeem_abi = [{"inputs":[
+            {"name":"collateralToken","type":"address"},
+            {"name":"parentCollectionId","type":"bytes32"},
+            {"name":"conditionId","type":"bytes32"},
+            {"name":"indexSets","type":"uint256[]"}
+        ],"name":"redeemPositions","outputs":[],"stateMutability":"nonpayable","type":"function"}]
+
+        ctf = w3.eth.contract(address=CTF_EXCHANGE, abi=redeem_abi)
+
+        condition_ids = []
+        if data.get("all"):
+            # Fetch all won trades with condition_ids
+            import urllib.request as ur
+            supabase_url = os.environ.get("SUPABASE_URL", "")
+            supabase_key = os.environ.get("SUPABASE_SERVICE_KEY", "")
+            req = ur.Request(
+                f"{supabase_url}/rest/v1/paper_trades?status=eq.won&trade_mode=eq.live&select=condition_id",
+                headers={"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}"}
+            )
+            with ur.urlopen(req, timeout=10) as resp:
+                trades = json.loads(resp.read().decode("utf-8"))
+                condition_ids = list(set(t.get("condition_id") for t in trades if t.get("condition_id")))
+        elif data.get("condition_id"):
+            condition_ids = [data["condition_id"]]
+
+        if not condition_ids:
+            return jsonify({"redeemed": 0, "message": "No condition_ids to redeem"})
+
+        results = []
+        for cid in condition_ids:
+            try:
+                # Pad condition_id to bytes32
+                cid_bytes = bytes.fromhex(cid.replace("0x", "").zfill(64))
+
+                nonce = w3.eth.get_transaction_count(address, "pending")
+                tx = ctf.functions.redeemPositions(
+                    USDC_E,
+                    b'\x00' * 32,  # parentCollectionId = 0x0
+                    cid_bytes,
+                    [1, 2]  # indexSets for YES and NO outcomes
+                ).build_transaction({
+                    "from": address,
+                    "nonce": nonce,
+                    "gasPrice": w3.eth.gas_price,
+                    "gas": 200000,
+                    "chainId": 137,
+                })
+                signed = account.sign_transaction(tx)
+                tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
+                receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=60)
+
+                results.append({
+                    "condition_id": cid,
+                    "status": "redeemed" if receipt["status"] == 1 else "failed",
+                    "tx_hash": tx_hash.hex(),
+                    "gas_used": receipt["gasUsed"],
+                })
+            except Exception as redeem_err:
+                results.append({
+                    "condition_id": cid,
+                    "status": "error",
+                    "error": str(redeem_err),
+                })
+
+        # Check balance after
+        bal_after = None
+        try:
+            client = get_client()
+            bal = client.get_balance_allowance(
+                params=BalanceAllowanceParams(asset_type=AssetType.COLLATERAL)
+            )
+            bal_after = float(bal.get("balance", "0")) / 1e6
+        except Exception:
+            pass
+
+        return jsonify({
+            "redeemed": sum(1 for r in results if r["status"] == "redeemed"),
+            "results": results,
+            "balance_after": bal_after,
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port, debug=True)
