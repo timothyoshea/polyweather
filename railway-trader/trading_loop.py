@@ -750,7 +750,7 @@ class TradingLoop:
         cache_entry = self._wallet_balance_cache.get(cache_key, {})
         if time.time() - cache_entry.get("time", 0) > 60:
             try:
-                client = _get_clob_client(portfolio.get("wallet_address"))
+                client = _get_client_for_portfolio(portfolio)
                 if client:
                     bal = client.get_balance_allowance(
                         params=BalanceAllowanceParams(asset_type=AssetType.COLLATERAL)
