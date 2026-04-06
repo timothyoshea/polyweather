@@ -743,19 +743,29 @@ class TradingLoop:
             return  # Silent skip — logged only on state change
 
         # Check actual wallet balance — don't trade if wallet is too low
-        wallet_addr = portfolio.get("wallet_address")
-        if wallet_addr:
+        # Only check every 60 seconds to avoid spamming the API
+        if not hasattr(self, '_wallet_balance_cache'):
+            self._wallet_balance_cache = {}
+        cache_key = portfolio.get("wallet_address", "default")
+        cache_entry = self._wallet_balance_cache.get(cache_key, {})
+        if time.time() - cache_entry.get("time", 0) > 60:
             try:
-                from wallet_manager import WalletManager
-                wal_bal = wallet_mgr.get_balance(wallet_addr) if wallet_mgr else None
-                if wal_bal:
-                    wallet_usdc = float(wal_bal.get("balance", 0))
-                    if wallet_usdc < 2.0:  # Less than $2 = can't place any trade
-                        if self._cycle_count % 200 == 0:
-                            _log(f"[{pf_name}] Wallet too low: ${wallet_usdc:.2f}")
-                        return
+                client = _get_clob_client(portfolio.get("wallet_address"))
+                if client:
+                    bal = client.get_balance_allowance(
+                        params=BalanceAllowanceParams(asset_type=AssetType.COLLATERAL)
+                    )
+                    wallet_usdc = float(bal.get("balance", "0")) / 1e6
+                    self._wallet_balance_cache[cache_key] = {"balance": wallet_usdc, "time": time.time()}
             except Exception:
-                pass  # If check fails, proceed with portfolio-level checks
+                wallet_usdc = cache_entry.get("balance", 999)  # Fail open
+        else:
+            wallet_usdc = cache_entry.get("balance", 999)
+
+        if wallet_usdc < 2.0:
+            if self._cycle_count % 200 == 0:
+                _log(f"[{pf_name}] Wallet too low: ${wallet_usdc:.2f}")
+            return
 
         # Capital management setup
         use_capital_mgmt = (
