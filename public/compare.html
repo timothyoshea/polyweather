@@ -541,6 +541,11 @@ function renderTable(metrics) {
     { key: 'won', label: 'Won', format: v => v.toLocaleString(), best: 'max' },
     { key: 'lost', label: 'Lost', format: v => v.toLocaleString(), best: 'min' },
     { key: 'winRate', label: 'Win %', format: v => v.toFixed(1) + '%', best: 'max' },
+    { key: 'reliability', label: 'Reliability', format: (v, m) => {
+      const colors = { 'Strong': 'var(--green)', 'Likely': 'var(--cyan)', 'Possible': 'var(--amber)', 'Too few': 'var(--text2)', 'Inconclusive': 'var(--text2)' };
+      const pStr = m.pValue < 0.001 ? '<.001' : m.pValue.toFixed(3);
+      return '<span style="color:' + (colors[v] || 'var(--text2)') + '">' + v + '</span> <span style="font-size:10px;color:var(--text2);">p=' + pStr + '</span>';
+    }, best: null },
     { key: 'totalInvested', label: 'Invested', format: v => '$' + v.toFixed(2), best: null },
     { key: 'totalProfit', label: 'P&L*', format: v => '$' + v.toFixed(2), best: 'max' },
     { key: 'roi', label: 'ROI %', format: v => v.toFixed(1) + '%', best: 'max' },
