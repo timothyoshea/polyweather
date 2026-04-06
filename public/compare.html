@@ -349,6 +349,7 @@ async function loadCompareData() {
 
     renderTable(metrics);
     renderChart(allData);
+    renderAnalysis(metrics, allData);
 
     document.getElementById('loading').style.display = 'none';
     document.getElementById('content').style.display = '';
