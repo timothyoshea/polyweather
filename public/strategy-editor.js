@@ -601,7 +601,7 @@ function renderStrategyEditor(containerId, strategy, portfolioId) {
     _sectionThresholds(
       'Edge Bet Thresholds',
       'edge_bet',
-      ['min_prob', 'max_price', 'min_edge', 'min_confidence'],
+      ['min_prob', 'max_price', 'min_edge', 'max_edge', 'min_confidence', 'max_confidence'],
       s,
       set
     )
