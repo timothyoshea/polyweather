@@ -843,20 +843,6 @@ class TradingLoop:
                 fees = cost * POLYMARKET_FEE_RATE
                 total_with_fees = cost + fees
 
-                # Wallet balance check — don't trade if wallet can't cover it
-                try:
-                    from wallet_manager import WalletManager
-                    wallet_addr = portfolio.get("wallet_address")
-                    if wallet_addr:
-                        wallet_bal = wallet_mgr.get_balance(wallet_addr) if 'wallet_mgr' in dir() else None
-                        if wallet_bal:
-                            usdc_bal = float(wallet_bal.get("balance", 0))
-                            if usdc_bal < cost:
-                                _dbg_drops["util"] += 1
-                                continue
-                except Exception:
-                    pass  # If balance check fails, let capital mgmt handle it
-
                 # Capital management checks
                 if use_capital_mgmt:
                     max_by_pct = current_capital * max_single_trade_pct / 100
