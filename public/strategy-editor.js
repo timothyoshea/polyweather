@@ -631,6 +631,9 @@ function renderStrategyEditor(containerId, strategy, portfolioId) {
   // Risk Filters
   root.appendChild(_sectionRisk(s, set));
 
+  // Forecast Filters
+  root.appendChild(_sectionForecastFilters(s, set));
+
   // Position Sizing
   root.appendChild(_sectionPositionSizing(s, set));
 
