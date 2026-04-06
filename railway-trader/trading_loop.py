@@ -742,6 +742,21 @@ class TradingLoop:
                 _log(f"[{pf_name}] Hours blocked: {hours_reason}")
             return  # Silent skip — logged only on state change
 
+        # Check actual wallet balance — don't trade if wallet is too low
+        wallet_addr = portfolio.get("wallet_address")
+        if wallet_addr:
+            try:
+                from wallet_manager import WalletManager
+                wal_bal = wallet_mgr.get_balance(wallet_addr) if wallet_mgr else None
+                if wal_bal:
+                    wallet_usdc = float(wal_bal.get("balance", 0))
+                    if wallet_usdc < 2.0:  # Less than $2 = can't place any trade
+                        if self._cycle_count % 200 == 0:
+                            _log(f"[{pf_name}] Wallet too low: ${wallet_usdc:.2f}")
+                        return
+            except Exception:
+                pass  # If check fails, proceed with portfolio-level checks
+
         # Capital management setup
         use_capital_mgmt = (
             not portfolio.get("unlimited_capital", True)
