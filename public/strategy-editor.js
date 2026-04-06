@@ -545,6 +545,16 @@ function _sectionTradingHours(s, set) {
   return sec;
 }
 
+function _sectionForecastFilters(s, set) {
+  const sec = _el('div', { className: 'se-section' });
+  sec.appendChild(_el('h3', { textContent: 'Forecast Filters' }));
+  const grid = _el('div', { className: 'se-grid' });
+  grid.appendChild(_numberField('ensemble_std_min', s.ensemble_std_min, (v) => set('ensemble_std_min', v)));
+  grid.appendChild(_numberField('ensemble_std_max', s.ensemble_std_max, (v) => set('ensemble_std_max', v)));
+  sec.appendChild(grid);
+  return sec;
+}
+
 function _sectionNotes(s, set) {
   const sec = _el('div', { className: 'se-section' });
   sec.appendChild(_el('h3', { textContent: 'Notes' }));
