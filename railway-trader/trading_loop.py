@@ -187,6 +187,33 @@ def _passes_strategy_filters(opp, strategy):
         if entry_price and float(entry_price) < float(min_entry):
             return False, f"entry_price {entry_price} < min {min_entry}"
 
+    # Max confidence
+    opp_conf = opp.get("confidence", 0) or 0
+    opp_bt = opp.get("bet_type", "")
+    if opp_bt == "edge":
+        max_conf = strategy.get("edge_bet", {}).get("max_confidence")
+        if max_conf is not None and opp_conf > float(max_conf):
+            return False, f"confidence {opp_conf} > max {max_conf} for edge"
+    elif opp_bt == "safe_no":
+        max_conf = strategy.get("safe_no", {}).get("max_confidence")
+        if max_conf is not None and opp_conf > float(max_conf):
+            return False, f"confidence {opp_conf} > max {max_conf} for safe_no"
+
+    # Max edge
+    if opp_bt == "edge":
+        max_edge = strategy.get("edge_bet", {}).get("max_edge")
+        opp_edge = opp.get("edge", 0) or 0
+        if max_edge is not None and opp_edge > float(max_edge) * 100:
+            return False, f"edge {opp_edge} > max {float(max_edge)*100}"
+
+    # Ensemble std min
+    ens_std_min = strategy.get("ensemble_std_min")
+    if ens_std_min is not None:
+        fd = opp.get("forecast_details") or {}
+        ens_std = fd.get("ensemble_std")
+        if ens_std is not None and float(ens_std) < float(ens_std_min):
+            return False, f"ensemble_std {ens_std} < min {ens_std_min}"
+
     return True, "ok"
 
 
