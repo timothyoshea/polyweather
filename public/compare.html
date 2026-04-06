@@ -354,6 +354,25 @@ function escHtml(s) {
   return d.innerHTML;
 }
 
+// ── Statistical Helpers ──
+function normalCDF(z) {
+  const a1=0.254829592, a2=-0.284496736, a3=1.421413741, a4=-1.453152027, a5=1.061405429, p=0.3275911;
+  const sign = z < 0 ? -1 : 1;
+  z = Math.abs(z) / Math.sqrt(2);
+  const t = 1.0 / (1.0 + p * z);
+  const y = 1.0 - (((((a5*t + a4)*t) + a3)*t + a2)*t + a1)*t * Math.exp(-z*z);
+  return 0.5 * (1.0 + sign * y);
+}
+
+function binomialPValue(successes, trials, p0) {
+  if (trials < 2) return 1.0;
+  const observed = successes / trials;
+  const se = Math.sqrt(p0 * (1 - p0) / trials);
+  if (se === 0) return 1.0;
+  const z = Math.abs(observed - p0) / se;
+  return 2 * (1 - normalCDF(z));
+}
+
 // ── Metric Computation ──
 function computeMetrics(portfolio, trades) {
   const closed = trades.filter(t => t.status === 'won' || t.status === 'lost');
