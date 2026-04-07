@@ -998,6 +998,58 @@ function render() {
   html += renderBreakdownPanel('Edge + Entry Price', resolved, t => `${edgeBucket(t.edge)} / ${priceBucket(t.entry_price)}`);
   html += '</div></div>';
 
+  // Forecast Model tab
+  html += '<div class="breakdown-group" data-tab="forecast" style="display:none">';
+  html += '<div style="background:rgba(79,195,247,0.06);border:1px solid rgba(79,195,247,0.15);border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:12px;color:var(--text2);line-height:1.6;">';
+  html += '<strong style="color:var(--cyan);">What is Ensemble Spread?</strong><br>';
+  html += 'The ensemble spread (ensemble_std) measures how much the weather forecast models <strong style="color:var(--text);">disagree</strong> with each other. ';
+  html += 'A <strong style="color:var(--green);">low spread (0-1.0)</strong> means models agree closely on the temperature — higher confidence in the forecast. ';
+  html += 'A <strong style="color:var(--red);">high spread (1.5+)</strong> means models disagree significantly — the forecast is uncertain. ';
+  html += 'Use this to filter out unreliable forecasts via the <em>Forecast Filters</em> in strategy settings.';
+  html += '</div>';
+  html += '<div class="breakdown-grid">';
+  html += renderBreakdownPanel('By Ensemble Spread', resolved, t => {
+    const fd = t.forecast_details || {};
+    const std = fd.ensemble_std;
+    if (std == null) return 'Unknown';
+    if (std < 0.5) return '0.0-0.5 (tight)';
+    if (std < 1.0) return '0.5-1.0 (moderate)';
+    if (std < 1.5) return '1.0-1.5 (wide)';
+    return '1.5+ (very wide)';
+  });
+  html += renderBreakdownPanel('By Confidence Bucket', resolved, t => confBucket(t.confidence));
+  html += renderBreakdownPanel('Ensemble Spread + Side', resolved, t => {
+    const fd = t.forecast_details || {};
+    const std = fd.ensemble_std;
+    let bucket = 'Unknown';
+    if (std != null) {
+      if (std < 0.5) bucket = '<0.5';
+      else if (std < 1.0) bucket = '0.5-1';
+      else if (std < 1.5) bucket = '1-1.5';
+      else bucket = '1.5+';
+    }
+    return bucket + ' / ' + (t.side || '?');
+  });
+  html += renderBreakdownPanel('Ensemble Spread + Bet Type', resolved, t => {
+    const fd = t.forecast_details || {};
+    const std = fd.ensemble_std;
+    let bucket = 'Unknown';
+    if (std != null) {
+      if (std < 0.5) bucket = '<0.5';
+      else if (std < 1.0) bucket = '0.5-1';
+      else if (std < 1.5) bucket = '1-1.5';
+      else bucket = '1.5+';
+    }
+    return bucket + ' / ' + (t.bet_type || '?');
+  });
+  html += renderBreakdownPanel('Confidence + Ensemble Spread', resolved, t => {
+    const fd = t.forecast_details || {};
+    const std = fd.ensemble_std;
+    let sBucket = std == null ? '?' : (std < 1.0 ? '<1.0' : '1.0+');
+    return confBucket(t.confidence) + ' / ' + sBucket;
+  });
+  html += '</div></div>';
+
   html += renderPatterns(resolved);
 
   app.innerHTML = html;
