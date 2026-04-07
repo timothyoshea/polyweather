@@ -560,8 +560,10 @@ class TradingLoop:
         self._last_portfolio_fetch = 0
         self._last_opp_fetch = 0
         self._last_price_poll = 0
+        self._last_redeem_check = 0
         self._cycle_count = 0
         self._trades_placed = 0
+        self._redeems_total = 0
         self._last_cycle_time = None
         self._last_error = None
         self._errors_total = 0
