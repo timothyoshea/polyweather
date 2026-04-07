@@ -858,6 +858,25 @@ def redeem():
         NEG_RISK_ADAPTER = w3.to_checksum_address("0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296")
         USDC_E = w3.to_checksum_address("0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174")
 
+        # Auto-approve: ensure NegRiskAdapter can spend our CTF tokens (ERC1155)
+        approval_abi = [
+            {"inputs":[{"name":"operator","type":"address"},{"name":"approved","type":"bool"}],
+             "name":"setApprovalForAll","outputs":[],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[{"name":"owner","type":"address"},{"name":"operator","type":"address"}],
+             "name":"isApprovedForAll","outputs":[{"name":"","type":"bool"}],
+             "stateMutability":"view","type":"function"}
+        ]
+        ctf_approval = w3.eth.contract(address=CTF_CONTRACT, abi=approval_abi)
+        if not ctf_approval.functions.isApprovedForAll(address, NEG_RISK_ADAPTER).call():
+            nonce = w3.eth.get_transaction_count(address, "pending")
+            tx = ctf_approval.functions.setApprovalForAll(NEG_RISK_ADAPTER, True).build_transaction({
+                "from": address, "nonce": nonce,
+                "gasPrice": w3.eth.gas_price, "gas": 60000, "chainId": 137,
+            })
+            signed = account.sign_transaction(tx)
+            tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
+            w3.eth.wait_for_transaction_receipt(tx_hash, timeout=60)
+
         # ABIs
         ctf_redeem_abi = [{"inputs":[
             {"name":"collateralToken","type":"address"},
