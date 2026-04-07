@@ -207,13 +207,18 @@ def _passes_strategy_filters(opp, strategy):
         if max_edge is not None and opp_edge > float(max_edge) * 100:
             return False, f"edge {opp_edge} > max {float(max_edge)*100}"
 
-    # Ensemble std min
+    # Ensemble std min/max
+    fd = opp.get("forecast_details") or {}
+    ens_std = fd.get("ensemble_std")
     ens_std_min = strategy.get("ensemble_std_min")
-    if ens_std_min is not None:
-        fd = opp.get("forecast_details") or {}
-        ens_std = fd.get("ensemble_std")
-        if ens_std is not None and float(ens_std) < float(ens_std_min):
+    if ens_std_min is not None and ens_std is not None:
+        if float(ens_std) < float(ens_std_min):
             return False, f"ensemble_std {ens_std} < min {ens_std_min}"
+
+    ens_std_max = strategy.get("ensemble_std_max")
+    if ens_std_max is not None and ens_std is not None:
+        if float(ens_std) > float(ens_std_max):
+            return False, f"ensemble_std {ens_std} > max {ens_std_max}"
 
     return True, "ok"
 
