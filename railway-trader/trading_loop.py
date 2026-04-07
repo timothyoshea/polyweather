@@ -998,6 +998,8 @@ class TradingLoop:
                     "ev_per_dollar": opp.get("ev_per_dollar"),
                     "half_kelly": opp.get("half_kelly") or opp.get("hk"),
                     "forecast_c": opp.get("forecast_c"),
+                    "forecast_details": opp.get("forecast_details"),
+                    "model_values": opp.get("model_values"),
                     "risk": opp.get("risk"),
                     "question": opp.get("question"),
                     "empirical_p": opp.get("empirical_p"),
