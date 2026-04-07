@@ -747,8 +747,8 @@ def redeem():
         account = w3.eth.account.from_key(PRIVATE_KEY)
         address = account.address
 
-        # CTF Exchange contract for redeemPositions
-        CTF_EXCHANGE = w3.to_checksum_address("0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E")
+        # Conditional Tokens Framework (CTF) contract for redeemPositions
+        CTF_CONTRACT = w3.to_checksum_address("0x4D97DCd97eC945f40cF65F87097ACe5EA0476045")
         USDC_E = w3.to_checksum_address("0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174")
 
         # redeemPositions ABI
