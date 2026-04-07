@@ -759,7 +759,7 @@ def redeem():
             {"name":"indexSets","type":"uint256[]"}
         ],"name":"redeemPositions","outputs":[],"stateMutability":"nonpayable","type":"function"}]
 
-        ctf = w3.eth.contract(address=CTF_EXCHANGE, abi=redeem_abi)
+        ctf = w3.eth.contract(address=CTF_CONTRACT, abi=redeem_abi)
 
         condition_ids = []
         if data.get("all"):
