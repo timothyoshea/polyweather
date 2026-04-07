@@ -886,39 +886,46 @@ def redeem():
             return jsonify({"redeemed": 0, "message": "No redeemable positions found"})
 
         results = []
-        for cid in condition_ids:
+        for pos in positions:
+            title = pos.get("title", "?")[:40]
+            cid = pos.get("conditionId", "")
+            is_neg_risk = pos.get("negativeRisk", False)
+            size = float(pos.get("size", 0))
+            outcome_idx = int(pos.get("outcomeIndex", 0))
+
             try:
-                # condition_id should be a hex string like 0x...
                 cid_hex = cid.replace("0x", "").zfill(64)
                 cid_bytes = bytes.fromhex(cid_hex)
+                size_raw = int(size * 1e6)
 
-                # First try to estimate gas to check if the call would succeed
+                if is_neg_risk:
+                    # Neg risk: call NegRiskAdapter.redeemPositions(conditionId, amounts)
+                    amounts = [0, 0]
+                    amounts[outcome_idx] = size_raw
+                    tx_func = neg_risk.functions.redeemPositions(cid_bytes, amounts)
+                else:
+                    # Standard: call CTF.redeemPositions(collateral, parent, condition, indexSets)
+                    tx_func = ctf.functions.redeemPositions(
+                        USDC_E, b'\x00' * 32, cid_bytes, [1, 2]
+                    )
+
+                # Estimate gas first
                 try:
-                    gas_est = ctf.functions.redeemPositions(
-                        USDC_E,
-                        b'\x00' * 32,
-                        cid_bytes,
-                        [1, 2]
-                    ).estimate_gas({"from": address})
+                    gas_est = tx_func.estimate_gas({"from": address})
                 except Exception as est_err:
                     results.append({
-                        "condition_id": cid[:20] + "...",
+                        "title": title,
                         "status": "skip",
-                        "error": f"Would revert: {str(est_err)[:100]}",
+                        "neg_risk": is_neg_risk,
+                        "error": f"Would revert: {str(est_err)[:80]}",
                     })
                     continue
 
                 nonce = w3.eth.get_transaction_count(address, "pending")
-                tx = ctf.functions.redeemPositions(
-                    USDC_E,
-                    b'\x00' * 32,
-                    cid_bytes,
-                    [1, 2]
-                ).build_transaction({
-                    "from": address,
-                    "nonce": nonce,
+                tx = tx_func.build_transaction({
+                    "from": address, "nonce": nonce,
                     "gasPrice": w3.eth.gas_price,
-                    "gas": min(gas_est + 50000, 300000),
+                    "gas": min(gas_est + 50000, 400000),
                     "chainId": 137,
                 })
                 signed = account.sign_transaction(tx)
@@ -926,14 +933,16 @@ def redeem():
                 receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=60)
 
                 results.append({
-                    "condition_id": cid[:20] + "...",
+                    "title": title,
                     "status": "redeemed" if receipt["status"] == 1 else "failed",
+                    "neg_risk": is_neg_risk,
+                    "size": size,
                     "tx_hash": tx_hash.hex(),
                     "gas_used": receipt["gasUsed"],
                 })
             except Exception as redeem_err:
                 results.append({
-                    "condition_id": cid[:20] + "...",
+                    "title": title,
                     "status": "error",
                     "error": str(redeem_err)[:150],
                 })
