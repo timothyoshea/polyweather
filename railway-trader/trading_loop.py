@@ -694,6 +694,19 @@ class TradingLoop:
 
                 now = time.time()
 
+                # Cleanup stale pending_execution trades (older than 5 min)
+                if now - getattr(self, '_last_cleanup', 0) >= 300:
+                    try:
+                        cleanup_url = (
+                            f"{SUPABASE_URL}/rest/v1/paper_trades"
+                            f"?status=eq.pending_execution&trade_mode=eq.live"
+                            f"&created_at=lt.{(datetime.now(timezone.utc) - __import__('datetime').timedelta(minutes=5)).isoformat()}"
+                        )
+                        _http_request(cleanup_url, method="DELETE", headers=_supabase_headers())
+                    except Exception:
+                        pass
+                    self._last_cleanup = now
+
                 # Refresh portfolios
                 if now - self._last_portfolio_fetch >= PORTFOLIO_REFRESH_INTERVAL:
                     self._refresh_portfolios()
