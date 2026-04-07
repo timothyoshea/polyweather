@@ -21,7 +21,7 @@ def fetch_temperature_events():
     events = []
     try:
         r = requests.get("https://gamma-api.polymarket.com/events",
-            params={"active": "true", "closed": "false", "tag_slug": "weather", "limit": 100},
+            params={"active": "true", "closed": "false", "tag_slug": "temperature", "limit": 100},
             timeout=15)
         r.raise_for_status()
         raw = r.json()
