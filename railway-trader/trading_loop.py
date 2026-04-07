@@ -645,6 +645,11 @@ class TradingLoop:
                         self._poll_and_trade()
                     self._last_price_poll = now
 
+                # Auto-redeem winning positions every 30 minutes
+                if now - self._last_redeem_check >= REDEEM_CHECK_INTERVAL:
+                    self._auto_redeem()
+                    self._last_redeem_check = now
+
                 self._cycle_count += 1
                 self._last_cycle_time = datetime.now(timezone.utc).isoformat()
 
