@@ -719,7 +719,7 @@ def redeem():
     """Redeem resolved winning positions for USDC.
 
     Body: {"condition_id": "0x..."} to redeem one, or {"all": true} to redeem all.
-    Calls redeemPositions on the CTF Exchange contract.
+    Calls redeemPositions on the Conditional Tokens Framework (CTF) contract.
     """
     try:
         from web3 import Web3
