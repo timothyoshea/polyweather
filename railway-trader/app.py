@@ -763,17 +763,17 @@ def redeem():
 
         condition_ids = []
         if data.get("all"):
-            # Fetch all won trades with condition_ids
             import urllib.request as ur
             supabase_url = os.environ.get("SUPABASE_URL", "")
             supabase_key = os.environ.get("SUPABASE_SERVICE_KEY", "")
-            req = ur.Request(
+            ureq = ur.Request(
                 f"{supabase_url}/rest/v1/paper_trades?status=eq.won&trade_mode=eq.live&select=condition_id",
-                headers={"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}"}
+                headers={"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}",
+                          "User-Agent": "PolyWeather/1.0"}
             )
-            with ur.urlopen(req, timeout=10) as resp:
-                trades = json.loads(resp.read().decode("utf-8"))
-                condition_ids = list(set(t.get("condition_id") for t in trades if t.get("condition_id")))
+            with ur.urlopen(ureq, timeout=10) as resp:
+                trades_data = json.loads(resp.read().decode("utf-8"))
+                condition_ids = list(set(t.get("condition_id") for t in trades_data if t.get("condition_id")))
         elif data.get("condition_id"):
             condition_ids = [data["condition_id"]]
 
@@ -783,20 +783,37 @@ def redeem():
         results = []
         for cid in condition_ids:
             try:
-                # Pad condition_id to bytes32
-                cid_bytes = bytes.fromhex(cid.replace("0x", "").zfill(64))
+                # condition_id should be a hex string like 0x...
+                cid_hex = cid.replace("0x", "").zfill(64)
+                cid_bytes = bytes.fromhex(cid_hex)
+
+                # First try to estimate gas to check if the call would succeed
+                try:
+                    gas_est = ctf.functions.redeemPositions(
+                        USDC_E,
+                        b'\x00' * 32,
+                        cid_bytes,
+                        [1, 2]
+                    ).estimate_gas({"from": address})
+                except Exception as est_err:
+                    results.append({
+                        "condition_id": cid[:20] + "...",
+                        "status": "skip",
+                        "error": f"Would revert: {str(est_err)[:100]}",
+                    })
+                    continue
 
                 nonce = w3.eth.get_transaction_count(address, "pending")
                 tx = ctf.functions.redeemPositions(
                     USDC_E,
-                    b'\x00' * 32,  # parentCollectionId = 0x0
+                    b'\x00' * 32,
                     cid_bytes,
-                    [1, 2]  # indexSets for YES and NO outcomes
+                    [1, 2]
                 ).build_transaction({
                     "from": address,
                     "nonce": nonce,
                     "gasPrice": w3.eth.gas_price,
-                    "gas": 200000,
+                    "gas": min(gas_est + 50000, 300000),
                     "chainId": 137,
                 })
                 signed = account.sign_transaction(tx)
@@ -804,16 +821,16 @@ def redeem():
                 receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=60)
 
                 results.append({
-                    "condition_id": cid,
+                    "condition_id": cid[:20] + "...",
                     "status": "redeemed" if receipt["status"] == 1 else "failed",
                     "tx_hash": tx_hash.hex(),
                     "gas_used": receipt["gasUsed"],
                 })
             except Exception as redeem_err:
                 results.append({
-                    "condition_id": cid,
+                    "condition_id": cid[:20] + "...",
                     "status": "error",
-                    "error": str(redeem_err),
+                    "error": str(redeem_err)[:150],
                 })
 
         # Check balance after
