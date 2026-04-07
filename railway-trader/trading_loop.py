@@ -610,6 +610,7 @@ class TradingLoop:
             "midpoints_cached": len(self._midpoints),
             "errors_total": self._errors_total,
             "last_error": self._last_error,
+            "redeems_total": self._redeems_total,
         }
 
     # -------------------------------------------------------------------
