@@ -333,12 +333,17 @@ def execute_live_trades(opps, scan_id, supabase_url, supabase_service_key,
                     skipped["filter"] += 1
                     continue
 
-            # Ensemble std filter
+            # Ensemble std filter (min and max)
+            fd = opp.get("forecast_details") or {}
+            ens_std = fd.get("ensemble_std")
             ens_std_min = strategy.get("ensemble_std_min")
-            if ens_std_min is not None:
-                fd = opp.get("forecast_details") or {}
-                ens_std = fd.get("ensemble_std")
-                if ens_std is not None and float(ens_std) < float(ens_std_min):
+            if ens_std_min is not None and ens_std is not None:
+                if float(ens_std) < float(ens_std_min):
+                    skipped["filter"] += 1
+                    continue
+            ens_std_max = strategy.get("ensemble_std_max")
+            if ens_std_max is not None and ens_std is not None:
+                if float(ens_std) > float(ens_std_max):
                     skipped["filter"] += 1
                     continue
 
