@@ -823,11 +823,12 @@ def swap_pol():
 def redeem():
     """Redeem resolved winning positions for USDC.
 
-    Body: {"condition_id": "0x..."} to redeem one, or {"all": true} to redeem all.
-    Calls redeemPositions on the Conditional Tokens Framework (CTF) contract.
+    Uses Polymarket Data API to find redeemable positions, then calls
+    the appropriate contract (NegRiskAdapter for neg risk, CTF for standard).
     """
     try:
         from web3 import Web3
+        import urllib.request as ur
 
         data = request.get_json() or {}
 
@@ -852,38 +853,37 @@ def redeem():
         account = w3.eth.account.from_key(PRIVATE_KEY)
         address = account.address
 
-        # Conditional Tokens Framework (CTF) contract for redeemPositions
+        # Contract addresses
         CTF_CONTRACT = w3.to_checksum_address("0x4D97DCd97eC945f40cF65F87097ACe5EA0476045")
+        NEG_RISK_ADAPTER = w3.to_checksum_address("0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296")
         USDC_E = w3.to_checksum_address("0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174")
 
-        # redeemPositions ABI
-        redeem_abi = [{"inputs":[
+        # ABIs
+        ctf_redeem_abi = [{"inputs":[
             {"name":"collateralToken","type":"address"},
             {"name":"parentCollectionId","type":"bytes32"},
             {"name":"conditionId","type":"bytes32"},
             {"name":"indexSets","type":"uint256[]"}
         ],"name":"redeemPositions","outputs":[],"stateMutability":"nonpayable","type":"function"}]
 
-        ctf = w3.eth.contract(address=CTF_CONTRACT, abi=redeem_abi)
+        neg_risk_redeem_abi = [{"inputs":[
+            {"name":"conditionId","type":"bytes32"},
+            {"name":"amounts","type":"uint256[]"}
+        ],"name":"redeemPositions","outputs":[],"stateMutability":"nonpayable","type":"function"}]
 
-        condition_ids = []
-        if data.get("all"):
-            import urllib.request as ur
-            supabase_url = os.environ.get("SUPABASE_URL", "")
-            supabase_key = os.environ.get("SUPABASE_SERVICE_KEY", "")
-            ureq = ur.Request(
-                f"{supabase_url}/rest/v1/paper_trades?status=eq.won&trade_mode=eq.live&select=condition_id",
-                headers={"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}",
-                          "User-Agent": "PolyWeather/1.0"}
-            )
-            with ur.urlopen(ureq, timeout=10) as resp:
-                trades_data = json.loads(resp.read().decode("utf-8"))
-                condition_ids = list(set(t.get("condition_id") for t in trades_data if t.get("condition_id")))
-        elif data.get("condition_id"):
-            condition_ids = [data["condition_id"]]
+        ctf = w3.eth.contract(address=CTF_CONTRACT, abi=ctf_redeem_abi)
+        neg_risk = w3.eth.contract(address=NEG_RISK_ADAPTER, abi=neg_risk_redeem_abi)
 
-        if not condition_ids:
-            return jsonify({"redeemed": 0, "message": "No condition_ids to redeem"})
+        # Fetch redeemable positions from Polymarket Data API
+        positions_url = f"https://data-api.polymarket.com/positions?user={address.lower()}&redeemable=true&sizeThreshold=0"
+        pos_req = ur.Request(positions_url, headers={"User-Agent": "PolyWeather/1.0"})
+        with ur.urlopen(pos_req, timeout=15) as resp:
+            positions = json.loads(resp.read().decode("utf-8"))
+
+        positions = [p for p in positions if float(p.get("size", 0)) > 0]
+
+        if not positions:
+            return jsonify({"redeemed": 0, "message": "No redeemable positions found"})
 
         results = []
         for cid in condition_ids:
