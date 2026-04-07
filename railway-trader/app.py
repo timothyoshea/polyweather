@@ -713,6 +713,111 @@ def loop_control():
     return jsonify(_trading_loop.status())
 
 
+@app.route("/swap-pol", methods=["POST"])
+@require_auth
+def swap_pol():
+    """Swap POL (native token) to USDC.e via Uniswap V3.
+
+    Body: {"amount_pol": 100}  (how much POL to swap)
+    """
+    try:
+        w3, connected_rpc = get_web3()
+        if w3 is None:
+            return jsonify({"error": "Cannot connect to Polygon RPC"}), 500
+
+        account = w3.eth.account.from_key(PRIVATE_KEY)
+        address = account.address
+
+        data = request.get_json() or {}
+        pol_balance = w3.eth.get_balance(address)
+        pol_balance_eth = pol_balance / 1e18
+
+        amount_pol = float(data.get("amount_pol", 0))
+        if amount_pol <= 0:
+            return jsonify({"error": f"Specify amount_pol. Balance: {pol_balance_eth:.2f} POL"}), 400
+        if amount_pol > pol_balance_eth - 5:  # Keep 5 POL for gas
+            return jsonify({"error": f"Too much. Balance: {pol_balance_eth:.2f}, keep 5 for gas"}), 400
+
+        amount_wei = int(amount_pol * 1e18)
+
+        # WPOL (Wrapped POL/MATIC) address
+        WPOL = w3.to_checksum_address("0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270")
+        USDC_E = w3.to_checksum_address("0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174")
+
+        # Step 1: Wrap POL to WPOL
+        wrap_abi = [{"inputs":[],"name":"deposit","outputs":[],"stateMutability":"payable","type":"function"}]
+        wpol = w3.eth.contract(address=WPOL, abi=wrap_abi)
+
+        nonce = w3.eth.get_transaction_count(address, "pending")
+        wrap_tx = wpol.functions.deposit().build_transaction({
+            "from": address, "nonce": nonce, "value": amount_wei,
+            "gasPrice": w3.eth.gas_price, "gas": 50000, "chainId": 137,
+        })
+        signed = account.sign_transaction(wrap_tx)
+        tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
+        w3.eth.wait_for_transaction_receipt(tx_hash, timeout=60)
+
+        # Step 2: Approve WPOL for Uniswap Router
+        SWAP_ROUTER = w3.to_checksum_address("0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45")
+        approve_abi = [{"inputs":[{"name":"spender","type":"address"},{"name":"amount","type":"uint256"}],
+                        "name":"approve","outputs":[{"name":"","type":"bool"}],
+                        "stateMutability":"nonpayable","type":"function"}]
+        wpol_token = w3.eth.contract(address=WPOL, abi=approve_abi)
+
+        nonce = w3.eth.get_transaction_count(address, "pending")
+        approve_tx = wpol_token.functions.approve(SWAP_ROUTER, 2**256-1).build_transaction({
+            "from": address, "nonce": nonce,
+            "gasPrice": w3.eth.gas_price, "gas": 60000, "chainId": 137,
+        })
+        signed = account.sign_transaction(approve_tx)
+        tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
+        w3.eth.wait_for_transaction_receipt(tx_hash, timeout=60)
+
+        # Step 3: Swap WPOL → USDC.e via Uniswap V3
+        swap_abi = [{"inputs":[{"components":[
+            {"name":"tokenIn","type":"address"},{"name":"tokenOut","type":"address"},
+            {"name":"fee","type":"uint24"},{"name":"recipient","type":"address"},
+            {"name":"amountIn","type":"uint256"},{"name":"amountOutMinimum","type":"uint256"},
+            {"name":"sqrtPriceLimitX96","type":"uint160"}
+        ],"name":"params","type":"tuple"}],"name":"exactInputSingle",
+        "outputs":[{"name":"amountOut","type":"uint256"}],"stateMutability":"payable","type":"function"}]
+
+        router = w3.eth.contract(address=SWAP_ROUTER, abi=swap_abi)
+
+        # 3% slippage tolerance
+        min_out = 0  # Accept any amount for now
+
+        nonce = w3.eth.get_transaction_count(address, "pending")
+        swap_tx = router.functions.exactInputSingle((
+            WPOL, USDC_E, 3000,  # 0.3% fee tier for POL/USDC
+            address, amount_wei, min_out, 0
+        )).build_transaction({
+            "from": address, "nonce": nonce,
+            "gasPrice": w3.eth.gas_price, "gas": 300000, "chainId": 137, "value": 0,
+        })
+        signed = account.sign_transaction(swap_tx)
+        tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
+        receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=90)
+
+        # Check final balance
+        erc20_abi = [{"inputs":[{"name":"account","type":"address"}],"name":"balanceOf",
+                      "outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"}]
+        usdc_e = w3.eth.contract(address=USDC_E, abi=erc20_abi)
+        final_usdc = usdc_e.functions.balanceOf(address).call() / 1e6
+        final_pol = w3.eth.get_balance(address) / 1e18
+
+        return jsonify({
+            "swapped_pol": amount_pol,
+            "swap_status": "success" if receipt["status"] == 1 else "failed",
+            "tx_hash": tx_hash.hex(),
+            "gas_used": receipt["gasUsed"],
+            "balance_after": {"usdc_e": round(final_usdc, 2), "pol": round(final_pol, 2)},
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+
+
 @app.route("/redeem", methods=["POST"])
 @require_auth
 def redeem():
