@@ -32,7 +32,7 @@
     line-height: 1.5;
   }
 
-  /* ── Sidebar ─────────────────────────────────── */
+  /* -- Sidebar ---------------------------------------- */
   .sidebar {
     position: fixed; left: 0; top: 0; bottom: 0; width: 200px;
     background: #0d0d14; border-right: 1px solid var(--card-border);
@@ -104,15 +104,13 @@
   .mobile-nav .nav-icon { font-size: 18px; }
   @media (max-width: 768px) { .mobile-nav { display: block; } }
 
-  /* ── Layout ─────────────────────────────────── */
+  /* -- Layout ----------------------------------------- */
   .container { max-width: 100%; margin: 0 auto; padding: 24px; }
 
   .page-header {
     display: flex; align-items: center; gap: 12px; margin-bottom: 24px;
   }
-  .page-header h1 {
-    font-size: 22px; font-weight: 700;
-  }
+  .page-header h1 { font-size: 22px; font-weight: 700; }
   .badge-paper {
     display: inline-block; font-size: 10px; font-weight: 700; padding: 3px 10px;
     border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em;
@@ -127,7 +125,7 @@
   .section-title .icon { font-size: 18px; }
   .section { margin-bottom: 32px; }
 
-  /* ── Summary Cards ─────────────────────────── */
+  /* -- Summary Cards ---------------------------------- */
   .summary-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -148,7 +146,7 @@
     font-family: var(--mono); font-size: 12px; color: var(--text2); margin-top: 4px;
   }
 
-  /* ── Tables ─────────────────────────────────── */
+  /* -- Tables ----------------------------------------- */
   .table-card {
     background: var(--card); border: 1px solid var(--card-border);
     border-radius: 10px; overflow: hidden; margin-bottom: 32px;
@@ -176,23 +174,39 @@
   .val-neg { color: var(--red); }
   .val-neutral { color: var(--text2); }
 
-  /* ── Chart ─────────────────────────────────── */
+  /* -- Signal group header row ------------------------ */
+  .signal-group-header td {
+    background: rgba(79, 195, 247, 0.06);
+    border-bottom: 1px solid rgba(79, 195, 247, 0.15);
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--cyan);
+    padding: 8px 14px;
+  }
+
+  /* -- Badges ----------------------------------------- */
+  .badge {
+    display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px;
+    border-radius: 4px; text-transform: uppercase; letter-spacing: 0.03em;
+    font-family: var(--mono);
+  }
+  .badge-yes { background: rgba(0,230,118,0.15); color: var(--green); border: 1px solid rgba(0,230,118,0.3); }
+  .badge-no { background: rgba(255,82,82,0.15); color: var(--red); border: 1px solid rgba(255,82,82,0.3); }
+  .badge-open { background: rgba(79,195,247,0.15); color: var(--cyan); border: 1px solid rgba(79,195,247,0.3); }
+  .badge-won { background: rgba(0,230,118,0.15); color: var(--green); border: 1px solid rgba(0,230,118,0.3); }
+  .badge-lost { background: rgba(255,82,82,0.15); color: var(--red); border: 1px solid rgba(255,82,82,0.3); }
+  .badge-traded { background: rgba(0,230,118,0.12); color: var(--green); }
+  .badge-not-traded { background: rgba(136,136,136,0.12); color: var(--text2); }
+
+  /* -- Chart ------------------------------------------ */
   .chart-card {
     background: var(--card); border: 1px solid var(--card-border);
     border-radius: 10px; padding: 20px; margin-bottom: 32px;
   }
   .chart-card canvas { width: 100% !important; max-height: 300px; }
 
-  /* ── Info Box ─────────────────────────────── */
-  .info-box {
-    background: rgba(79, 195, 247, 0.06);
-    border: 1px solid rgba(79, 195, 247, 0.15);
-    border-radius: 8px; padding: 14px 18px; margin-bottom: 24px;
-    font-size: 12px; color: var(--text2); line-height: 1.6;
-  }
-  .info-box strong { color: var(--text); }
-
-  /* ── Breakdown Cards ───────────────────────── */
+  /* -- Breakdown Cards -------------------------------- */
   .breakdown-grid {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 16px; margin-bottom: 32px;
@@ -213,7 +227,7 @@
   .breakdown-card .metric-label { color: var(--text2); }
   .breakdown-card .metric-value { font-family: var(--mono); font-weight: 600; }
 
-  /* ── Analysis Metrics ──────────────────────── */
+  /* -- Analysis Metrics ------------------------------- */
   .analysis-grid {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 12px; margin-bottom: 32px;
@@ -233,7 +247,7 @@
     font-size: 11px; color: var(--text2); margin-top: 4px;
   }
 
-  /* ── Loading ─────────────────────────────── */
+  /* -- Loading ---------------------------------------- */
   .loading {
     display: flex; flex-direction: column; align-items: center;
     justify-content: center; padding: 60px 0; gap: 16px; color: var(--text2);
@@ -257,7 +271,7 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
   .catch(() => { window.location.href = '/login.html'; });
 </script>
 
-<!-- ── Sidebar ─────────────────────────────────── -->
+<!-- -- Sidebar ---------------------------------------- -->
 <nav class="sidebar">
   <a href="/" class="sidebar-logo">
     <span class="logo-icon">&#x26C8;</span>
@@ -276,7 +290,7 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
   </div>
 </nav>
 
-<!-- ── Main Content ────────────────────────────── -->
+<!-- -- Main Content ----------------------------------- -->
 <div class="main-content">
 <div class="container">
 
@@ -287,19 +301,19 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
     <span id="last-refresh" style="font-size:11px;color:var(--text2);margin-left:auto;">Loading...</span>
   </div>
 
-  <!-- Section 1: Live Status -->
+  <!-- Section 1: Live Status (multi-city overview) -->
   <div class="section">
     <div class="section-title"><span class="icon">&#x1F6F0;</span> Live Status</div>
     <div class="summary-grid" id="status-grid">
       <div class="stat-card">
-        <div class="label">METAR Temp</div>
-        <div class="value" id="metar-temp">--</div>
-        <div class="sub" id="metar-station">EGLC</div>
+        <div class="label">Markets Tracked</div>
+        <div class="value" id="markets-tracked">--</div>
+        <div class="sub">unique markets</div>
       </div>
       <div class="stat-card">
-        <div class="label">Last Signal</div>
-        <div class="value" id="last-signal-time">--</div>
-        <div class="sub">time</div>
+        <div class="label">Cities Active</div>
+        <div class="value" id="cities-active">--</div>
+        <div class="sub">with signals today</div>
       </div>
       <div class="stat-card">
         <div class="label">Today's Signals</div>
@@ -319,31 +333,36 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
     </div>
   </div>
 
-  <!-- Section 2: Today's Signals & Trades -->
+  <!-- Section 2: Today's Signals -->
   <div class="section">
     <div class="section-title"><span class="icon">&#x26A1;</span> Today's Signals</div>
     <div class="table-card">
       <div class="table-header">
         <h3>Recent Signals</h3>
+        <span class="trade-count" id="signal-count" style="font-size:12px;color:var(--text2);font-family:var(--mono);">0 signals</span>
       </div>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
               <th>Time</th>
+              <th>City</th>
+              <th>Station</th>
               <th>Temp Observed</th>
               <th>Previous Temp</th>
+              <th>Rise</th>
               <th>Bands Locked</th>
               <th>Traded</th>
             </tr>
           </thead>
           <tbody id="signals-tbody">
-            <tr><td colspan="5" class="empty-state">Loading signals...</td></tr>
+            <tr><td colspan="8" class="empty-state">Loading signals...</td></tr>
           </tbody>
         </table>
       </div>
     </div>
 
+    <!-- Today's Trades -->
     <div class="section-title"><span class="icon">&#x1F4B9;</span> Today's Trades</div>
     <div class="table-card">
       <div class="table-header">
@@ -355,16 +374,22 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
           <thead>
             <tr>
               <th>Time</th>
+              <th>City</th>
+              <th>Market Date</th>
               <th>Band</th>
               <th>Side</th>
-              <th>Trade Type</th>
+              <th>Type</th>
+              <th>METAR Temp</th>
               <th>Entry Price</th>
+              <th>Book Depth</th>
+              <th>Shares</th>
+              <th>Size</th>
               <th>Status</th>
               <th>P&amp;L</th>
             </tr>
           </thead>
           <tbody id="trades-tbody">
-            <tr><td colspan="7" class="empty-state">Loading trades...</td></tr>
+            <tr><td colspan="13" class="empty-state">Loading trades...</td></tr>
           </tbody>
         </table>
       </div>
@@ -500,7 +525,7 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
 </div>
 </div>
 
-<!-- ── Mobile Nav ─────────────────────────────── -->
+<!-- -- Mobile Nav ------------------------------------- -->
 <nav class="mobile-nav">
   <div style="display:flex;border-bottom:1px solid var(--card-border);padding:4px 8px;">
     <a href="/" style="flex:1;text-align:center;font-size:10px;font-weight:600;color:var(--text2);padding:4px;text-decoration:none;font-family:var(--sans);">Temp Predictions</a>
@@ -517,6 +542,8 @@ const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 
 let pnlChart = null;
+let allSignals = [];
+let allTrades = [];
 
 function fmtMoney(v) {
   const n = Number(v) || 0;
@@ -536,17 +563,57 @@ function fmtTime(ts) {
   return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
+function fmtDate(ts) {
+  if (!ts) return '--';
+  const d = new Date(ts);
+  return d.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' });
+}
+
+function cityFromStation(station) {
+  // Common ICAO to city mapping for display
+  const map = {
+    'EGLC': 'London', 'EGLL': 'London', 'LFPG': 'Paris', 'LFPO': 'Paris',
+    'EDDB': 'Berlin', 'LEMD': 'Madrid', 'LIRF': 'Rome', 'LIRA': 'Rome',
+    'EHAM': 'Amsterdam', 'EKCH': 'Copenhagen', 'ESSA': 'Stockholm',
+    'EFHK': 'Helsinki', 'ENGM': 'Oslo', 'LOWW': 'Vienna', 'LSZH': 'Zurich',
+    'EPWA': 'Warsaw', 'LKPR': 'Prague', 'LHBP': 'Budapest', 'LGAV': 'Athens',
+    'LTFM': 'Istanbul', 'LLBG': 'Tel Aviv', 'OMDB': 'Dubai', 'OEJN': 'Jeddah',
+    'VIDP': 'Delhi', 'VABB': 'Mumbai', 'ZBAA': 'Beijing', 'ZSSS': 'Shanghai',
+    'RJTT': 'Tokyo', 'RKSI': 'Seoul', 'WSSS': 'Singapore', 'VTBS': 'Bangkok',
+    'YSSY': 'Sydney', 'YMML': 'Melbourne', 'NZAA': 'Auckland',
+    'KJFK': 'New York', 'KLAX': 'Los Angeles', 'KORD': 'Chicago',
+    'KATL': 'Atlanta', 'KDFW': 'Dallas', 'KDEN': 'Denver', 'KSFO': 'San Francisco',
+    'CYYZ': 'Toronto', 'MMMX': 'Mexico City', 'SBGR': 'Sao Paulo',
+    'SAEZ': 'Buenos Aires', 'FAOR': 'Johannesburg', 'HECA': 'Cairo',
+    'DNMM': 'Lagos', 'GMMN': 'Casablanca'
+  };
+  return map[station] || station;
+}
+
 function statusBadge(status) {
   if (!status) return '<span class="val-neutral">--</span>';
-  const colors = { won: 'val-pos', lost: 'val-neg', open: 'val-neutral', pending: 'val-neutral' };
-  return `<span class="${colors[status] || 'val-neutral'}">${status.toUpperCase()}</span>`;
+  const cls = { won: 'badge-won', lost: 'badge-lost', open: 'badge-open' };
+  return `<span class="badge ${cls[status] || 'badge-open'}">${status.toUpperCase()}</span>`;
 }
 
 function tradeTypeBadge(type) {
   if (!type) return '--';
-  if (type === 'top_band_yes') return '<span style="color:var(--green);">Top Band YES</span>';
-  if (type === 'lower_band_no') return '<span style="color:var(--red);">NO Sweep</span>';
+  if (type === 'top_band_yes') return '<span class="badge badge-yes">Top Band YES</span>';
+  if (type === 'lower_band_no') return '<span class="badge badge-no">NO Sweep</span>';
   return type;
+}
+
+function sideBadge(side) {
+  if (!side) return '--';
+  const s = side.toUpperCase();
+  if (s === 'YES') return '<span style="color:var(--green);font-weight:600;">YES</span>';
+  if (s === 'NO') return '<span style="color:var(--red);font-weight:600;">NO</span>';
+  return side;
+}
+
+function tradedBadge(traded) {
+  if (traded) return '<span class="badge badge-traded">YES</span>';
+  return '<span class="badge badge-not-traded">NO</span>';
 }
 
 async function loadSignals() {
@@ -554,39 +621,45 @@ async function loadSignals() {
     const resp = await fetch('/api/sniper_signals');
     if (!resp.ok) throw new Error('API error');
     const data = await resp.json();
-    const signals = Array.isArray(data) ? data : (data.signals || []);
+    allSignals = Array.isArray(data) ? data : (data.signals || []);
 
     const today = new Date().toISOString().slice(0, 10);
-    const todaySignals = signals.filter(s => (s.created_at || s.time || '').startsWith(today));
+    const todaySignals = allSignals.filter(s => (s.signal_time || s.created_at || s.time || '').slice(0, 10) === today);
 
+    // Update status cards
+    const uniqueCities = new Set(todaySignals.map(s => s.city || cityFromStation(s.station)));
+    $('#cities-active').textContent = uniqueCities.size;
     $('#today-signals').textContent = todaySignals.length;
-
-    if (todaySignals.length > 0) {
-      const last = todaySignals[0];
-      $('#last-signal-time').textContent = fmtTime(last.created_at || last.time);
-      if (last.temp_observed !== undefined) {
-        $('#metar-temp').textContent = last.temp_observed + '\u00B0C';
-      }
-    }
+    $('#signal-count').textContent = todaySignals.length + ' signal' + (todaySignals.length !== 1 ? 's' : '');
 
     const tbody = $('#signals-tbody');
     if (todaySignals.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No signals today</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No signals today</td></tr>';
       return;
     }
 
-    tbody.innerHTML = todaySignals.slice(0, 20).map(s => `
-      <tr>
-        <td>${fmtTime(s.created_at || s.time)}</td>
-        <td>${s.temp_observed !== undefined ? s.temp_observed + '\u00B0C' : '--'}</td>
-        <td>${s.previous_temp !== undefined ? s.previous_temp + '\u00B0C' : '--'}</td>
-        <td>${s.bands_locked || '--'}</td>
-        <td>${s.traded ? '<span class="val-pos">YES</span>' : '<span class="val-neutral">NO</span>'}</td>
-      </tr>
-    `).join('');
+    tbody.innerHTML = todaySignals.slice(0, 50).map(s => {
+      const city = s.city || cityFromStation(s.station);
+      const rise = (s.temp_observed !== undefined && s.previous_temp !== undefined)
+        ? (s.temp_observed - s.previous_temp) : null;
+      const riseStr = rise !== null
+        ? `<span class="${rise > 0 ? 'val-pos' : rise < 0 ? 'val-neg' : 'val-neutral'}">${rise > 0 ? '+' : ''}${rise.toFixed(1)}\u00B0C</span>`
+        : '--';
+      return `
+        <tr>
+          <td>${fmtTime(s.signal_time || s.created_at || s.time)}</td>
+          <td style="font-family:var(--sans);font-weight:600;">${city}</td>
+          <td>${s.station || '--'}</td>
+          <td>${s.temp_observed !== undefined ? s.temp_observed + '\u00B0C' : '--'}</td>
+          <td>${s.previous_temp !== undefined ? s.previous_temp + '\u00B0C' : '--'}</td>
+          <td>${riseStr}</td>
+          <td>${s.num_bands_locked !== undefined ? s.num_bands_locked : (s.bands_locked || '--')}</td>
+          <td>${tradedBadge(s.traded)}</td>
+        </tr>`;
+    }).join('');
   } catch (e) {
     console.error('Error loading signals:', e);
-    $('#signals-tbody').innerHTML = '<tr><td colspan="5" class="empty-state">No signal data available</td></tr>';
+    $('#signals-tbody').innerHTML = '<tr><td colspan="8" class="empty-state">No signal data available</td></tr>';
   }
 }
 
@@ -595,34 +668,94 @@ async function loadTrades() {
     const resp = await fetch('/api/sniper_trades');
     if (!resp.ok) throw new Error('API error');
     const data = await resp.json();
-    const trades = Array.isArray(data) ? data : (data.trades || []);
+    allTrades = Array.isArray(data) ? data : (data.trades || []);
 
     const today = new Date().toISOString().slice(0, 10);
-    const todayTrades = trades.filter(t => (t.created_at || t.time || '').startsWith(today));
+    const todayTrades = allTrades.filter(t => (t.created_at || t.time || '').slice(0, 10) === today);
 
+    // Update status cards
     $('#today-trades').textContent = todayTrades.length;
+
+    // Count unique markets from all trades
+    const uniqueMarkets = new Set(allTrades.map(t => t.market_question || t.city || '').filter(Boolean));
+    $('#markets-tracked').textContent = uniqueMarkets.size || '--';
 
     const tbody = $('#trades-tbody');
     if (todayTrades.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No trades today</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="13" class="empty-state">No trades today</td></tr>';
       return;
     }
 
-    tbody.innerHTML = todayTrades.slice(0, 20).map(t => `
-      <tr>
-        <td>${fmtTime(t.created_at || t.time)}</td>
-        <td>${t.band || '--'}</td>
-        <td>${t.side || '--'}</td>
-        <td>${tradeTypeBadge(t.trade_type)}</td>
-        <td>${t.entry_price !== undefined ? t.entry_price.toFixed(2) + '\u00A2' : '--'}</td>
-        <td>${statusBadge(t.status)}</td>
-        <td>${t.pnl !== undefined ? fmtMoney(t.pnl) : '--'}</td>
-      </tr>
-    `).join('');
+    // Group trades by signal context (city + temp_observed + approximate time)
+    const groups = groupTradesBySignal(todayTrades);
+    let html = '';
+
+    for (const group of groups) {
+      if (group.trades.length > 1) {
+        // Insert signal group header
+        const t0 = group.trades[0];
+        const city = t0.city || '--';
+        const rise = t0.temp_observed !== undefined ? t0.temp_observed + '\u00B0C' : '';
+        html += `<tr class="signal-group-header"><td colspan="13">${city} \u2014 METAR ${rise} \u2014 ${group.trades.length} trades</td></tr>`;
+      }
+      for (const t of group.trades) {
+        const mktDate = t.market_date ? fmtDate(t.market_date) : '--';
+        const band = t.band_label || t.band || (t.band_temp !== undefined ? t.band_temp + '\u00B0C' : '--');
+        const depth = t.bid_depth_usdc !== undefined ? '$' + Number(t.bid_depth_usdc).toFixed(0) : '--';
+        html += `
+          <tr>
+            <td>${fmtTime(t.created_at || t.time)}</td>
+            <td style="font-family:var(--sans);font-weight:600;">${t.city || '--'}</td>
+            <td>${mktDate}</td>
+            <td>${band}</td>
+            <td>${sideBadge(t.side)}</td>
+            <td>${tradeTypeBadge(t.trade_type)}</td>
+            <td>${t.temp_observed !== undefined ? t.temp_observed + '\u00B0C' : '--'}</td>
+            <td>${t.entry_price !== undefined ? (t.entry_price * 100 < 100 ? (t.entry_price * 100).toFixed(1) : t.entry_price.toFixed(1)) + '\u00A2' : '--'}</td>
+            <td>${depth}</td>
+            <td>${t.total_shares !== undefined ? Number(t.total_shares).toFixed(1) : '--'}</td>
+            <td>${t.size_usdc !== undefined ? '$' + Number(t.size_usdc).toFixed(2) : '--'}</td>
+            <td>${statusBadge(t.status)}</td>
+            <td>${t.profit_usd !== undefined ? fmtMoney(t.profit_usd) : (t.pnl !== undefined ? fmtMoney(t.pnl) : '--')}</td>
+          </tr>`;
+      }
+    }
+
+    tbody.innerHTML = html;
   } catch (e) {
     console.error('Error loading trades:', e);
-    $('#trades-tbody').innerHTML = '<tr><td colspan="7" class="empty-state">No trade data available</td></tr>';
+    $('#trades-tbody').innerHTML = '<tr><td colspan="13" class="empty-state">No trade data available</td></tr>';
   }
+}
+
+function groupTradesBySignal(trades) {
+  // Group trades that share city + temp_observed + close timestamps (within 60s)
+  const groups = [];
+  const sorted = [...trades].sort((a, b) => {
+    const ta = a.created_at || a.time || '';
+    const tb = b.created_at || b.time || '';
+    return ta.localeCompare(tb);
+  });
+
+  for (const t of sorted) {
+    const city = t.city || '';
+    const temp = t.temp_observed;
+    const ts = new Date(t.created_at || t.time || 0).getTime();
+
+    let matched = false;
+    for (const g of groups) {
+      if (g.city === city && g.temp === temp && Math.abs(ts - g.lastTs) < 120000) {
+        g.trades.push(t);
+        g.lastTs = ts;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      groups.push({ city, temp, lastTs: ts, trades: [t] });
+    }
+  }
+  return groups;
 }
 
 async function loadPnl() {
