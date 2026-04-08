@@ -934,12 +934,12 @@ function histSortArrow(col) {
 function sortHistorySnapshots(snaps, col, asc) {
   const sorters = {
     city: (a, b) => (a.city || '').localeCompare(b.city || ''),
-    date: (a, b) => (a.trade_date || '').localeCompare(b.trade_date || ''),
-    band: (a, b) => (a.band || '').localeCompare(b.band || ''),
-    side: (a, b) => (a.side || '').localeCompare(b.side || ''),
-    type: (a, b) => (a.bet_type || '').localeCompare(b.bet_type || ''),
+    date: (a, b) => (a.date || a.trade_date || '').localeCompare(b.date || b.trade_date || ''),
+    band: (a, b) => (a.band_c || a.band || '').localeCompare(b.band_c || b.band || ''),
     rec: (a, b) => (a.recommendation || '').localeCompare(b.recommendation || ''),
-    exit_price: (a, b) => parseFloat(a.exit_price || 0) - parseFloat(b.exit_price || 0),
+    captured: (a, b) => parseFloat(a.captured_pct || 0) - parseFloat(b.captured_pct || 0),
+    hours: (a, b) => parseFloat(a.hours_to_resolution || 999) - parseFloat(b.hours_to_resolution || 999),
+    capital: (a, b) => parseFloat(a.capital_locked || a.total_cost || 0) - parseFloat(b.capital_locked || b.total_cost || 0),
     hypo_profit: (a, b) => parseFloat(a.hypothetical_profit || 0) - parseFloat(b.hypothetical_profit || 0),
     actual_profit: (a, b) => parseFloat(a.actual_profit || 0) - parseFloat(b.actual_profit || 0),
     exit_vs_hold: (a, b) => parseFloat(a.exit_vs_hold || 0) - parseFloat(b.exit_vs_hold || 0),
