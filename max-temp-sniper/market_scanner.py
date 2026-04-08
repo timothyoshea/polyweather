@@ -1,7 +1,7 @@
 """
 Max Temp Sniper — Market Scanner.
-Polls Polymarket Gamma API /events endpoint for London temperature events,
-builds band map from the individual markets within each event.
+Polls Polymarket Gamma API /events endpoint for ALL temperature events,
+extracts the ICAO station from the resolution source, builds band maps.
 """
 from __future__ import annotations
 import json
@@ -16,7 +16,7 @@ logger = logging.getLogger("sniper.scanner")
 
 GAMMA_EVENTS_URL = (
     "https://gamma-api.polymarket.com/events"
-    "?active=true&closed=false&tag_slug=temperature&limit=100"
+    "?active=true&closed=false&tag_slug=temperature&limit=200"
 )
 
 # Patterns to detect the top band ("25°C or higher", "≥25°C", "above 25")
@@ -27,12 +27,20 @@ BOTTOM_BAND_PATTERNS = re.compile(r"(or below|or less|or lower|below|≤)", re.I
 # Extract numeric temperature from text
 TEMP_EXTRACT = re.compile(r"(-?\d+(?:\.\d+)?)\s*°?[CcFf]?")
 
+# Fallback ICAO station mapping for cities where regex extraction fails
+FALLBACK_STATIONS = {
+    "Hong Kong": "VHHH",
+    "Tel Aviv": "LLBG",
+    "Istanbul": "LTFM",
+    "Moscow": "UUEE",
+}
 
-def fetch_london_markets() -> list[Market]:
-    """Fetch active London temperature events from Gamma API, build band maps."""
+
+def fetch_all_markets() -> list[Market]:
+    """Fetch ALL active temperature events from Gamma API, build band maps."""
     try:
         req = urllib.request.Request(GAMMA_EVENTS_URL, headers={"User-Agent": "MaxTempSniper/1.0"})
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with urllib.request.urlopen(req, timeout=20) as resp:
             events = json.loads(resp.read().decode())
     except Exception as e:
         logger.error(f"Gamma API fetch failed: {e}")
@@ -41,8 +49,6 @@ def fetch_london_markets() -> list[Market]:
     markets = []
     for event in events:
         title = event.get("title", "")
-        if "london" not in title.lower():
-            continue
         if "highest" not in title.lower():
             continue
 
@@ -50,14 +56,37 @@ def fetch_london_markets() -> list[Market]:
         if market and market.bands:
             markets.append(market)
             top = market.top_band
-            logger.info(
-                f"Found: {market.question} | {len(market.bands)} bands | "
-                f"top: {top.label} ({top.temp_value}°C)" if top else
-                f"Found: {market.question} | {len(market.bands)} bands | no top band"
-            )
+            if top:
+                logger.info(
+                    f"Found: {market.city} ({market.station}) | "
+                    f"{len(market.bands)} bands | top: {top.label} ({top.temp_value}°C)"
+                )
+            else:
+                logger.info(
+                    f"Found: {market.city} ({market.station}) | "
+                    f"{len(market.bands)} bands | no top band detected"
+                )
 
-    logger.info(f"Scanner found {len(markets)} London temperature markets")
+    logger.info(f"Scanner found {len(markets)} temperature markets across {len(set(m.station for m in markets))} stations")
     return markets
+
+
+def _extract_city(title: str) -> str:
+    """Extract city name from event title like 'Highest temperature in London on April 9?'"""
+    m = re.search(r"in (.+?) on", title)
+    return m.group(1) if m else ""
+
+
+def _extract_station(event: dict, city: str) -> str:
+    """Extract ICAO station code from resolution source URL or description."""
+    for text in [event.get("resolutionSource", ""), event.get("description", "")]:
+        # Match ICAO code at end of WU URL: .../EGLC or .../KLGA
+        match = re.search(r"/([A-Z]{4})(?:\s|\.|$|/|\?|\\)", text)
+        if match:
+            return match.group(1)
+
+    # Fallback mapping for cities where URL extraction fails
+    return FALLBACK_STATIONS.get(city, "")
 
 
 def _parse_event(event: dict) -> Optional[Market]:
@@ -67,17 +96,26 @@ def _parse_event(event: dict) -> Optional[Market]:
         if not event_markets:
             return None
 
+        title = event.get("title", "")
+        city = _extract_city(title)
+        station = _extract_station(event, city)
+
+        if not station:
+            logger.warning(f"No METAR station found for {city}, skipping")
+            return None
+
         market = Market(
             condition_id=event.get("id", ""),
-            question=event.get("title", ""),
+            question=title,
             slug=event.get("slug", ""),
             end_date=event.get("endDate", ""),
             neg_risk_market_id=event.get("negRiskMarketID", ""),
+            city=city,
+            station=station,
         )
 
         for m in event_markets:
             question = m.get("question", "")
-            condition_id = m.get("conditionId", "")
 
             # Parse clobTokenIds — JSON string: [yes_token, no_token]
             tokens_raw = m.get("clobTokenIds", "[]")
@@ -88,6 +126,7 @@ def _parse_event(event: dict) -> Optional[Market]:
 
             yes_token = tokens[0] if len(tokens) > 0 else ""
             no_token = tokens[1] if len(tokens) > 1 else ""
+            condition_id = m.get("conditionId", "")
 
             band = _parse_band_from_question(question, yes_token, no_token, condition_id)
             if band:
@@ -106,7 +145,7 @@ def _parse_event(event: dict) -> Optional[Market]:
 def _parse_band_from_question(
     question: str, yes_token_id: str, no_token_id: str, condition_id: str = ""
 ) -> Optional[Band]:
-    """Parse a band from a market question like 'Will the highest temperature in London be 22°C on April 9?'"""
+    """Parse a band from a market question."""
     temp_match = TEMP_EXTRACT.search(question)
     if not temp_match:
         return None
@@ -116,7 +155,7 @@ def _parse_band_from_question(
     is_bottom = bool(BOTTOM_BAND_PATTERNS.search(question))
 
     return Band(
-        label=_short_label(question, temp_value, is_top, is_bottom),
+        label=_short_label(temp_value, is_top, is_bottom),
         temp_value=temp_value,
         is_top_band=is_top,
         is_bottom_band=is_bottom,
@@ -126,7 +165,7 @@ def _parse_band_from_question(
     )
 
 
-def _short_label(question: str, temp: float, is_top: bool, is_bottom: bool) -> str:
+def _short_label(temp: float, is_top: bool, is_bottom: bool) -> str:
     """Create a short band label like '22°C' or '25°C or higher'."""
     t = int(temp) if temp == int(temp) else temp
     if is_top:
