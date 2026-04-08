@@ -801,7 +801,7 @@ function render(positions, opportunities) {
         <div id="${oppId}" style="display:none;width:100%;padding-top:10px;border-top:1px solid var(--card-border);margin-top:8px;font-size:12px;font-family:var(--mono);color:var(--text2);">
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:6px 16px;">
             <div>Forecast: <span style="color:var(--text);">${opp.forecast_c != null ? fmt(opp.forecast_c, 1) + '\u00B0C' : '\u2014'}</span></div>
-            <div>My P: <span style="color:var(--text);">${opp.my_p != null ? fmt(parseFloat(opp.my_p) * 100, 1) + '\u00A2' : '\u2014'}</span></div>
+            <div>My P: <span style="color:var(--text);">${opp.my_p != null ? fmt(parseFloat(opp.my_p), 1) + '%' : '\u2014'}</span></div>
             <div>Confidence: <span style="color:var(--text);">${opp.confidence != null ? fmt(parseFloat(opp.confidence) * 100, 0) + '%' : '\u2014'}</span></div>
             <div>EV/Dollar: <span style="color:var(--text);">${opp.ev_per_dollar != null ? fmt(opp.ev_per_dollar, 3) : '\u2014'}</span></div>
           </div>
