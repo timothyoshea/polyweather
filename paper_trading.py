@@ -607,9 +607,16 @@ def check_polymarket_resolution(market_slug):
 
         market = markets[0]
 
-        # Determine winning outcome from outcomePrices
-        # Markets resolve to ~1.0/0.0 prices — check that instead of
-        # the unreliable "closed" flag which sometimes stays False
+        # Check resolution status — require either:
+        # 1. closed=True, OR
+        # 2. automaticallyResolved=True
+        # AND price at 0.95+ for the winning outcome
+        is_closed = market.get("closed", False)
+        is_auto_resolved = market.get("automaticallyResolved", False)
+
+        if not is_closed and not is_auto_resolved:
+            return None  # Market still active — don't resolve
+
         prices_raw = market.get("outcomePrices", "")
         try:
             prices = json.loads(prices_raw) if isinstance(prices_raw, str) else prices_raw
@@ -619,8 +626,6 @@ def check_polymarket_resolution(market_slug):
         if prices and len(prices) >= 2:
             yes_price = float(prices[0])
             no_price = float(prices[1])
-            # Resolved: price at 0.95+ means that outcome won
-            # (use 0.95 instead of 0.9 to be safe but still catch resolved markets)
             if yes_price > 0.95:
                 return "YES"
             elif no_price > 0.95:
