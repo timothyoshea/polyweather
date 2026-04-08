@@ -2,16 +2,107 @@
 Max Temp Sniper — Multi-Station METAR Poller.
 Polls aviationweather.gov for ALL active stations every 10 seconds.
 Batches stations into a single API call where possible.
+Logs every new METAR observation to Supabase for historical tracking.
 """
 from __future__ import annotations
 import json
 import logging
+import os
+import re
 import urllib.request
+from datetime import datetime, timezone
 from typing import Optional
 
 logger = logging.getLogger("sniper.metar")
 
 METAR_API = "https://aviationweather.gov/api/data/metar"
+
+# Supabase config (module-level, read once)
+SUPABASE_URL = os.getenv("SUPABASE_URL", "")
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "")
+
+# Weather phenomena codes to look for in METAR
+_WEATHER_CODES = {
+    "CAVOK", "NCD", "NSC", "SKC", "CLR", "FEW", "SCT", "BKN", "OVC",
+    "RA", "SN", "DZ", "GR", "GS", "SG", "IC", "PL", "UP",
+    "FG", "BR", "HZ", "FU", "SA", "DU", "VA",
+    "TS", "SQ", "FC", "DS", "SS",
+    "+RA", "-RA", "+SN", "-SN", "+DZ", "-DZ", "+TS", "-TS",
+    "TSRA", "+TSRA", "-TSRA", "VCSH", "VCTS",
+    "SHRA", "+SHRA", "-SHRA", "SHSN", "+SHSN", "-SHSN",
+    "FZRA", "+FZRA", "-FZRA", "FZDZ", "FZFG",
+    "BCFG", "PRFG", "MIFG",
+}
+
+
+def _parse_metar_fields(raw: str) -> dict:
+    """
+    Extract observation_time, wind, visibility, and weather from a raw METAR string.
+
+    Example: "METAR EHAM 081855Z 13005KT 100V160 CAVOK 15/03 Q1023 NOSIG"
+      - observation_time = "081855Z"
+      - wind = "13005KT"
+      - visibility = "CAVOK"
+      - weather = "CAVOK"
+    """
+    result = {
+        "observation_time": None,
+        "wind": None,
+        "visibility": None,
+        "weather": None,
+    }
+
+    tokens = raw.strip().split()
+    if not tokens:
+        return result
+
+    # Find the observation time token (format: DDHHMMz, e.g. "081855Z")
+    for i, tok in enumerate(tokens):
+        if re.match(r"^\d{6}Z$", tok):
+            result["observation_time"] = tok
+            break
+
+    # Find wind token (ends with KT or MPS, e.g. "13005KT", "VRB02KT")
+    for tok in tokens:
+        if re.match(r"^(VRB|\d{3})\d{2,3}(G\d{2,3})?(KT|MPS)$", tok):
+            result["wind"] = tok
+            break
+
+    # Find visibility: numeric token (e.g. "9999", "0800") or "CAVOK" after wind
+    wind_found = False
+    for tok in tokens:
+        if result["wind"] and tok == result["wind"]:
+            wind_found = True
+            continue
+        if not wind_found:
+            continue
+        # Skip variable wind direction (e.g. "100V160")
+        if re.match(r"^\d{3}V\d{3}$", tok):
+            continue
+        if tok == "CAVOK":
+            result["visibility"] = "CAVOK"
+            break
+        if re.match(r"^\d{4}$", tok):
+            result["visibility"] = tok
+            break
+        if re.match(r"^\d+SM$", tok):
+            result["visibility"] = tok
+            break
+        # If we hit temp/dew (NN/NN) or QNH, stop looking
+        if re.match(r"^M?\d{2}/M?\d{2}$", tok) or tok.startswith("Q") or tok.startswith("A"):
+            break
+
+    # Find weather phenomena
+    weather_parts = []
+    for tok in tokens:
+        # Check exact match or prefix-stripped match
+        if tok in _WEATHER_CODES:
+            weather_parts.append(tok)
+        elif tok == "CAVOK":
+            weather_parts.append("CAVOK")
+    result["weather"] = " ".join(weather_parts) if weather_parts else None
+
+    return result
 
 
 class MetarPoller:
@@ -20,6 +111,19 @@ class MetarPoller:
     def __init__(self):
         # Per-station state: {station: {last_raw, last_temp, previous_temp}}
         self._state: dict[str, dict] = {}
+        # Station metadata: {station: {"city": "...", "resolution_source": "..."}}
+        self._station_metadata: dict[str, dict] = {}
+
+    def set_station_metadata(self, mapping: dict):
+        """
+        Set station-to-city metadata mapping.
+        Called from main.py after market scanner runs.
+
+        Args:
+            mapping: dict of {station: {"city": "Amsterdam", "resolution_source": "https://..."}}
+        """
+        self._station_metadata = mapping
+        logger.info(f"Station metadata set for {len(mapping)} stations")
 
     def _ensure_station(self, station: str):
         if station not in self._state:
@@ -104,30 +208,88 @@ class MetarPoller:
             return None
 
         # Track temperature changes
-        state["previous_temp"] = state["last_temp"]
+        previous_temp = state["last_temp"]
+        state["previous_temp"] = previous_temp
         state["last_temp"] = temp
         state["last_raw"] = raw_ob
 
         is_rising = (
-            state["previous_temp"] is not None
-            and temp > state["previous_temp"]
+            previous_temp is not None
+            and temp > previous_temp
         )
+
+        # Log EVERY new observation to Supabase (not just rising)
+        self._log_reading_to_supabase(station, temp, raw_ob, previous_temp, is_rising)
 
         if is_rising:
             logger.info(
-                f"RISING {station}: {temp}°C (was {state['previous_temp']}°C) | {raw_ob}"
+                f"RISING {station}: {temp}°C (was {previous_temp}°C) | {raw_ob}"
             )
             return {
                 "temp": temp,
                 "raw": raw_ob,
                 "station": station,
-                "previous_temp": state["previous_temp"],
+                "previous_temp": previous_temp,
             }
         else:
             logger.debug(
-                f"{station}: {temp}°C (prev: {state['previous_temp']}°C) stable/falling"
+                f"{station}: {temp}°C (prev: {previous_temp}°C) stable/falling"
             )
             return None
+
+    def _log_reading_to_supabase(
+        self, station: str, temp_c: float, raw: str,
+        previous_temp: Optional[float], is_rising: bool
+    ):
+        """Best-effort insert of every METAR reading into metar_readings table."""
+        if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
+            return
+
+        try:
+            # Get metadata for this station
+            meta = self._station_metadata.get(station, {})
+            city = meta.get("city")
+            resolution_source = meta.get("resolution_source")
+
+            # Parse METAR fields
+            parsed = _parse_metar_fields(raw)
+
+            # Calculate derived fields
+            temp_f = round(temp_c * 9 / 5 + 32, 2)
+            temp_change = round(temp_c - previous_temp, 2) if previous_temp is not None else None
+
+            payload = json.dumps({
+                "station": station,
+                "city": city,
+                "temp_c": temp_c,
+                "temp_f": temp_f,
+                "metar_raw": raw,
+                "observation_time": parsed["observation_time"],
+                "wind": parsed["wind"],
+                "visibility": parsed["visibility"],
+                "weather": parsed["weather"],
+                "previous_temp_c": previous_temp,
+                "temp_change": temp_change,
+                "is_rising": is_rising,
+                "resolution_source": resolution_source,
+            }).encode()
+
+            url = f"{SUPABASE_URL}/rest/v1/metar_readings"
+            req = urllib.request.Request(
+                url,
+                data=payload,
+                method="POST",
+                headers={
+                    "Content-Type": "application/json",
+                    "apikey": SUPABASE_SERVICE_KEY,
+                    "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
+                    "Prefer": "return=minimal",
+                },
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                logger.debug(f"METAR reading logged for {station} ({resp.status})")
+        except Exception as e:
+            logger.warning(f"Failed to log METAR reading for {station}: {e}")
 
     def get_temp(self, station: str) -> Optional[float]:
         """Get the last known temperature for a station."""
