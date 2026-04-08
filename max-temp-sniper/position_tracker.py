@@ -67,36 +67,8 @@ class PositionTracker:
         return len(self._positions)
 
     def _persist_position(self, pos: Position):
-        """Upsert position to Supabase sniper_positions table (best effort)."""
-        if not self._supabase_url or not self._supabase_key:
-            logger.debug("No Supabase config, skipping position persist")
-            return
-
-        try:
-            payload = json.dumps({
-                "market_id": pos.market_id,
-                "band_label": pos.band_label,
-                "side": pos.side,
-                "trade_type": pos.trade_type,
-                "entry_price": pos.entry_price,
-                "size_usdc": pos.size_usdc,
-                "created_at": pos.created_at,
-            }).encode()
-
-            url = f"{self._supabase_url}/rest/v1/sniper_positions"
-            req = urllib.request.Request(
-                url,
-                data=payload,
-                method="POST",
-                headers={
-                    "Content-Type": "application/json",
-                    "apikey": self._supabase_key,
-                    "Authorization": f"Bearer {self._supabase_key}",
-                    "Prefer": "return=minimal",
-                },
-            )
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                logger.debug(f"Position persisted to Supabase: {resp.status}")
+        """No separate positions table — positions are derived from sniper_trades."""
+        pass  # In-memory only; loaded from sniper_trades on restart
         except Exception as e:
             logger.warning(f"Failed to persist position to Supabase: {e}")
 
