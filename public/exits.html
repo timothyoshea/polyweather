@@ -582,9 +582,16 @@ function sortPositions(positions, col, asc) {
     pnl_pct: (a, b) => (parseFloat(a.unrealized_pnl_pct || 0)) - (parseFloat(b.unrealized_pnl_pct || 0)),
     hours: (a, b) => getHoursToResolution(a.date) - getHoursToResolution(b.date),
     score: (a, b) => getValueScore(a) - getValueScore(b),
+    orig_edge: (a, b) => parseFloat(a.edge || 0) - parseFloat(b.edge || 0),
+    curr_edge: (a, b) => {
+      const ca = forecastComparisons[a.id], cb = forecastComparisons[b.id];
+      const ea = ca && ca.latest_scan ? parseFloat(ca.latest_scan.edge || 0) : parseFloat(a.edge || 0);
+      const eb = cb && cb.latest_scan ? parseFloat(cb.latest_scan.edge || 0) : parseFloat(b.edge || 0);
+      return ea - eb;
+    },
     rec: (a, b) => {
-      const order = { 'Exit Now': 0, 'Stop Loss': 1, 'Consider Exit': 2, 'Hold': 3 };
-      return (order[getRecommendation(a).label] || 3) - (order[getRecommendation(b).label] || 3);
+      const order = { 'Exit \u2014 Forecast Changed': 0, 'Exit Now': 0, 'Stop Loss': 1, 'Consider Exit': 2, 'Hold': 3, 'Double Down': 4 };
+      return (order[getRecommendation(a).label] ?? 3) - (order[getRecommendation(b).label] ?? 3);
     }
   };
 
