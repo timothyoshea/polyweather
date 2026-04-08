@@ -16,15 +16,18 @@ class Band:
     is_top_band: bool       # True if this is the highest band ("or higher" / "above" / "+")
     yes_token_id: str       # CLOB token ID for YES
     no_token_id: str        # CLOB token ID for NO
+    is_bottom_band: bool = False  # True if this is the lowest band ("or below")
+    condition_id: str = ""  # Polymarket conditionId for this specific band/market
 
 
 @dataclass
 class Market:
     """A Polymarket temperature event with its bands."""
-    condition_id: str       # Polymarket condition/market ID
-    question: str           # Full market question text
+    condition_id: str       # Polymarket event ID
+    question: str           # Full event title
     slug: str               # URL slug
     end_date: str           # Market close date
+    neg_risk_market_id: str = ""  # negRisk market ID for the event
     bands: list[Band] = field(default_factory=list)
 
     @property
@@ -35,8 +38,10 @@ class Market:
         return None
 
     def bands_below(self, temp: float) -> list[Band]:
-        """Return bands whose threshold the observed temp has exceeded (strict >)."""
-        return [b for b in self.bands if not b.is_top_band and temp > b.temp_value]
+        """Return bands whose threshold the observed temp has exceeded (strict >).
+        Excludes bottom band ("or below") and top band."""
+        return [b for b in self.bands
+                if not b.is_top_band and not b.is_bottom_band and temp > b.temp_value]
 
 
 @dataclass
