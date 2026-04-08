@@ -873,6 +873,21 @@ class TradingLoop:
                         hypothetical_profit = round(exit_value - cost, 4)
                         hypothetical_roi_pct = round((exit_value - cost) / cost * 100, 2) if cost > 0 else 0
 
+                        # Estimate hours to resolution (market date end of day UTC - now)
+                        hours_to_resolution = None
+                        trade_date = trade.get("date")
+                        if trade_date:
+                            try:
+                                from datetime import datetime as _dt, timezone as _tz
+                                # Markets resolve after end of day — estimate midnight UTC next day
+                                market_end = _dt.strptime(trade_date, "%Y-%m-%d").replace(
+                                    hour=23, minute=59, tzinfo=_tz.utc)
+                                now_utc = _dt.now(_tz.utc)
+                                hours_to_resolution = round(
+                                    max(0, (market_end - now_utc).total_seconds() / 3600), 1)
+                            except Exception:
+                                pass
+
                         snapshot = {
                             "trade_id": trade_id,
                             "portfolio_id": portfolio_id,
@@ -891,6 +906,8 @@ class TradingLoop:
                             "hypothetical_roi_pct": hypothetical_roi_pct,
                             "forecast_gap": round(gap, 1) if gap is not None else None,
                             "captured_pct": round(captured_pct, 1),
+                            "hours_to_resolution": hours_to_resolution,
+                            "capital_locked": round(cost, 2),
                         }
 
                         # INSERT into exit_snapshots
