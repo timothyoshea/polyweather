@@ -618,7 +618,7 @@ function sortPositions(positions, col, asc) {
       return ea - eb;
     },
     rec: (a, b) => {
-      const order = { 'Exit \u2014 Forecast Changed': 0, 'Exit Now': 0, 'Stop Loss': 1, 'Consider Exit': 2, 'Hold': 3, 'Double Down': 4 };
+      const order = { 'Exit \u2014 Thesis Broken': 0, 'Stop Loss': 1, 'Danger \u2014 Close to Band': 2, 'Consider Exit': 3, 'Take Profit': 4, 'Hold': 5 };
       return (order[getRecommendation(a).label] ?? 3) - (order[getRecommendation(b).label] ?? 3);
     }
   };
