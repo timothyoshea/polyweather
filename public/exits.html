@@ -781,6 +781,7 @@ function render(positions, opportunities) {
         <td style="font-family:var(--sans);font-weight:500;">${t.city || '\u2014'}</td>
         <td>${t.date || '\u2014'}</td>
         <td>${t.band_c || t.band_f || '\u2014'}</td>
+        <td style="color:${comp && comp.forecast_gap != null ? (comp.forecast_gap >= 3 ? 'var(--green)' : comp.forecast_gap >= 1 ? 'var(--amber)' : 'var(--red)') : 'var(--text2)'};">${comp && comp.forecast_gap != null ? fmt(comp.forecast_gap, 1) + '\u00B0C' : '\u2014'}</td>
         <td>${(t.side || '').toUpperCase()}</td>
         <td>${fmt(entryPrice, 1)}\u00A2</td>
         <td>${fmt(livePrice, 1)}\u00A2</td>
