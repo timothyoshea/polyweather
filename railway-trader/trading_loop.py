@@ -570,19 +570,20 @@ def _parse_band_threshold(band_c):
     return None
 
 
-def _get_exit_recommendation(trade, live_price):
+def _get_exit_recommendation(trade, live_price, latest_forecast_c=None):
     """Determine exit recommendation based on forecast distance from band threshold.
 
     Returns (recommendation, gap, captured_pct).
     live_price is in cents (0-100).
+    latest_forecast_c overrides the trade's stored forecast if provided.
     """
     band = trade.get("band_c", "")
     threshold = _parse_band_threshold(band)
     if threshold is None:
         return "hold", None, 0
 
-    # Use the trade's forecast_c as the latest forecast
-    latest_fc = float(trade.get("forecast_c") or 0)
+    # Use the latest scanner forecast if available, otherwise fall back to trade's original
+    latest_fc = float(latest_forecast_c) if latest_forecast_c is not None else float(trade.get("forecast_c") or 0)
     side = trade.get("side", "").upper()
     band_type = trade.get("band_type", "exact")
 
