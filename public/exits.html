@@ -525,7 +525,7 @@ async function loadData() {
       fetch(`/api/refresh_prices?portfolio_id=${currentPortfolioId}`),
       fetch(`/api/forecast_compare?portfolio_id=${currentPortfolioId}`),
       fetch(`/api/exit_snapshots?summary=true`),
-      fetch(`/api/exit_snapshots?portfolio_id=${currentPortfolioId}&resolved=true`)
+      fetch(`/api/exit_snapshots?portfolio_id=${currentPortfolioId}`)
     ]);
     const pricesData = await pricesRes.json();
     const compareData = await compareRes.json();
