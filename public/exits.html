@@ -599,6 +599,12 @@ function sortPositions(positions, col, asc) {
     city: (a, b) => (a.city || '').localeCompare(b.city || ''),
     date: (a, b) => (a.date || '').localeCompare(b.date || ''),
     band: (a, b) => (a.band_c || a.band_f || '').localeCompare(b.band_c || b.band_f || ''),
+    gap: (a, b) => {
+      const ca = forecastComparisons[a.id], cb = forecastComparisons[b.id];
+      const ga = ca && ca.forecast_gap != null ? ca.forecast_gap : 999;
+      const gb = cb && cb.forecast_gap != null ? cb.forecast_gap : 999;
+      return ga - gb;
+    },
     side: (a, b) => (a.side || '').localeCompare(b.side || ''),
     type: (a, b) => (a.bet_type || '').localeCompare(b.bet_type || ''),
     entry: (a, b) => (parseFloat(a.entry_price || 0)) - (parseFloat(b.entry_price || 0)),
