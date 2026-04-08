@@ -34,22 +34,29 @@ def get_recommendation(trade, latest_scan):
         return "hold"
 
     orig_edge = float(trade.get("edge") or 0)
-    orig_my_p = float(trade.get("my_p") or 0)
+    orig_my_p = float(trade.get("my_p") or 0)  # 0-100 scale
     latest_edge = float(latest_scan.get("edge") or 0)
-    latest_my_p = float(latest_scan.get("my_p") or 0)
+    latest_my_p = float(latest_scan.get("my_p") or 0)  # 0-100 scale
 
     # Forecast flipped direction (was >50% now <50% or vice versa)
-    if orig_my_p > 0.5 and latest_my_p < 0.5:
+    # my_p is 0-100 scale, so midpoint is 50
+    if orig_my_p > 50 and latest_my_p < 50:
         return "exit_forecast_changed"
-    if orig_my_p < 0.5 and latest_my_p > 0.5:
-        return "exit_forecast_changed"
-
-    # Edge halved or worse
-    if orig_edge != 0 and abs(latest_edge) < abs(orig_edge) * 0.5:
+    if orig_my_p < 50 and latest_my_p > 50:
         return "exit_forecast_changed"
 
-    # Edge improved 20%+
-    if orig_edge != 0 and abs(latest_edge) > abs(orig_edge) * 1.2:
+    # Edge collapsed significantly (dropped by more than 60%)
+    # Only trigger if orig edge was meaningful (> 3pp)
+    if orig_edge > 3 and latest_edge > 0 and latest_edge < orig_edge * 0.4:
+        return "exit_forecast_changed"
+
+    # Edge went negative (forecast no longer supports position)
+    if orig_edge > 3 and latest_edge < 0:
+        return "exit_forecast_changed"
+
+    # Edge improved significantly (50%+ increase)
+    # Only trigger if the improvement is meaningful (> 5pp increase)
+    if orig_edge > 3 and latest_edge > orig_edge * 1.5 and (latest_edge - orig_edge) > 5:
         return "double_down"
 
     # Profitable with time remaining — could free capital
