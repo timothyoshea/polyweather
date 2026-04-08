@@ -453,7 +453,8 @@ function computeMetrics(portfolio, trades) {
     currentValue,
     deployed,
     available,
-    utilizationPct
+    utilizationPct,
+    allowedBetTypes: portfolio.allowed_bet_types || []
   };
 }
 
