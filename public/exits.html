@@ -735,12 +735,16 @@ function render(positions, opportunities) {
       if (comp && comp.latest_scan) {
         const ls = comp.latest_scan;
         latestForecast = ls.forecast_c != null ? fmt(ls.forecast_c, 1) + '\u00B0C' : '\u2014';
-        currEdge = ls.edge != null ? fmtPct(parseFloat(ls.edge)) : '\u2014';
+        // Calculate real current edge from latest my_p minus current live price
+        const latestMyP = ls.my_p != null ? parseFloat(ls.my_p) * 100 : null;
+        const realCurrEdge = (latestMyP != null && livePrice > 0) ? (latestMyP - livePrice) : null;
+        currEdge = realCurrEdge != null ? fmtEdge(realCurrEdge) : (ls.edge != null ? fmtEdge(parseFloat(ls.edge)) : '\u2014');
 
         // Determine change direction based on edge
-        if (t.edge != null && ls.edge != null) {
+        const currEdgeVal = realCurrEdge != null ? realCurrEdge : (ls.edge != null ? parseFloat(ls.edge) : null);
+        if (t.edge != null && currEdgeVal != null) {
           const origE = Math.abs(parseFloat(t.edge));
-          const currE = Math.abs(parseFloat(ls.edge));
+          const currE = Math.abs(currEdgeVal);
           if (currE > origE * 1.05) {
             changeIcon = '<span class="forecast-change-up">\u25B2</span>';
           } else if (currE < origE * 0.95) {
