@@ -1034,26 +1034,23 @@ function renderExitHistory() {
       const ap = parseFloat(snap.actual_profit || 0);
       const evh = parseFloat(snap.exit_vs_hold || 0);
       const exitPrice = parseFloat(snap.exit_price || 0);
+      const resolved = snap.actual_outcome != null;
 
       h += `<tr>
         <td style="font-family:var(--sans);font-weight:500;">${snap.city || '\u2014'}</td>
-        <td>${snap.trade_date || '\u2014'}</td>
-        <td>${snap.band || '\u2014'}</td>
+        <td>${snap.date || snap.trade_date || '\u2014'}</td>
+        <td>${snap.band_c || snap.band || '\u2014'}</td>
         <td>${(snap.side || '').toUpperCase()}</td>
         <td style="font-size:11px;color:var(--text2);">${snap.bet_type || '\u2014'}</td>
         <td>${recBadge(snap.recommendation)}</td>
         <td>${fmt(exitPrice * 100, 1)}\u00A2</td>
         <td class="${hp >= 0 ? 'val-pos' : 'val-neg'}">${hp >= 0 ? '+' : ''}${fmtUsd(hp)}</td>
-        <td class="${ap >= 0 ? 'val-pos' : 'val-neg'}">${ap >= 0 ? '+' : ''}${fmtUsd(ap)}</td>
-        <td style="font-weight:600;color:${evh > 0 ? 'var(--green)' : evh < 0 ? 'var(--red)' : 'var(--text2)'};">${evh > 0 ? '+' : ''}${fmtUsd(evh)}</td>
+        <td>${resolved ? `<span class="${ap >= 0 ? 'val-pos' : 'val-neg'}">${ap >= 0 ? '+' : ''}${fmtUsd(ap)}</span>` : '<span style="color:var(--text2);font-size:11px;">Pending</span>'}</td>
+        <td>${resolved ? `<span style="font-weight:600;color:${evh > 0 ? 'var(--green)' : evh < 0 ? 'var(--red)' : 'var(--text2)'};">${evh > 0 ? '+' : ''}${fmtUsd(evh)}</span>` : '<span style="color:var(--text2);font-size:11px;">Pending</span>'}</td>
       </tr>`;
     }
 
     h += `</tbody></table></div></div>`;
-  } else if (summaryData.some(s => s.total > 0)) {
-    h += `<div style="text-align:center;padding:30px;color:var(--text2);font-size:13px;background:var(--card);border:1px solid var(--card-border);border-radius:10px;">
-      Snapshots are being collected but none have resolved yet for this portfolio. Check back after some trades close.
-    </div>`;
   }
 
   h += `</div>`;
