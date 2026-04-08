@@ -996,11 +996,18 @@ function renderExitHistory() {
       const winPct = s.exit_better_pct || 0;
       const winColor = winPct >= 50 ? 'var(--green)' : 'var(--red)';
 
+      const avgHours = s.avg_hours_to_resolution;
+      const capitalHours = s.total_capital_hours_freed || 0;
+      const totalCapital = s.total_capital_locked || 0;
+
       h += `<div class="history-card">
         <div class="hc-title">${recBadge(s.recommendation)}</div>
         <div class="hc-row"><span class="hc-label">Total snapshots</span><span class="hc-val">${s.total}</span></div>
         <div class="hc-row"><span class="hc-label">Resolved</span><span class="hc-val">${s.resolved}</span></div>
         <div class="hc-row"><span class="hc-label">Avg exit vs hold</span><span class="hc-val" style="color:${evhColor};">${avgEvh >= 0 ? '+' : ''}$${fmt(avgEvh, 4)}</span></div>
+        ${avgHours != null ? `<div class="hc-row"><span class="hc-label">Avg hours saved</span><span class="hc-val">${fmt(avgHours, 1)}h</span></div>` : ''}
+        ${totalCapital > 0 ? `<div class="hc-row"><span class="hc-label">Capital freed</span><span class="hc-val">$${fmt(totalCapital, 2)}</span></div>` : ''}
+        ${capitalHours > 0 ? `<div class="hc-row"><span class="hc-label">Capital-hours freed</span><span class="hc-val" style="color:var(--green);">${fmt(capitalHours, 0)} $\u00B7h</span></div>` : ''}
         ${s.resolved > 0 ? `<div class="hc-winrate" style="color:${winColor};">Exit wins ${fmtPct(winPct)} of the time</div>` : `<div class="hc-winrate" style="color:var(--text2);">No resolved data yet</div>`}
       </div>`;
     }
