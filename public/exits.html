@@ -673,13 +673,15 @@ function render(positions, opportunities) {
         <th onclick="onSort('date')">Date${sortArrow('date')}</th>
         <th onclick="onSort('band')">Band${sortArrow('band')}</th>
         <th onclick="onSort('side')">Side${sortArrow('side')}</th>
-        <th onclick="onSort('type')">Type${sortArrow('type')}</th>
         <th onclick="onSort('entry')">Entry${sortArrow('entry')}</th>
         <th onclick="onSort('current')">Current${sortArrow('current')}</th>
-        <th onclick="onSort('pnl')">P&L ($)${sortArrow('pnl')}</th>
         <th onclick="onSort('pnl_pct')">P&L (%)${sortArrow('pnl_pct')}</th>
+        <th>Orig Forecast</th>
+        <th>Latest Forecast</th>
+        <th onclick="onSort('orig_edge')">Orig Edge${sortArrow('orig_edge')}</th>
+        <th onclick="onSort('curr_edge')">Curr Edge${sortArrow('curr_edge')}</th>
+        <th>Change</th>
         <th onclick="onSort('hours')">Hours Left${sortArrow('hours')}</th>
-        <th onclick="onSort('score')">Value Score${sortArrow('score')}</th>
       </tr></thead>
       <tbody>`;
 
