@@ -759,7 +759,7 @@ function render(positions, opportunities) {
           <div class="opp-title">${opp.city || '\u2014'} &mdash; ${opp.date || '\u2014'}</div>
           <div class="opp-detail">${(opp.side || '').toUpperCase()} ${opp.band_f || opp.band_c || ''} | ${opp.bet_type || ''} | Mkt: ${fmt((parseFloat(opp.mkt_p || 0)) * 100, 1)}\u00A2</div>
         </div>
-        <div class="opp-edge ${edge >= 0 ? 'val-pos' : 'val-neg'}">${edge >= 0 ? '+' : ''}${fmtPct(edge * 100)} edge</div>
+        <div class="opp-edge ${edge >= 0 ? 'val-pos' : 'val-neg'}">${edge >= 0 ? '+' : ''}${fmtPct(edge)} edge</div>
       </div>`;
     }
   }
