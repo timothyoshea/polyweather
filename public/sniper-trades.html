@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PolyWeather — Sniper Trade History</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --card: #12121a;
+    --card-border: #1e1e2e;
+    --green: #00e676;
+    --red: #ff5252;
+    --amber: #ffc107;
+    --cyan: #4fc3f7;
+    --text: #e0e0e0;
+    --text2: #888;
+    --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* ── Sidebar ─────────────────────────────────── */
+  .sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0; width: 200px;
+    background: #0d0d14; border-right: 1px solid var(--card-border);
+    display: flex; flex-direction: column; padding: 20px 0; z-index: 100;
+  }
+  .sidebar-logo {
+    display: flex; align-items: center; gap: 8px; padding: 0 16px 20px;
+    font-size: 16px; font-weight: 700; text-decoration: none; color: var(--text);
+  }
+  .sidebar-logo .logo-icon {
+    font-size: 20px;
+    filter: drop-shadow(0 0 6px rgba(79, 195, 247, 0.5));
+  }
+  .sidebar-logo span:not(.logo-icon) {
+    background: linear-gradient(135deg, var(--cyan), var(--green));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .strategy-switcher {
+    display: flex; margin: 0 12px 16px; border-radius: 6px; overflow: hidden;
+    border: 1px solid var(--card-border); background: var(--bg);
+  }
+  .strategy-switcher a {
+    flex: 1; padding: 6px 4px; text-align: center; font-size: 11px; font-weight: 600;
+    color: var(--text2); text-decoration: none; transition: all 0.2s;
+    font-family: var(--sans); cursor: pointer;
+  }
+  .strategy-switcher a:hover { color: var(--text); }
+  .strategy-switcher a.active {
+    background: rgba(79,195,247,0.15); color: var(--cyan);
+  }
+  .sidebar-nav { display: flex; flex-direction: column; gap: 2px; }
+  .sidebar-link {
+    display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+    color: var(--text2); font-size: 13px; font-weight: 500; text-decoration: none;
+    border-left: 3px solid transparent; transition: all 0.2s;
+  }
+  .sidebar-link:hover { color: var(--text); background: rgba(79,195,247,0.05); }
+  .sidebar-link.active {
+    color: var(--cyan); border-left-color: var(--cyan);
+    background: rgba(79,195,247,0.08);
+  }
+  .main-content { margin-left: 200px; min-height: 100vh; }
+
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main-content { margin-left: 0; padding-bottom: 70px; }
+  }
+  .mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--card);
+    border-top: 1px solid var(--card-border);
+    z-index: 500;
+    padding: 6px 0 env(safe-area-inset-bottom, 6px);
+  }
+  .mobile-nav-inner {
+    display: flex; justify-content: space-around; align-items: center;
+  }
+  .mobile-nav a {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    background: none; border: none; color: var(--text2);
+    font-size: 10px; font-family: var(--sans); cursor: pointer;
+    padding: 6px 8px; text-decoration: none; transition: color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mobile-nav a:hover { color: var(--text); }
+  .mobile-nav .active { color: var(--cyan); }
+  .mobile-nav .nav-icon { font-size: 18px; }
+  @media (max-width: 768px) { .mobile-nav { display: block; } }
+
+  /* ── Layout ─────────────────────────────────── */
+  .container { max-width: 100%; margin: 0 auto; padding: 24px; }
+
+  .page-header {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 24px;
+  }
+  .page-header h1 { font-size: 22px; font-weight: 700; }
+  .badge-paper {
+    display: inline-block; font-size: 10px; font-weight: 700; padding: 3px 10px;
+    border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em;
+    font-family: var(--mono); background: rgba(255,193,7,0.15);
+    color: var(--amber); border: 1px solid rgba(255,193,7,0.3);
+  }
+
+  .section-title {
+    font-size: 16px; font-weight: 600; margin-bottom: 16px; color: var(--text);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title .icon { font-size: 18px; }
+  .section { margin-bottom: 32px; }
+
+  /* ── Filters ─────────────────────────────────── */
+  .filter-bar {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .filter-bar label {
+    font-size: 11px; color: var(--text2); text-transform: uppercase;
+    letter-spacing: 0.5px; font-weight: 600;
+  }
+  .filter-bar select, .filter-bar input {
+    background: var(--card); border: 1px solid var(--card-border);
+    color: var(--text); padding: 6px 10px; border-radius: 6px;
+    font-family: var(--sans); font-size: 12px; cursor: pointer;
+  }
+  .filter-bar select:focus, .filter-bar input:focus {
+    outline: none; border-color: var(--cyan);
+  }
+
+  /* ── Tables ─────────────────────────────────── */
+  .table-card {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 10px; overflow: hidden; margin-bottom: 32px;
+  }
+  .table-card .table-header {
+    padding: 16px 20px; border-bottom: 1px solid var(--card-border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .table-card .table-header h3 { font-size: 14px; font-weight: 600; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th {
+    text-align: left; padding: 10px 14px; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2);
+    border-bottom: 1px solid var(--card-border); font-weight: 600;
+    font-family: var(--sans); cursor: pointer; user-select: none;
+  }
+  th:hover { color: var(--text); }
+  th .sort-arrow { font-size: 10px; margin-left: 4px; }
+  td {
+    padding: 10px 14px; border-bottom: 1px solid var(--card-border);
+    font-family: var(--mono); white-space: nowrap;
+  }
+  tr:hover td { background: rgba(79, 195, 247, 0.03); }
+
+  .val-pos { color: var(--green); }
+  .val-neg { color: var(--red); }
+  .val-neutral { color: var(--text2); }
+
+  .empty-state {
+    text-align: center; padding: 40px 20px; color: var(--text2); font-size: 13px;
+  }
+
+  .trade-count {
+    font-size: 12px; color: var(--text2); font-family: var(--mono);
+  }
+</style>
+</head>
+<body>
+<script>
+fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({action:'check'}) })
+  .then(r => r.json()).then(d => { if (!d.authenticated) window.location.href = '/login.html'; })
+  .catch(() => { window.location.href = '/login.html'; });
+</script>
+
+<!-- ── Sidebar ─────────────────────────────────── -->
+<nav class="sidebar">
+  <a href="/" class="sidebar-logo">
+    <span class="logo-icon">&#x26C8;</span>
+    <span>PolyWeather</span>
+  </a>
+  <div class="strategy-switcher">
+    <a href="/">Temp Predictions</a>
+    <a class="active" href="/sniper">Max Temp Sniper</a>
+  </div>
+  <div class="sidebar-nav">
+    <a class="sidebar-link" href="/sniper">Dashboard</a>
+    <a class="sidebar-link active" href="/sniper/trades">Trade History</a>
+  </div>
+  <div style="padding:0 16px 16px;">
+    <button onclick="fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'logout'})}).then(()=>window.location.href='/login.html')" style="background:none;border:1px solid var(--card-border);color:var(--text2);padding:6px 14px;border-radius:6px;font-size:11px;cursor:pointer;font-family:var(--sans);width:100%;transition:color 0.15s;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text2)'">Sign Out</button>
+  </div>
+</nav>
+
+<!-- ── Main Content ────────────────────────────── -->
+<div class="main-content">
+<div class="container">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>Sniper Trade History</h1>
+    <span class="badge-paper">Paper Mode</span>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-bar">
+    <div>
+      <label>Status</label><br>
+      <select id="filter-status" onchange="applyFilters()">
+        <option value="all">All</option>
+        <option value="open">Open</option>
+        <option value="won">Won</option>
+        <option value="lost">Lost</option>
+      </select>
+    </div>
+    <div>
+      <label>Trade Type</label><br>
+      <select id="filter-type" onchange="applyFilters()">
+        <option value="all">All</option>
+        <option value="top_band_yes">Top Band YES</option>
+        <option value="lower_band_no">NO Sweep</option>
+      </select>
+    </div>
+    <div>
+      <label>From</label><br>
+      <input type="date" id="filter-from" onchange="applyFilters()">
+    </div>
+    <div>
+      <label>To</label><br>
+      <input type="date" id="filter-to" onchange="applyFilters()">
+    </div>
+    <div style="margin-left:auto;">
+      <span class="trade-count" id="trade-count">0 trades</span>
+    </div>
+  </div>
+
+  <!-- Trades Table -->
+  <div class="table-card">
+    <div class="table-header">
+      <h3>All Trades</h3>
+    </div>
+    <div class="table-wrap">
+      <table id="trades-table">
+        <thead>
+          <tr>
+            <th data-sort="time" onclick="sortBy('time')">Time <span class="sort-arrow" id="sort-time">&#x25BC;</span></th>
+            <th data-sort="band" onclick="sortBy('band')">Band <span class="sort-arrow" id="sort-band"></span></th>
+            <th data-sort="side" onclick="sortBy('side')">Side <span class="sort-arrow" id="sort-side"></span></th>
+            <th data-sort="trade_type" onclick="sortBy('trade_type')">Trade Type <span class="sort-arrow" id="sort-trade_type"></span></th>
+            <th data-sort="temp_observed" onclick="sortBy('temp_observed')">Temp <span class="sort-arrow" id="sort-temp_observed"></span></th>
+            <th data-sort="entry_price" onclick="sortBy('entry_price')">Entry Price <span class="sort-arrow" id="sort-entry_price"></span></th>
+            <th data-sort="status" onclick="sortBy('status')">Status <span class="sort-arrow" id="sort-status"></span></th>
+            <th data-sort="pnl" onclick="sortBy('pnl')">Profit <span class="sort-arrow" id="sort-pnl"></span></th>
+          </tr>
+        </thead>
+        <tbody id="trades-tbody">
+          <tr><td colspan="8" class="empty-state">Loading trades...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ── Mobile Nav ─────────────────────────────── -->
+<nav class="mobile-nav">
+  <div style="display:flex;border-bottom:1px solid var(--card-border);padding:4px 8px;">
+    <a href="/" style="flex:1;text-align:center;font-size:10px;font-weight:600;color:var(--text2);padding:4px;text-decoration:none;font-family:var(--sans);">Temp Predictions</a>
+    <a href="/sniper" style="flex:1;text-align:center;font-size:10px;font-weight:600;color:var(--cyan);padding:4px;text-decoration:none;font-family:var(--sans);">Sniper</a>
+  </div>
+  <div class="mobile-nav-inner">
+    <a href="/sniper"><span class="nav-icon">&#x1F3AF;</span>Dashboard</a>
+    <a href="/sniper/trades" class="active"><span class="nav-icon">&#x1F4CB;</span>Trades</a>
+  </div>
+</nav>
+
+<script>
+const $ = s => document.querySelector(s);
+let allTrades = [];
+let filteredTrades = [];
+let currentSort = { field: 'time', dir: 'desc' };
+
+function fmtMoney(v) {
+  const n = Number(v) || 0;
+  const cls = n > 0 ? 'val-pos' : n < 0 ? 'val-neg' : 'val-neutral';
+  return `<span class="${cls}">${n >= 0 ? '+' : ''}$${Math.abs(n).toFixed(2)}</span>`;
+}
+
+function fmtTime(ts) {
+  if (!ts) return '--';
+  const d = new Date(ts);
+  return d.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' }) + ' ' +
+         d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
+function statusBadge(status) {
+  if (!status) return '<span class="val-neutral">--</span>';
+  const colors = { won: 'val-pos', lost: 'val-neg', open: 'val-neutral', pending: 'val-neutral' };
+  return `<span class="${colors[status] || 'val-neutral'}">${status.toUpperCase()}</span>`;
+}
+
+function tradeTypeBadge(type) {
+  if (!type) return '--';
+  if (type === 'top_band_yes') return '<span style="color:var(--green);">Top Band YES</span>';
+  if (type === 'lower_band_no') return '<span style="color:var(--red);">NO Sweep</span>';
+  return type;
+}
+
+async function loadTrades() {
+  try {
+    const resp = await fetch('/api/sniper_trades');
+    if (!resp.ok) throw new Error('API error');
+    const data = await resp.json();
+    allTrades = Array.isArray(data) ? data : (data.trades || []);
+    applyFilters();
+  } catch (e) {
+    console.error('Error loading trades:', e);
+    $('#trades-tbody').innerHTML = '<tr><td colspan="8" class="empty-state">No trade data available</td></tr>';
+    $('#trade-count').textContent = '0 trades';
+  }
+}
+
+function applyFilters() {
+  const status = $('#filter-status').value;
+  const type = $('#filter-type').value;
+  const from = $('#filter-from').value;
+  const to = $('#filter-to').value;
+
+  filteredTrades = allTrades.filter(t => {
+    if (status !== 'all' && t.status !== status) return false;
+    if (type !== 'all' && t.trade_type !== type) return false;
+    const tDate = (t.created_at || t.time || '').slice(0, 10);
+    if (from && tDate < from) return false;
+    if (to && tDate > to) return false;
+    return true;
+  });
+
+  sortTrades();
+  renderTrades();
+}
+
+function sortBy(field) {
+  if (currentSort.field === field) {
+    currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    currentSort.field = field;
+    currentSort.dir = 'desc';
+  }
+
+  // Update sort arrows
+  document.querySelectorAll('.sort-arrow').forEach(el => el.textContent = '');
+  const arrow = $(`#sort-${field}`);
+  if (arrow) arrow.innerHTML = currentSort.dir === 'asc' ? '&#x25B2;' : '&#x25BC;';
+
+  sortTrades();
+  renderTrades();
+}
+
+function sortTrades() {
+  const { field, dir } = currentSort;
+  filteredTrades.sort((a, b) => {
+    let va, vb;
+    if (field === 'time') {
+      va = a.created_at || a.time || '';
+      vb = b.created_at || b.time || '';
+    } else {
+      va = a[field]; vb = b[field];
+    }
+    if (va === undefined || va === null) va = '';
+    if (vb === undefined || vb === null) vb = '';
+    if (typeof va === 'number' && typeof vb === 'number') {
+      return dir === 'asc' ? va - vb : vb - va;
+    }
+    va = String(va); vb = String(vb);
+    return dir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+  });
+}
+
+function renderTrades() {
+  const tbody = $('#trades-tbody');
+  $('#trade-count').textContent = filteredTrades.length + ' trade' + (filteredTrades.length !== 1 ? 's' : '');
+
+  if (filteredTrades.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No trades match filters</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filteredTrades.map(t => `
+    <tr>
+      <td>${fmtTime(t.created_at || t.time)}</td>
+      <td>${t.band || '--'}</td>
+      <td>${t.side || '--'}</td>
+      <td>${tradeTypeBadge(t.trade_type)}</td>
+      <td>${t.temp_observed !== undefined ? t.temp_observed + '\u00B0C' : '--'}</td>
+      <td>${t.entry_price !== undefined ? t.entry_price.toFixed(2) + '\u00A2' : '--'}</td>
+      <td>${statusBadge(t.status)}</td>
+      <td>${t.pnl !== undefined ? fmtMoney(t.pnl) : '--'}</td>
+    </tr>
+  `).join('');
+}
+
+// Initial load
+loadTrades();
+</script>
+</body>
+</html>
