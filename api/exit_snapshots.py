@@ -14,15 +14,15 @@ from urllib.parse import urlparse, parse_qs
 from collections import defaultdict
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
-SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "")
+SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "").strip()
 
 
 def supabase_query(path):
     """Query Supabase REST API."""
     url = f"{SUPABASE_URL}/rest/v1/{path}"
     headers = {
-        "apikey": SUPABASE_ANON_KEY,
-        "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
+        "apikey": SUPABASE_SERVICE_KEY,
+        "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
     }
     req = urllib.request.Request(url, headers=headers)
     with urllib.request.urlopen(req, timeout=10) as resp:
