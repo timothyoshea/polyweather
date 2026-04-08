@@ -759,6 +759,18 @@ function render(positions, opportunities) {
         }
       }
 
+      // Profit breakdown: captured vs remaining
+      const shares = parseFloat(t.total_shares || 0);
+      const cost = parseFloat(t.total_cost_usd || 0);
+      const maxProfit = shares - cost; // payout if win = shares * $1
+      const unrealizedPnl = parseFloat(t.unrealized_pnl || 0);
+      const remaining = maxProfit - unrealizedPnl;
+      const capturedPct = maxProfit > 0 ? (unrealizedPnl / maxProfit * 100) : 0;
+
+      // Visual bar showing how much upside is captured
+      const barWidth = Math.max(0, Math.min(100, capturedPct));
+      const barColor = capturedPct >= 80 ? 'var(--green)' : capturedPct >= 50 ? 'var(--amber)' : capturedPct > 0 ? 'var(--cyan)' : 'var(--red)';
+
       html += `<tr>
         <td><span class="badge ${rec.cls}">${rec.label}</span></td>
         <td style="font-family:var(--sans);font-weight:500;">${t.city || '\u2014'}</td>
@@ -768,6 +780,16 @@ function render(positions, opportunities) {
         <td>${fmt(entryPrice, 1)}\u00A2</td>
         <td>${fmt(livePrice, 1)}\u00A2</td>
         <td class="${pnlPct >= 0 ? 'val-pos' : 'val-neg'}">${pnlPct >= 0 ? '+' : ''}${fmtPct(pnlPct)}</td>
+        <td class="val-pos">$${fmt(Math.max(0, unrealizedPnl), 2)}</td>
+        <td>$${fmt(Math.max(0, remaining), 2)}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="width:50px;height:6px;background:var(--card-border);border-radius:3px;overflow:hidden;">
+              <div style="width:${barWidth}%;height:100%;background:${barColor};border-radius:3px;"></div>
+            </div>
+            <span style="font-size:10px;color:${barColor};">${fmt(capturedPct, 0)}%</span>
+          </div>
+        </td>
         <td>${origForecast}</td>
         <td>${latestForecast}</td>
         <td>${origEdge}</td>
