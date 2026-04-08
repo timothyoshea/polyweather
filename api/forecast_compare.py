@@ -205,7 +205,7 @@ class handler(BaseHTTPRequestHandler):
                     if latest_edge is not None and orig_edge != 0:
                         edge_improved = abs(latest_edge) > abs(orig_edge)
 
-                rec = get_recommendation(t, latest_scan)
+                rec, gap, captured_pct = get_recommendation(t, latest_scan)
 
                 comparisons.append({
                     "trade": {
@@ -231,6 +231,8 @@ class handler(BaseHTTPRequestHandler):
                     "forecast_changed": forecast_changed,
                     "edge_improved": edge_improved,
                     "recommendation": rec,
+                    "forecast_gap": round(gap, 1) if gap is not None else None,
+                    "captured_pct": round(captured_pct, 1),
                 })
 
             self._respond(200, {"comparisons": comparisons})
