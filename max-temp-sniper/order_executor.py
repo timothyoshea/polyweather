@@ -165,22 +165,22 @@ class OrderExecutor:
             logger.debug("No Supabase config, skipping trade insert")
             return
 
+        # Calculate total_shares from size and price
+        total_shares = round(trade.size_usdc / trade.entry_price, 4) if trade.entry_price > 0 else 0
+
         payload = json.dumps({
-            "id": trade.id,
             "signal_id": trade.signal_id,
             "market_id": trade.market_id,
             "market_question": trade.market_question,
             "band_label": trade.band_label,
-            "band_temp": trade.band_temp,
+            "band_temp": int(trade.band_temp),
             "side": trade.side,
             "trade_type": trade.trade_type,
             "temp_observed": trade.temp_observed,
             "entry_price": trade.entry_price,
             "size_usdc": trade.size_usdc,
+            "total_shares": total_shares,
             "status": trade.status,
-            "profit_usd": trade.profit_usd,
-            "resolved_at": trade.resolved_at,
-            "created_at": trade.created_at,
         }).encode()
 
         try:
