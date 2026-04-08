@@ -473,14 +473,22 @@ function onPortfolioChange() {
 // ── Data Loading ──
 async function loadData() {
   try {
-    const [pricesRes, oppsRes] = await Promise.all([
+    const [pricesRes, compareRes] = await Promise.all([
       fetch(`/api/refresh_prices?portfolio_id=${currentPortfolioId}`),
-      fetch(`/api/trades?portfolio_id=${currentPortfolioId}&status=open&limit=100`)
+      fetch(`/api/forecast_compare?portfolio_id=${currentPortfolioId}`)
     ]);
     const pricesData = await pricesRes.json();
-    const oppsData = await oppsRes.json();
+    const compareData = await compareRes.json();
 
     positionsData = pricesData.trades || [];
+
+    // Index forecast comparisons by trade id
+    forecastComparisons = {};
+    for (const c of (compareData.comparisons || [])) {
+      if (c.trade && c.trade.id) {
+        forecastComparisons[c.trade.id] = c;
+      }
+    }
 
     // Fetch scanner opportunities for the "Available Opportunities" section
     let opportunities = [];
