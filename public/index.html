@@ -1689,10 +1689,16 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
       const selected = sel.options[sel.selectedIndex];
       nameEl.textContent = selected ? selected.textContent : '--';
     }
-    // Show portfolio description
+    // Show portfolio description — formatted with line breaks
     if (descEl && activePortfolioId && allPortfolios) {
       const pf = allPortfolios.find(p => p.id === activePortfolioId);
-      descEl.textContent = pf && pf.description ? pf.description : '';
+      if (pf && pf.description) {
+        // Split on periods followed by space to create readable lines
+        const parts = pf.description.split(/\.\s+/).filter(s => s.trim());
+        descEl.innerHTML = parts.map(p => p.trim().replace(/\.$/, '')).join('.<br>') + '.';
+      } else {
+        descEl.innerHTML = '';
+      }
     }
     // Load capital status
     loadCapitalStatus();
