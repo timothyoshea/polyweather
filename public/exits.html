@@ -763,7 +763,7 @@ function render(positions, opportunities) {
         <td><span class="badge ${rec.cls}">${rec.label}</span></td>
         <td style="font-family:var(--sans);font-weight:500;">${t.city || '\u2014'}</td>
         <td>${t.date || '\u2014'}</td>
-        <td>${t.band_f || t.band_c || '\u2014'}</td>
+        <td>${t.band_c || t.band_f || '\u2014'}</td>
         <td>${(t.side || '').toUpperCase()}</td>
         <td>${fmt(entryPrice, 1)}\u00A2</td>
         <td>${fmt(livePrice, 1)}\u00A2</td>
