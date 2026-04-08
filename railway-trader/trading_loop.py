@@ -44,6 +44,7 @@ PORTFOLIO_REFRESH_INTERVAL = 60
 OPP_REFRESH_INTERVAL = 60
 PRICE_POLL_INTERVAL = 3
 REDEEM_CHECK_INTERVAL = 1800  # Check for redeemable positions every 30 minutes
+SNAPSHOT_INTERVAL = 1800  # Collect exit snapshots every 30 minutes
 
 # Minimum edge (percentage points) to trigger a trade
 MIN_EDGE_PP = 3.0
