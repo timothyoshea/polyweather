@@ -121,8 +121,13 @@ class OrderExecutor:
             f"(${trade_size}) | type={locked.trade_type} | temp={locked.temp_observed}°C"
         )
 
-        # Insert to Supabase
-        self._insert_trade(trade)
+        # Insert to Supabase with enriched data
+        token_id = locked.band.no_token_id if locked.side == "NO" else locked.band.yes_token_id
+        city = locked.market.city or None
+        market_date = _extract_market_date(locked.market.question)
+        book_depth = self._fetch_book_depth(token_id)
+
+        self._insert_trade(trade, token_id=token_id, city=city, market_date=market_date, book_depth=book_depth)
 
         return trade
 
