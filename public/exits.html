@@ -434,6 +434,10 @@ let positionsData = [];
 let forecastComparisons = {};  // keyed by trade id
 let sortCol = null;
 let sortAsc = true;
+let historySortCol = null;
+let historySortAsc = true;
+let historySnapshots = [];
+let historySummary = null;
 
 // ── Portfolio Loading ──
 async function loadPortfolios() {
