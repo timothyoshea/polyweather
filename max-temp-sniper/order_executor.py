@@ -185,6 +185,14 @@ class OrderExecutor:
             return None
 
         signal_id = str(uuid.uuid4())
+
+        # Extract city and market_date from the first locked band
+        city = None
+        market_date = None
+        if trigger.locked_bands:
+            city = trigger.locked_bands[0].market.city or None
+            market_date = _extract_market_date(trigger.locked_bands[0].market.question)
+
         payload = json.dumps({
             "id": signal_id,
             "station": trigger.station,
@@ -194,6 +202,8 @@ class OrderExecutor:
             "signal_time": trigger.signal_time.isoformat(),
             "num_bands_locked": len(trigger.locked_bands),
             "traded": True,
+            "city": city,
+            "market_date": market_date,
         }).encode()
 
         try:
