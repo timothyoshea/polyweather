@@ -909,7 +909,155 @@ function render(positions, opportunities) {
 
   html += `</div>`;
 
+  // ── Paper Exit History ──
+  html += renderExitHistory();
+
   $('#app').innerHTML = html;
+}
+
+// ── History Sort ──
+function onHistorySort(col) {
+  if (historySortCol === col) {
+    historySortAsc = !historySortAsc;
+  } else {
+    historySortCol = col;
+    historySortAsc = true;
+  }
+  render(positionsData, lastOpportunities);
+}
+
+function histSortArrow(col) {
+  if (historySortCol !== col) return '';
+  return `<span class="sort-arrow">${historySortAsc ? '\u25B2' : '\u25BC'}</span>`;
+}
+
+function sortHistorySnapshots(snaps, col, asc) {
+  const sorters = {
+    city: (a, b) => (a.city || '').localeCompare(b.city || ''),
+    date: (a, b) => (a.trade_date || '').localeCompare(b.trade_date || ''),
+    band: (a, b) => (a.band || '').localeCompare(b.band || ''),
+    side: (a, b) => (a.side || '').localeCompare(b.side || ''),
+    type: (a, b) => (a.bet_type || '').localeCompare(b.bet_type || ''),
+    rec: (a, b) => (a.recommendation || '').localeCompare(b.recommendation || ''),
+    exit_price: (a, b) => parseFloat(a.exit_price || 0) - parseFloat(b.exit_price || 0),
+    hypo_profit: (a, b) => parseFloat(a.hypothetical_profit || 0) - parseFloat(b.hypothetical_profit || 0),
+    actual_profit: (a, b) => parseFloat(a.actual_profit || 0) - parseFloat(b.actual_profit || 0),
+    exit_vs_hold: (a, b) => parseFloat(a.exit_vs_hold || 0) - parseFloat(b.exit_vs_hold || 0),
+  };
+  const fn = sorters[col];
+  if (!fn) return snaps;
+  const sorted = [...snaps].sort(fn);
+  return asc ? sorted : sorted.reverse();
+}
+
+function recBadge(rec) {
+  const map = {
+    take_profit: { label: 'Take Profit', cls: 'badge-take-profit' },
+    consider_exit: { label: 'Consider Exit', cls: 'badge-consider' },
+    danger: { label: 'Danger', cls: 'badge-danger' },
+    exit_forecast_changed: { label: 'Exit \u2014 Thesis Broken', cls: 'badge-exit' },
+    stop_loss: { label: 'Stop Loss', cls: 'badge-stop' },
+  };
+  const m = map[rec] || { label: rec || 'Unknown', cls: 'badge-consider' };
+  return `<span class="badge ${m.cls}">${m.label}</span>`;
+}
+
+function renderExitHistory() {
+  let h = '';
+
+  h += `<div class="section" style="margin-top:32px;">
+    <div class="section-title"><span class="icon">&#x1F4CB;</span> Paper Exit History</div>`;
+
+  // Info box
+  h += `<div class="info-box">
+    <strong>How this works:</strong> Each time a non-Hold recommendation is made, a snapshot is recorded with the current exit price.
+    When the trade resolves, we compare the hypothetical exit profit vs actual hold profit.
+    <strong>Positive exit_vs_hold</strong> = exiting would have been better. <strong>Negative</strong> = holding was better.
+  </div>`;
+
+  // Check if we have any data
+  const summaryData = (historySummary && historySummary.by_recommendation) ? historySummary.by_recommendation : [];
+  const hasData = summaryData.length > 0 || historySnapshots.length > 0;
+
+  if (!hasData) {
+    h += `<div style="text-align:center;padding:40px;color:var(--text2);font-size:13px;background:var(--card);border:1px solid var(--card-border);border-radius:10px;">
+      No exit snapshots recorded yet. Data collection starts automatically \u2014 check back after some trades resolve.
+    </div>`;
+    h += `</div>`;
+    return h;
+  }
+
+  // ── Summary Cards ──
+  if (summaryData.length > 0) {
+    h += `<div class="history-summary-grid">`;
+    for (const s of summaryData) {
+      const avgEvh = s.avg_exit_vs_hold || 0;
+      const evhColor = avgEvh > 0 ? 'var(--green)' : avgEvh < 0 ? 'var(--red)' : 'var(--text2)';
+      const winPct = s.exit_better_pct || 0;
+      const winColor = winPct >= 50 ? 'var(--green)' : 'var(--red)';
+
+      h += `<div class="history-card">
+        <div class="hc-title">${recBadge(s.recommendation)}</div>
+        <div class="hc-row"><span class="hc-label">Total snapshots</span><span class="hc-val">${s.total}</span></div>
+        <div class="hc-row"><span class="hc-label">Resolved</span><span class="hc-val">${s.resolved}</span></div>
+        <div class="hc-row"><span class="hc-label">Avg exit vs hold</span><span class="hc-val" style="color:${evhColor};">${avgEvh >= 0 ? '+' : ''}$${fmt(avgEvh, 4)}</span></div>
+        ${s.resolved > 0 ? `<div class="hc-winrate" style="color:${winColor};">Exit wins ${fmtPct(winPct)} of the time</div>` : `<div class="hc-winrate" style="color:var(--text2);">No resolved data yet</div>`}
+      </div>`;
+    }
+    h += `</div>`;
+  }
+
+  // ── History Table ──
+  if (historySnapshots.length > 0) {
+    const sorted = historySortCol ? sortHistorySnapshots(historySnapshots, historySortCol, historySortAsc) : historySnapshots;
+
+    h += `<div class="table-card">
+      <div class="table-header"><h3>Resolved Snapshots (${sorted.length})</h3></div>
+      <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th class="hist-th" onclick="onHistorySort('city')">City${histSortArrow('city')}</th>
+          <th class="hist-th" onclick="onHistorySort('date')">Date${histSortArrow('date')}</th>
+          <th class="hist-th" onclick="onHistorySort('band')">Band${histSortArrow('band')}</th>
+          <th class="hist-th" onclick="onHistorySort('side')">Side${histSortArrow('side')}</th>
+          <th class="hist-th" onclick="onHistorySort('type')">Type${histSortArrow('type')}</th>
+          <th class="hist-th" onclick="onHistorySort('rec')">Recommendation${histSortArrow('rec')}</th>
+          <th class="hist-th" onclick="onHistorySort('exit_price')">Exit Price${histSortArrow('exit_price')}</th>
+          <th class="hist-th" onclick="onHistorySort('hypo_profit')">Hypo Profit${histSortArrow('hypo_profit')}</th>
+          <th class="hist-th" onclick="onHistorySort('actual_profit')">Actual Profit${histSortArrow('actual_profit')}</th>
+          <th class="hist-th" onclick="onHistorySort('exit_vs_hold')">Exit vs Hold${histSortArrow('exit_vs_hold')}</th>
+        </tr></thead>
+        <tbody>`;
+
+    for (const snap of sorted) {
+      const hp = parseFloat(snap.hypothetical_profit || 0);
+      const ap = parseFloat(snap.actual_profit || 0);
+      const evh = parseFloat(snap.exit_vs_hold || 0);
+      const exitPrice = parseFloat(snap.exit_price || 0);
+
+      h += `<tr>
+        <td style="font-family:var(--sans);font-weight:500;">${snap.city || '\u2014'}</td>
+        <td>${snap.trade_date || '\u2014'}</td>
+        <td>${snap.band || '\u2014'}</td>
+        <td>${(snap.side || '').toUpperCase()}</td>
+        <td style="font-size:11px;color:var(--text2);">${snap.bet_type || '\u2014'}</td>
+        <td>${recBadge(snap.recommendation)}</td>
+        <td>${fmt(exitPrice * 100, 1)}\u00A2</td>
+        <td class="${hp >= 0 ? 'val-pos' : 'val-neg'}">${hp >= 0 ? '+' : ''}${fmtUsd(hp)}</td>
+        <td class="${ap >= 0 ? 'val-pos' : 'val-neg'}">${ap >= 0 ? '+' : ''}${fmtUsd(ap)}</td>
+        <td style="font-weight:600;color:${evh > 0 ? 'var(--green)' : evh < 0 ? 'var(--red)' : 'var(--text2)'};">${evh > 0 ? '+' : ''}${fmtUsd(evh)}</td>
+      </tr>`;
+    }
+
+    h += `</tbody></table></div></div>`;
+  } else if (summaryData.some(s => s.total > 0)) {
+    h += `<div style="text-align:center;padding:30px;color:var(--text2);font-size:13px;background:var(--card);border:1px solid var(--card-border);border-radius:10px;">
+      Snapshots are being collected but none have resolved yet for this portfolio. Check back after some trades close.
+    </div>`;
+  }
+
+  h += `</div>`;
+  return h;
 }
 
 // ── Init ──
