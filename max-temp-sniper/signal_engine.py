@@ -22,9 +22,10 @@ class SignalEngine:
         self.markets = markets
         logger.info(f"Signal engine updated with {len(markets)} markets")
 
-    def evaluate(self, metar: dict) -> TriggerResult:
+    def evaluate_market(self, metar: dict, market: Market) -> TriggerResult:
         """
-        Evaluate a METAR reading against all market bands.
+        Evaluate a single METAR reading against a specific market's bands.
+        Called per-market from main loop after a rising trigger is detected.
 
         Signal logic (strict >):
         - if temp > top_band_threshold -> lock top band YES
@@ -43,24 +44,13 @@ class SignalEngine:
             signal_time=datetime.now(timezone.utc),
         )
 
-        if not metar.get("is_new"):
-            return result
-
-        if not metar.get("is_rising"):
-            logger.debug(f"Temp not rising ({temp}°C), no signals")
-            return result
-
-        for market in self.markets:
-            locked = self._evaluate_market(market, temp)
-            result.locked_bands.extend(locked)
+        locked = self._evaluate_market(market, temp)
+        result.locked_bands.extend(locked)
 
         if result.has_signal:
             logger.info(
-                f"SIGNAL: {temp}°C triggers {len(result.locked_bands)} bands "
-                f"across {len(self.markets)} markets"
+                f"SIGNAL {market.city}: {temp}°C triggers {len(result.locked_bands)} bands"
             )
-        else:
-            logger.debug(f"No bands locked at {temp}°C")
 
         return result
 
