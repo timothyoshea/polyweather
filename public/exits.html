@@ -633,6 +633,13 @@ function render(positions, opportunities) {
 
   let html = '';
 
+  // ── Info Box ──
+  html += `<div class="info-box">
+    <strong>Forecast Comparison:</strong> Compares your original trade forecast against the latest scanner data.
+    "Original" shows conditions when the trade was placed. "Latest" shows the most recent forecast.
+    If the edge improved, the position may be worth adding to rather than exiting.
+  </div>`;
+
   // ── Summary Cards ──
   html += `<div class="summary-grid">
     <div class="stat-card">
