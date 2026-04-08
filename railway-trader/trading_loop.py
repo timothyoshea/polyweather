@@ -547,6 +547,92 @@ def _execute_trade(client, opp, position, portfolio_id):
 
 
 # ---------------------------------------------------------------------------
+# Exit snapshot helpers (self-contained — mirrors api/forecast_compare.py)
+# ---------------------------------------------------------------------------
+
+def _parse_band_threshold(band_c):
+    """Extract the threshold temperature from a band string like '26°C', '>=29°C', '16-16°C'."""
+    if not band_c:
+        return None
+    import re
+    # ">=29°C" or "≥29°C"
+    m = re.search(r'[>≥]=?\s*(-?\d+)', band_c)
+    if m:
+        return float(m.group(1))
+    # "<=8°C" or "≤8°C"
+    m = re.search(r'[<≤]=?\s*(-?\d+)', band_c)
+    if m:
+        return float(m.group(1))
+    # "26°C" or "26-26°C" or "16-16°C"
+    m = re.search(r'(-?\d+)', band_c)
+    if m:
+        return float(m.group(1))
+    return None
+
+
+def _get_exit_recommendation(trade, live_price):
+    """Determine exit recommendation based on forecast distance from band threshold.
+
+    Returns (recommendation, gap, captured_pct).
+    live_price is in cents (0-100).
+    """
+    band = trade.get("band_c", "")
+    threshold = _parse_band_threshold(band)
+    if threshold is None:
+        return "hold", None, 0
+
+    # Use the trade's forecast_c as the latest forecast
+    latest_fc = float(trade.get("forecast_c") or 0)
+    side = trade.get("side", "").upper()
+    band_type = trade.get("band_type", "exact")
+
+    # Calculate forecast gap from band
+    if side == "NO":
+        if band_type == "above":  # >=X, NO wins if temp < X
+            gap = threshold - latest_fc
+        elif band_type == "below":  # <=X, NO wins if temp > X
+            gap = latest_fc - threshold
+        else:  # exact band, NO wins if temp not in band
+            gap = abs(latest_fc - threshold)
+    else:  # YES
+        if band_type == "above":
+            gap = latest_fc - threshold
+        elif band_type == "below":
+            gap = threshold - latest_fc
+        else:
+            gap = -abs(latest_fc - threshold)  # negative = outside band
+
+    # Calculate captured upside
+    shares = float(trade.get("total_shares", 0) or 0)
+    cost = float(trade.get("total_cost_usd", 0) or 0)
+    max_profit = shares - cost
+    entry_price = float(trade.get("entry_price", 0) or 0)
+    unrealized = shares * (live_price / 100) - cost
+    captured_pct = (unrealized / max_profit * 100) if max_profit > 0 else 0
+
+    # Recommendation matrix
+    if gap < 0:  # Forecast IN or PAST the band — thesis broken
+        return "exit_forecast_changed", gap, captured_pct
+
+    if gap < 1.0:  # Danger zone — very close to band
+        if captured_pct > 50:
+            return "exit_forecast_changed", gap, captured_pct
+        return "danger", gap, captured_pct
+
+    if gap < 3.0:  # Watch zone
+        if captured_pct > 80:
+            return "take_profit", gap, captured_pct
+        return "hold", gap, captured_pct
+
+    # Safe zone (gap >= 3°C)
+    if captured_pct > 80:
+        return "take_profit", gap, captured_pct
+    if captured_pct > 50:
+        return "consider_exit", gap, captured_pct
+    return "hold", gap, captured_pct
+
+
+# ---------------------------------------------------------------------------
 # TradingLoop class
 # ---------------------------------------------------------------------------
 
