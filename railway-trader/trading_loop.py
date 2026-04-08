@@ -766,6 +766,122 @@ class TradingLoop:
             _log(f"Auto-redeem error: {e}")
 
     # -------------------------------------------------------------------
+    # Exit snapshots
+    # -------------------------------------------------------------------
+
+    def _collect_exit_snapshots(self):
+        """Collect exit snapshots for open trades with non-hold recommendations.
+
+        READ-ONLY: only INSERTs into exit_snapshots table. Does NOT modify
+        any existing trades, place orders, or change portfolio data.
+        """
+        try:
+            if not self._portfolios:
+                return
+
+            total_new = 0
+
+            for portfolio in self._portfolios:
+                portfolio_id = portfolio.get("id")
+                pf_name = portfolio.get("name", str(portfolio_id))
+
+                # Fetch open live trades for this portfolio
+                try:
+                    trades_url = (
+                        f"{SUPABASE_URL}/rest/v1/paper_trades"
+                        f"?status=eq.open&trade_mode=eq.live"
+                        f"&portfolio_id=eq.{portfolio_id}&select=*"
+                    )
+                    trades = _http_get(trades_url, _supabase_headers())
+                except Exception as e:
+                    _log(f"Exit snapshots: failed to fetch trades for {pf_name}: {e}")
+                    continue
+
+                if not trades:
+                    continue
+
+                count = 0
+                for trade in trades:
+                    try:
+                        token_id = trade.get("token_id", "")
+                        if not token_id or token_id not in self._midpoints:
+                            continue
+
+                        # live_price in cents (0-100)
+                        live_price = self._midpoints[token_id] * 100
+
+                        recommendation, gap, captured_pct = _get_exit_recommendation(trade, live_price)
+
+                        # Only snapshot non-hold recommendations
+                        if recommendation == "hold":
+                            continue
+
+                        trade_id = trade.get("id")
+                        if not trade_id:
+                            continue
+
+                        # Deduplication: check if snapshot already exists for this trade+recommendation
+                        try:
+                            dedup_url = (
+                                f"{SUPABASE_URL}/rest/v1/exit_snapshots"
+                                f"?trade_id=eq.{trade_id}"
+                                f"&recommendation=eq.{urllib.parse.quote(recommendation, safe='')}"
+                                f"&select=id&limit=1"
+                            )
+                            existing = _http_get(dedup_url, _supabase_headers())
+                            if existing:
+                                continue
+                        except Exception:
+                            pass  # If dedup check fails, still insert (fail open)
+
+                        # Calculate snapshot values
+                        shares = float(trade.get("total_shares", 0) or 0)
+                        cost = float(trade.get("total_cost_usd", 0) or 0)
+                        exit_price = live_price / 100  # store as 0-1 scale
+                        exit_value = round(shares * exit_price, 4)
+                        hypothetical_profit = round(exit_value - cost, 4)
+                        hypothetical_roi_pct = round((exit_value - cost) / cost * 100, 2) if cost > 0 else 0
+
+                        snapshot = {
+                            "trade_id": trade_id,
+                            "portfolio_id": portfolio_id,
+                            "recommendation": recommendation,
+                            "city": trade.get("city"),
+                            "date": trade.get("date"),
+                            "band_c": trade.get("band_c"),
+                            "side": trade.get("side"),
+                            "bet_type": trade.get("bet_type"),
+                            "exit_price": exit_price,
+                            "exit_value": exit_value,
+                            "entry_price": trade.get("entry_price"),
+                            "total_cost": cost,
+                            "total_shares": shares,
+                            "hypothetical_profit": hypothetical_profit,
+                            "hypothetical_roi_pct": hypothetical_roi_pct,
+                            "forecast_gap": round(gap, 1) if gap is not None else None,
+                            "captured_pct": round(captured_pct, 1),
+                        }
+
+                        # INSERT into exit_snapshots
+                        insert_url = f"{SUPABASE_URL}/rest/v1/exit_snapshots"
+                        _http_post(insert_url, [snapshot], _supabase_headers())
+                        count += 1
+
+                    except Exception as te:
+                        _log(f"Exit snapshots: error on trade {trade.get('id', '?')}: {te}")
+                        continue
+
+                if count > 0:
+                    _log(f"Exit snapshots: {count} new snapshots for {pf_name}")
+                    total_new += count
+
+            if total_new > 0:
+                _log(f"Exit snapshots: {total_new} total new snapshots across all portfolios")
+
+        except Exception as e:
+            _log(f"Exit snapshots error: {e}")
+
+    # -------------------------------------------------------------------
     # Main loop
     # -------------------------------------------------------------------
 
