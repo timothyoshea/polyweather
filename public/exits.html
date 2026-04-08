@@ -793,7 +793,7 @@ function render(positions, opportunities) {
         <td>${fmt(entryPrice, 1)}\u00A2</td>
         <td>${fmt(livePrice, 1)}\u00A2</td>
         <td class="${pnlPct >= 0 ? 'val-pos' : 'val-neg'}">${pnlPct >= 0 ? '+' : ''}${fmtPct(pnlPct)}</td>
-        <td class="val-pos">$${fmt(Math.max(0, unrealizedPnl), 2)}</td>
+        <td class="${unrealizedPnl >= 0 ? 'val-pos' : 'val-neg'}">${unrealizedPnl >= 0 ? '+' : '-'}$${fmt(Math.abs(unrealizedPnl), 2)}</td>
         <td>$${fmt(Math.max(0, remaining), 2)}</td>
         <td>
           <div style="display:flex;align-items:center;gap:6px;">
