@@ -31,6 +31,7 @@ class Market:
     neg_risk_market_id: str = ""  # negRisk market ID for the event
     city: str = ""          # City name (e.g. "London")
     station: str = ""       # ICAO METAR station (e.g. "EGLC")
+    resolution_source: str = ""  # Resolution source URL (e.g. Weather Underground)
     bands: list[Band] = field(default_factory=list)
 
     @property
