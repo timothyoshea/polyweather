@@ -729,7 +729,7 @@ function render(positions, opportunities) {
       <tbody>`;
 
   if (sorted.length === 0) {
-    html += `<tr><td colspan="14" style="text-align:center;color:var(--text2);padding:40px;">No open positions</td></tr>`;
+    html += `<tr><td colspan="19" style="text-align:center;color:var(--text2);padding:40px;">No open positions</td></tr>`;
   } else {
     for (const t of sorted) {
       const rec = getRecommendation(t);
