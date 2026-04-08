@@ -970,8 +970,8 @@ function renderExitHistory() {
 
   // Info box
   h += `<div class="info-box">
-    <strong>How this works:</strong> Each time a non-Hold recommendation is made, a snapshot is recorded with the current exit price.
-    When the trade resolves, we compare the hypothetical exit profit vs actual hold profit.
+    <strong>How this works:</strong> Each time a non-Hold recommendation is made, a snapshot records the exit price, captured upside, and hours until resolution.
+    When the trade resolves, we compare exit profit vs hold profit. <strong>Capital-hours freed</strong> = capital x hours saved &mdash; the opportunity cost of staying in the trade.
     <strong>Positive exit_vs_hold</strong> = exiting would have been better. <strong>Negative</strong> = holding was better.
   </div>`;
 
