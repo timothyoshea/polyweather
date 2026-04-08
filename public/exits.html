@@ -773,6 +773,9 @@ function render(positions, opportunities) {
         <td>${currEdge}</td>
         <td style="text-align:center;">${changeIcon}</td>
         <td>${hoursLeft < 1 ? '<1h' : fmt(hoursLeft, 0) + 'h'}</td>
+        <td style="white-space:nowrap;">
+          ${t.url ? '<a href="' + t.url + '" target="_blank" style="color:var(--cyan);font-size:11px;text-decoration:none;" onclick="event.stopPropagation();">Polymarket \u2192</a>' : ''}
+        </td>
       </tr>`;
     }
   }
