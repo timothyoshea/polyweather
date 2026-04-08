@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PolyWeather — Temp History</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --card: #12121a;
+    --card-border: #1e1e2e;
+    --green: #00e676;
+    --red: #ff5252;
+    --amber: #ffc107;
+    --cyan: #4fc3f7;
+    --text: #e0e0e0;
+    --text2: #888;
+    --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* -- Sidebar ---------------------------------------- */
+  .sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0; width: 200px;
+    background: #0d0d14; border-right: 1px solid var(--card-border);
+    display: flex; flex-direction: column; padding: 20px 0; z-index: 100;
+  }
+  .sidebar-logo {
+    display: flex; align-items: center; gap: 8px; padding: 0 16px 20px;
+    font-size: 16px; font-weight: 700; text-decoration: none; color: var(--text);
+  }
+  .sidebar-logo .logo-icon {
+    font-size: 20px;
+    filter: drop-shadow(0 0 6px rgba(79, 195, 247, 0.5));
+  }
+  .sidebar-logo span:not(.logo-icon) {
+    background: linear-gradient(135deg, var(--cyan), var(--green));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .strategy-switcher {
+    display: flex; margin: 0 12px 16px; border-radius: 6px; overflow: hidden;
+    border: 1px solid var(--card-border); background: var(--bg);
+  }
+  .strategy-switcher a {
+    flex: 1; padding: 6px 4px; text-align: center; font-size: 11px; font-weight: 600;
+    color: var(--text2); text-decoration: none; transition: all 0.2s;
+    font-family: var(--sans); cursor: pointer;
+  }
+  .strategy-switcher a:hover { color: var(--text); }
+  .strategy-switcher a.active {
+    background: rgba(79,195,247,0.15); color: var(--cyan);
+  }
+  .sidebar-nav { display: flex; flex-direction: column; gap: 2px; }
+  .sidebar-link {
+    display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+    color: var(--text2); font-size: 13px; font-weight: 500; text-decoration: none;
+    border-left: 3px solid transparent; transition: all 0.2s;
+  }
+  .sidebar-link:hover { color: var(--text); background: rgba(79,195,247,0.05); }
+  .sidebar-link.active {
+    color: var(--cyan); border-left-color: var(--cyan);
+    background: rgba(79,195,247,0.08);
+  }
+  .main-content { margin-left: 200px; min-height: 100vh; }
+
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main-content { margin-left: 0; padding-bottom: 70px; }
+  }
+  .mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--card);
+    border-top: 1px solid var(--card-border);
+    z-index: 500;
+    padding: 6px 0 env(safe-area-inset-bottom, 6px);
+  }
+  .mobile-nav-inner {
+    display: flex; justify-content: space-around; align-items: center;
+  }
+  .mobile-nav a {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    background: none; border: none; color: var(--text2);
+    font-size: 10px; font-family: var(--sans); cursor: pointer;
+    padding: 6px 8px; text-decoration: none; transition: color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mobile-nav a:hover { color: var(--text); }
+  .mobile-nav .active { color: var(--cyan); }
+  .mobile-nav .nav-icon { font-size: 18px; }
+  @media (max-width: 768px) { .mobile-nav { display: block; } }
+
+  /* -- Layout ----------------------------------------- */
+  .container { max-width: 100%; margin: 0 auto; padding: 24px; }
+
+  .page-header {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 24px;
+  }
+  .page-header h1 { font-size: 22px; font-weight: 700; }
+
+  .section-title {
+    font-size: 16px; font-weight: 600; margin-bottom: 16px; color: var(--text);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title .icon { font-size: 18px; }
+  .section { margin-bottom: 32px; }
+
+  /* -- Tables ----------------------------------------- */
+  .table-card {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 10px; overflow: hidden; margin-bottom: 32px;
+  }
+  .table-card .table-header {
+    padding: 16px 20px; border-bottom: 1px solid var(--card-border);
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  }
+  .table-card .table-header h3 { font-size: 14px; font-weight: 600; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th {
+    text-align: left; padding: 10px 14px; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2);
+    border-bottom: 1px solid var(--card-border); font-weight: 600;
+    font-family: var(--sans); cursor: pointer; user-select: none;
+  }
+  th:hover { color: var(--text); }
+  th .sort-arrow { font-size: 10px; margin-left: 4px; }
+  td {
+    padding: 10px 14px; border-bottom: 1px solid var(--card-border);
+    font-family: var(--mono); white-space: nowrap;
+  }
+  tr:hover td { background: rgba(79, 195, 247, 0.03); }
+
+  .val-pos { color: var(--green); }
+  .val-neg { color: var(--red); }
+  .val-neutral { color: var(--text2); }
+
+  /* -- Chart ------------------------------------------ */
+  .chart-card {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 10px; padding: 20px; margin-bottom: 32px;
+  }
+  .chart-card canvas { width: 100% !important; max-height: 400px; }
+
+  /* -- Filters ---------------------------------------- */
+  .filter-bar {
+    display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+  }
+  .filter-bar select, .filter-bar input {
+    background: var(--bg); border: 1px solid var(--card-border); color: var(--text);
+    padding: 6px 12px; border-radius: 6px; font-size: 12px; font-family: var(--sans);
+  }
+  .filter-bar select:focus, .filter-bar input:focus {
+    outline: none; border-color: var(--cyan);
+  }
+  .filter-bar label {
+    font-size: 11px; color: var(--text2); font-weight: 500;
+  }
+  .filter-bar .filter-group {
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  /* -- Status dots ------------------------------------ */
+  .status-dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px;
+  }
+  .status-fresh { background: var(--green); box-shadow: 0 0 6px rgba(0,230,118,0.5); }
+  .status-stale { background: var(--amber); box-shadow: 0 0 6px rgba(255,193,7,0.5); }
+  .status-dead { background: var(--red); box-shadow: 0 0 6px rgba(255,82,82,0.5); }
+
+  /* -- Loading ---------------------------------------- */
+  .loading {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 60px 0; gap: 16px; color: var(--text2);
+  }
+  .spinner {
+    width: 32px; height: 32px; border: 3px solid var(--card-border);
+    border-top-color: var(--cyan); border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty-state {
+    text-align: center; padding: 40px 20px; color: var(--text2); font-size: 13px;
+  }
+
+  .resolution-link {
+    color: var(--cyan); text-decoration: none; font-size: 11px;
+  }
+  .resolution-link:hover { text-decoration: underline; }
+
+  .badge {
+    display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px;
+    border-radius: 4px; text-transform: uppercase; letter-spacing: 0.03em;
+    font-family: var(--mono);
+  }
+  .badge-rising { background: rgba(0,230,118,0.15); color: var(--green); border: 1px solid rgba(0,230,118,0.3); }
+  .badge-falling { background: rgba(255,82,82,0.15); color: var(--red); border: 1px solid rgba(255,82,82,0.3); }
+  .badge-stable { background: rgba(136,136,136,0.12); color: var(--text2); border: 1px solid rgba(136,136,136,0.3); }
+</style>
+</head>
+<body>
+<script>
+fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({action:'check'}) })
+  .then(r => r.json()).then(d => { if (!d.authenticated) window.location.href = '/login.html'; })
+  .catch(() => { window.location.href = '/login.html'; });
+</script>
+
+<!-- -- Sidebar ---------------------------------------- -->
+<nav class="sidebar">
+  <a href="/" class="sidebar-logo">
+    <span class="logo-icon">&#x26C8;</span>
+    <span>PolyWeather</span>
+  </a>
+  <div class="strategy-switcher">
+    <a href="/">Temp Predictions</a>
+    <a class="active" href="/sniper">Max Temp Sniper</a>
+  </div>
+  <div class="sidebar-nav">
+    <a class="sidebar-link" href="/sniper">Dashboard</a>
+    <a class="sidebar-link" href="/sniper/trades">Trade History</a>
+    <a class="sidebar-link active" href="/sniper/history">Temp History</a>
+  </div>
+  <div style="padding:0 16px 16px;">
+    <button onclick="fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'logout'})}).then(()=>window.location.href='/login.html')" style="background:none;border:1px solid var(--card-border);color:var(--text2);padding:6px 14px;border-radius:6px;font-size:11px;cursor:pointer;font-family:var(--sans);width:100%;transition:color 0.15s;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text2)'">Sign Out</button>
+  </div>
+</nav>
+
+<!-- -- Main Content ----------------------------------- -->
+<div class="main-content">
+<div class="container">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>Temp History</h1>
+    <span id="last-refresh" style="font-size:11px;color:var(--text2);margin-left:auto;">Loading...</span>
+  </div>
+
+  <!-- Section 1: Station Overview -->
+  <div class="section" id="section-overview">
+    <div class="section-title"><span class="icon">&#x1F6F0;</span> Station Overview</div>
+    <div class="table-card">
+      <div class="table-header">
+        <h3>Monitored Stations</h3>
+        <span id="station-count" style="font-size:12px;color:var(--text2);font-family:var(--mono);">0 stations</span>
+      </div>
+      <div class="table-wrap">
+        <table id="overview-table">
+          <thead>
+            <tr>
+              <th data-sort="city">City <span class="sort-arrow"></span></th>
+              <th data-sort="station">Station <span class="sort-arrow"></span></th>
+              <th data-sort="latest_temp_c">Current <span class="sort-arrow"></span></th>
+              <th data-sort="today_high">High <span class="sort-arrow"></span></th>
+              <th data-sort="today_low">Low <span class="sort-arrow"></span></th>
+              <th data-sort="reading_count">Readings <span class="sort-arrow"></span></th>
+              <th data-sort="avg_interval_min">Avg Interval <span class="sort-arrow"></span></th>
+              <th data-sort="last_update">Last Update <span class="sort-arrow"></span></th>
+              <th>Source</th>
+            </tr>
+          </thead>
+          <tbody id="overview-tbody">
+            <tr><td colspan="9" class="empty-state">Loading station overview...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Temperature Timeline -->
+  <div class="section" id="section-chart">
+    <div class="section-title"><span class="icon">&#x1F4C8;</span> Temperature Timeline</div>
+    <div class="chart-card">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px;">
+        <div class="filter-group">
+          <label>Station:</label>
+          <select id="chart-station" multiple style="min-width:200px;height:80px;">
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Hours:</label>
+          <select id="chart-hours">
+            <option value="6">6h</option>
+            <option value="12">12h</option>
+            <option value="24" selected>24h</option>
+            <option value="48">48h</option>
+            <option value="72">72h</option>
+          </select>
+        </div>
+      </div>
+      <canvas id="temp-chart"></canvas>
+    </div>
+  </div>
+
+  <!-- Section 3: Reading History -->
+  <div class="section" id="section-readings">
+    <div class="section-title"><span class="icon">&#x1F4CB;</span> Reading History</div>
+    <div class="table-card">
+      <div class="table-header">
+        <h3>METAR Readings</h3>
+        <div class="filter-bar">
+          <div class="filter-group">
+            <label>City:</label>
+            <select id="filter-city">
+              <option value="">All</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Rising only:</label>
+            <input type="checkbox" id="filter-rising">
+          </div>
+          <div class="filter-group">
+            <label>Hours:</label>
+            <select id="filter-hours">
+              <option value="6">6h</option>
+              <option value="12">12h</option>
+              <option value="24" selected>24h</option>
+              <option value="48">48h</option>
+            </select>
+          </div>
+          <span id="reading-count" style="font-size:12px;color:var(--text2);font-family:var(--mono);">0 readings</span>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="readings-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>City</th>
+              <th>Station</th>
+              <th>Temp C</th>
+              <th>Temp F</th>
+              <th>Change</th>
+              <th>Rising?</th>
+              <th>Wind</th>
+              <th>Weather</th>
+              <th>METAR Raw</th>
+            </tr>
+          </thead>
+          <tbody id="readings-tbody">
+            <tr><td colspan="10" class="empty-state">Loading readings...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- -- Mobile Nav ------------------------------------- -->
+<nav class="mobile-nav">
+  <div style="display:flex;border-bottom:1px solid var(--card-border);padding:4px 8px;">
+    <a href="/" style="flex:1;text-align:center;font-size:10px;font-weight:600;color:var(--text2);padding:4px;text-decoration:none;font-family:var(--sans);">Temp Predictions</a>
+    <a href="/sniper" style="flex:1;text-align:center;font-size:10px;font-weight:600;color:var(--cyan);padding:4px;text-decoration:none;font-family:var(--sans);">Sniper</a>
+  </div>
+  <div class="mobile-nav-inner">
+    <a href="/sniper"><span class="nav-icon">&#x1F3AF;</span>Dashboard</a>
+    <a href="/sniper/trades"><span class="nav-icon">&#x1F4CB;</span>Trades</a>
+    <a href="/sniper/history" class="active"><span class="nav-icon">&#x1F321;</span>Temps</a>
+  </div>
+</nav>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+// ── Color palette for chart lines ──
+const CHART_COLORS = [
+  '#4fc3f7', '#00e676', '#ffc107', '#ff5252', '#ab47bc',
+  '#26a69a', '#ef5350', '#42a5f5', '#66bb6a', '#ffa726',
+];
+
+let tempChart = null;
+let summaryData = [];
+let readingsData = [];
+let overviewSortKey = 'city';
+let overviewSortAsc = true;
+
+// ── Helpers ──
+function fmtTime(iso) {
+  if (!iso) return '--';
+  const d = new Date(iso);
+  return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+function fmtDateTime(iso) {
+  if (!iso) return '--';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' +
+         d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+function minutesAgo(iso) {
+  if (!iso) return Infinity;
+  return (Date.now() - new Date(iso).getTime()) / 60000;
+}
+
+function staleDot(iso) {
+  const m = minutesAgo(iso);
+  if (m <= 15) return '<span class="status-dot status-fresh"></span>';
+  if (m <= 60) return '<span class="status-dot status-stale"></span>';
+  return '<span class="status-dot status-dead"></span>';
+}
+
+function cToF(c) {
+  return c != null ? Math.round(c * 9 / 5 + 32) : null;
+}
+
+// ── Section 1: Station Overview ──
+async function loadOverview() {
+  try {
+    const resp = await fetch('/api/metar_history?summary=true&hours=24&limit=2000');
+    summaryData = await resp.json();
+    if (summaryData.error) throw new Error(summaryData.error);
+    renderOverview();
+    populateChartStations();
+    $('#station-count').textContent = summaryData.length + ' stations';
+    $('#last-refresh').textContent = 'Updated ' + new Date().toLocaleTimeString();
+  } catch (e) {
+    $('#overview-tbody').innerHTML = `<tr><td colspan="9" class="empty-state">Error: ${e.message}</td></tr>`;
+  }
+}
+
+function renderOverview() {
+  const sorted = [...summaryData].sort((a, b) => {
+    let va = a[overviewSortKey], vb = b[overviewSortKey];
+    if (va == null) va = overviewSortAsc ? Infinity : -Infinity;
+    if (vb == null) vb = overviewSortAsc ? Infinity : -Infinity;
+    if (typeof va === 'string') va = va.toLowerCase();
+    if (typeof vb === 'string') vb = vb.toLowerCase();
+    if (va < vb) return overviewSortAsc ? -1 : 1;
+    if (va > vb) return overviewSortAsc ? 1 : -1;
+    return 0;
+  });
+
+  // Update sort arrows
+  $$('#overview-table th[data-sort]').forEach(th => {
+    const arrow = th.querySelector('.sort-arrow');
+    if (th.dataset.sort === overviewSortKey) {
+      arrow.textContent = overviewSortAsc ? ' \u25B2' : ' \u25BC';
+    } else {
+      arrow.textContent = '';
+    }
+  });
+
+  if (sorted.length === 0) {
+    $('#overview-tbody').innerHTML = '<tr><td colspan="9" class="empty-state">No stations found</td></tr>';
+    return;
+  }
+
+  $('#overview-tbody').innerHTML = sorted.map(s => {
+    const sourceLink = s.resolution_source
+      ? `<a href="${s.resolution_source}" target="_blank" class="resolution-link">${new URL(s.resolution_source).hostname.replace('www.','')}</a>`
+      : '--';
+    return `<tr>
+      <td>${s.city || '--'}</td>
+      <td>${s.station || '--'}</td>
+      <td>${s.latest_temp_c != null ? s.latest_temp_c + '\u00B0C' : '--'}</td>
+      <td>${s.today_high != null ? s.today_high + '\u00B0C' : '--'}</td>
+      <td>${s.today_low != null ? s.today_low + '\u00B0C' : '--'}</td>
+      <td>${s.reading_count}</td>
+      <td>${s.avg_interval_min != null ? s.avg_interval_min + ' min' : '--'}</td>
+      <td>${staleDot(s.last_update)}${fmtDateTime(s.last_update)}</td>
+      <td>${sourceLink}</td>
+    </tr>`;
+  }).join('');
+}
+
+// Sort click handler
+$$('#overview-table th[data-sort]').forEach(th => {
+  th.addEventListener('click', () => {
+    const key = th.dataset.sort;
+    if (overviewSortKey === key) {
+      overviewSortAsc = !overviewSortAsc;
+    } else {
+      overviewSortKey = key;
+      overviewSortAsc = true;
+    }
+    renderOverview();
+  });
+});
+
+// ── Section 2: Temperature Timeline ──
+function populateChartStations() {
+  const sel = $('#chart-station');
+  const existing = new Set(Array.from(sel.options).map(o => o.value));
+  summaryData.forEach(s => {
+    if (!existing.has(s.station)) {
+      const opt = document.createElement('option');
+      opt.value = s.station;
+      opt.textContent = `${s.city} (${s.station})`;
+      sel.appendChild(opt);
+    }
+  });
+  // Auto-select first station if none selected
+  if (sel.selectedOptions.length === 0 && sel.options.length > 0) {
+    sel.options[0].selected = true;
+  }
+}
+
+async function loadChart() {
+  const sel = $('#chart-station');
+  const selected = Array.from(sel.selectedOptions).map(o => o.value);
+  const hours = $('#chart-hours').value;
+
+  if (selected.length === 0) return;
+
+  // Fetch data for each selected station
+  const datasets = [];
+  for (let i = 0; i < selected.length; i++) {
+    const station = selected[i];
+    try {
+      const resp = await fetch(`/api/metar_history?station=${station}&hours=${hours}&limit=1000`);
+      const data = await resp.json();
+      if (data.error) continue;
+
+      const city = data.length > 0 ? (data[0].city || station) : station;
+      const color = CHART_COLORS[i % CHART_COLORS.length];
+
+      datasets.push({
+        label: `${city} (${station})`,
+        data: data.map(r => ({
+          x: new Date(r.created_at),
+          y: r.temp_c,
+        })).reverse(),
+        borderColor: color,
+        backgroundColor: color + '33',
+        pointRadius: 3,
+        pointHoverRadius: 5,
+        tension: 0.2,
+        fill: false,
+      });
+    } catch (e) {
+      console.error(`Failed to load chart data for ${station}:`, e);
+    }
+  }
+
+  const ctx = $('#temp-chart').getContext('2d');
+  if (tempChart) tempChart.destroy();
+
+  tempChart = new Chart(ctx, {
+    type: 'line',
+    data: { datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: {
+          type: 'time',
+          time: { tooltipFormat: 'MMM d, HH:mm' },
+          ticks: { color: '#888', font: { family: "'JetBrains Mono', monospace", size: 10 } },
+          grid: { color: 'rgba(255,255,255,0.05)' },
+        },
+        y: {
+          title: { display: true, text: 'Temperature (\u00B0C)', color: '#888' },
+          ticks: { color: '#888', font: { family: "'JetBrains Mono', monospace", size: 10 } },
+          grid: { color: 'rgba(255,255,255,0.05)' },
+        },
+      },
+      plugins: {
+        legend: {
+          labels: { color: '#e0e0e0', font: { size: 11 } },
+        },
+        tooltip: {
+          backgroundColor: '#1e1e2e',
+          titleColor: '#e0e0e0',
+          bodyColor: '#e0e0e0',
+          borderColor: '#333',
+          borderWidth: 1,
+        },
+      },
+    },
+  });
+}
+
+$('#chart-station').addEventListener('change', loadChart);
+$('#chart-hours').addEventListener('change', loadChart);
+
+// ── Section 3: Reading History ──
+async function loadReadings() {
+  const hours = $('#filter-hours').value;
+  try {
+    const resp = await fetch(`/api/metar_history?hours=${hours}&limit=500`);
+    readingsData = await resp.json();
+    if (readingsData.error) throw new Error(readingsData.error);
+    populateCityFilter();
+    renderReadings();
+  } catch (e) {
+    $('#readings-tbody').innerHTML = `<tr><td colspan="10" class="empty-state">Error: ${e.message}</td></tr>`;
+  }
+}
+
+function populateCityFilter() {
+  const sel = $('#filter-city');
+  const cities = [...new Set(readingsData.map(r => r.city).filter(Boolean))].sort();
+  // Keep current selection
+  const current = sel.value;
+  sel.innerHTML = '<option value="">All</option>';
+  cities.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c;
+    opt.textContent = c;
+    sel.appendChild(opt);
+  });
+  sel.value = current;
+}
+
+function renderReadings() {
+  const cityFilter = $('#filter-city').value;
+  const risingOnly = $('#filter-rising').checked;
+
+  let filtered = readingsData;
+  if (cityFilter) filtered = filtered.filter(r => r.city === cityFilter);
+  if (risingOnly) filtered = filtered.filter(r => r.is_rising === true);
+
+  $('#reading-count').textContent = filtered.length + ' readings';
+
+  if (filtered.length === 0) {
+    $('#readings-tbody').innerHTML = '<tr><td colspan="10" class="empty-state">No readings match filters</td></tr>';
+    return;
+  }
+
+  $('#readings-tbody').innerHTML = filtered.map(r => {
+    const tempC = r.temp_c != null ? r.temp_c.toFixed(1) : '--';
+    const tempF = r.temp_c != null ? cToF(r.temp_c) : '--';
+    const change = r.temp_change != null ? (r.temp_change >= 0 ? '+' : '') + r.temp_change.toFixed(1) : '--';
+    const changeClass = r.temp_change > 0 ? 'val-pos' : r.temp_change < 0 ? 'val-neg' : 'val-neutral';
+    const risingBadge = r.is_rising === true
+      ? '<span class="badge badge-rising">RISING</span>'
+      : r.is_rising === false
+        ? '<span class="badge badge-falling">FALLING</span>'
+        : '<span class="badge badge-stable">--</span>';
+    const wind = r.wind_speed != null ? `${r.wind_speed}kt ${r.wind_dir || ''}\u00B0` : (r.wind || '--');
+    const weather = r.weather || r.wx_string || '--';
+    const raw = r.metar_raw || r.raw_ob || '--';
+    return `<tr>
+      <td>${fmtDateTime(r.created_at)}</td>
+      <td>${r.city || '--'}</td>
+      <td>${r.station || '--'}</td>
+      <td>${tempC}\u00B0C</td>
+      <td>${tempF}\u00B0F</td>
+      <td class="${changeClass}">${change}</td>
+      <td>${risingBadge}</td>
+      <td>${wind}</td>
+      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;" title="${weather}">${weather}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;font-size:10px;" title="${raw}">${raw}</td>
+    </tr>`;
+  }).join('');
+}
+
+$('#filter-city').addEventListener('change', renderReadings);
+$('#filter-rising').addEventListener('change', renderReadings);
+$('#filter-hours').addEventListener('change', loadReadings);
+
+// ── Init & Auto-refresh ──
+async function init() {
+  await loadOverview();
+  await loadReadings();
+  await loadChart();
+}
+
+init();
+
+// Auto-refresh: overview every 30s, readings+chart every 60s
+setInterval(loadOverview, 30000);
+setInterval(() => { loadReadings(); loadChart(); }, 60000);
+</script>
+</body>
+</html>
