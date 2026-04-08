@@ -934,6 +934,11 @@ class TradingLoop:
                     self._auto_redeem()
                     self._last_redeem_check = now
 
+                # Collect exit snapshots every 30 minutes
+                if now - self._last_snapshot_check >= SNAPSHOT_INTERVAL:
+                    self._collect_exit_snapshots()
+                    self._last_snapshot_check = now
+
                 self._cycle_count += 1
                 self._last_cycle_time = datetime.now(timezone.utc).isoformat()
 
