@@ -521,12 +521,22 @@ function onPortfolioChange() {
 // ── Data Loading ──
 async function loadData() {
   try {
-    const [pricesRes, compareRes] = await Promise.all([
+    const [pricesRes, compareRes, histSummaryRes, histSnapsRes] = await Promise.all([
       fetch(`/api/refresh_prices?portfolio_id=${currentPortfolioId}`),
-      fetch(`/api/forecast_compare?portfolio_id=${currentPortfolioId}`)
+      fetch(`/api/forecast_compare?portfolio_id=${currentPortfolioId}`),
+      fetch(`/api/exit_snapshots?summary=true`),
+      fetch(`/api/exit_snapshots?portfolio_id=${currentPortfolioId}&resolved=true`)
     ]);
     const pricesData = await pricesRes.json();
     const compareData = await compareRes.json();
+    try {
+      historySummary = await histSummaryRes.json();
+      historySnapshots = await histSnapsRes.json();
+      if (!Array.isArray(historySnapshots)) historySnapshots = [];
+    } catch (e) {
+      historySummary = null;
+      historySnapshots = [];
+    }
 
     positionsData = pricesData.trades || [];
 
