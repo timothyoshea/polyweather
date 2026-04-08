@@ -156,22 +156,27 @@ def _parse_band_from_question(
     is_top = bool(TOP_BAND_PATTERNS.search(question))
     is_bottom = bool(BOTTOM_BAND_PATTERNS.search(question))
 
+    # Detect unit from the question text
+    unit = "F" if FAHRENHEIT_PATTERN.search(question) else "C"
+
     return Band(
-        label=_short_label(temp_value, is_top, is_bottom),
+        label=_short_label(temp_value, is_top, is_bottom, unit),
         temp_value=temp_value,
         is_top_band=is_top,
         is_bottom_band=is_bottom,
         yes_token_id=yes_token_id,
         no_token_id=no_token_id,
         condition_id=condition_id,
+        unit=unit,
     )
 
 
-def _short_label(temp: float, is_top: bool, is_bottom: bool) -> str:
-    """Create a short band label like '22°C' or '25°C or higher'."""
+def _short_label(temp: float, is_top: bool, is_bottom: bool, unit: str = "C") -> str:
+    """Create a short band label like '22°C' or '76°F or higher'."""
     t = int(temp) if temp == int(temp) else temp
+    u = f"°{unit}"
     if is_top:
-        return f"{t}°C or higher"
+        return f"{t}{u} or higher"
     if is_bottom:
-        return f"{t}°C or below"
-    return f"{t}°C"
+        return f"{t}{u} or below"
+    return f"{t}{u}"
