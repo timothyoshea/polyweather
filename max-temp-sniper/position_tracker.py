@@ -69,8 +69,6 @@ class PositionTracker:
     def _persist_position(self, pos: Position):
         """No separate positions table — positions are derived from sniper_trades."""
         pass  # In-memory only; loaded from sniper_trades on restart
-        except Exception as e:
-            logger.warning(f"Failed to persist position to Supabase: {e}")
 
     def load_from_supabase(self):
         """Load existing open positions from Supabase on startup."""
