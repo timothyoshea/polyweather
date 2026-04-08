@@ -48,8 +48,12 @@ def parse_band_threshold(band_c):
     return None
 
 
-def get_recommendation(trade, latest_scan):
-    """Determine recommendation based on forecast distance from band threshold."""
+def get_recommendation(trade, latest_scan, live_price=None):
+    """Determine recommendation based on forecast distance from band threshold.
+
+    live_price: current market price as 0-1 float (e.g. 0.96). If provided,
+    used to calculate captured_pct accurately.
+    """
     if latest_scan is None:
         return "hold", None, 0
 
@@ -80,28 +84,39 @@ def get_recommendation(trade, latest_scan):
         else:
             gap = -abs(latest_fc - threshold)  # negative = outside band
 
-    # Calculate captured upside
+    # Calculate captured upside from live price
     shares = float(trade.get("total_shares", 0) or 0)
     cost = float(trade.get("total_cost_usd", 0) or 0)
     max_profit = shares - cost
-    unrealized = float(trade.get("unrealized_pnl", 0) or 0)
+    if live_price is not None:
+        unrealized = shares * float(live_price) - cost
+    else:
+        unrealized = float(trade.get("unrealized_pnl", 0) or 0)
     captured_pct = (unrealized / max_profit * 100) if max_profit > 0 else 0
 
-    # Recommendation matrix
-    if gap < 0:  # Forecast IN or PAST the band — thesis broken
+    # ── Recommendation matrix ──
+
+    # 1. High capture — take profit regardless of gap (capital redeployment)
+    if captured_pct >= 90:
+        return "take_profit", gap, captured_pct
+
+    # 2. Thesis broken — forecast crossed band
+    if gap < 0:
         return "exit_forecast_changed", gap, captured_pct
 
-    if gap < 1.0:  # Danger zone — very close to band
+    # 3. Danger zone — very close to band
+    if gap < 1.0:
         if captured_pct > 50:
             return "exit_forecast_changed", gap, captured_pct
         return "danger", gap, captured_pct
 
-    if gap < 3.0:  # Watch zone
+    # 4. Watch zone
+    if gap < 3.0:
         if captured_pct > 80:
             return "take_profit", gap, captured_pct
         return "hold", gap, captured_pct
 
-    # Safe zone (gap >= 3°C)
+    # 5. Safe zone (gap >= 3°C)
     if captured_pct > 80:
         return "take_profit", gap, captured_pct
     if captured_pct > 50:
