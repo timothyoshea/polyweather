@@ -54,40 +54,59 @@ class SignalEngine:
 
         return result
 
-    def _evaluate_market(self, market: Market, temp: float) -> list[LockedBand]:
-        """Evaluate a single market's bands against the observed temperature."""
+    @staticmethod
+    def _c_to_f(temp_c: float) -> float:
+        """Convert Celsius to Fahrenheit."""
+        return temp_c * 9 / 5 + 32
+
+    def _evaluate_market(self, market: Market, temp_c: float) -> list[LockedBand]:
+        """Evaluate a single market's bands against the observed temperature.
+
+        temp_c is always in Celsius (from METAR). If bands are in °F,
+        we convert the METAR temp to °F for comparison.
+        """
         locked = []
+
+        # Determine comparison temp based on market's unit
+        # All bands in a market use the same unit
+        sample_band = market.bands[0] if market.bands else None
+        if sample_band and sample_band.unit == "F":
+            temp_compare = self._c_to_f(temp_c)
+            unit_label = "°F"
+        else:
+            temp_compare = temp_c
+            unit_label = "°C"
 
         # 1. Top band YES: if temp exceeds top band threshold
         top = market.top_band
-        if top and temp > top.temp_value:
+        if top and temp_compare > top.temp_value:
             locked.append(LockedBand(
                 band=top,
                 market=market,
                 side="YES",
                 trade_type="top_band_yes",
-                temp_observed=temp,
+                temp_observed=temp_c,
             ))
             logger.info(
-                f"  TOP BAND YES: {top.label} (threshold {top.temp_value}°C, "
-                f"observed {temp}°C) in {market.question}"
+                f"  TOP BAND YES: {top.label} (observed {temp_compare:.1f}{unit_label}) "
+                f"in {market.city}"
             )
 
-        # 2. Lower band NO sweep: for each non-top band that temp exceeds
+        # 2. Lower band NO sweep: for each non-top, non-bottom band that temp exceeds
         for band in market.bands:
-            if band.is_top_band:
+            if band.is_top_band or band.is_bottom_band:
                 continue
-            if temp > band.temp_value:
+            if temp_compare > band.temp_value:
                 locked.append(LockedBand(
                     band=band,
                     market=market,
                     side="NO",
                     trade_type="lower_band_no",
-                    temp_observed=temp,
+                    temp_observed=temp_c,
                 ))
-                logger.info(
-                    f"  LOWER BAND NO: {band.label} (threshold {band.temp_value}°C, "
-                    f"observed {temp}°C) in {market.question}"
+                logger.debug(
+                    f"  LOWER BAND NO: {band.label} (observed {temp_compare:.1f}{unit_label}) "
+                    f"in {market.city}"
                 )
 
         return locked
