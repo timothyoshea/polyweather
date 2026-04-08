@@ -601,7 +601,7 @@ function sortPositions(positions, col, asc) {
   const sorters = {
     city: (a, b) => (a.city || '').localeCompare(b.city || ''),
     date: (a, b) => (a.date || '').localeCompare(b.date || ''),
-    band: (a, b) => (a.band_f || a.band_c || '').localeCompare(b.band_f || b.band_c || ''),
+    band: (a, b) => (a.band_c || a.band_f || '').localeCompare(b.band_c || b.band_f || ''),
     side: (a, b) => (a.side || '').localeCompare(b.side || ''),
     type: (a, b) => (a.bet_type || '').localeCompare(b.bet_type || ''),
     entry: (a, b) => (parseFloat(a.entry_price || 0)) - (parseFloat(b.entry_price || 0)),
