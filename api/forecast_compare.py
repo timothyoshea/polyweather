@@ -185,7 +185,22 @@ class handler(BaseHTTPRequestHandler):
                 if key not in opp_index:
                     opp_index[key] = opp
 
-            # 4. Build comparisons
+            # 4. Fetch live midpoints for all trades' token_ids
+            live_prices = {}  # token_id -> float (0-1)
+            token_ids = [t.get("token_id") for t in trades if t.get("token_id")]
+            for tid in token_ids:
+                try:
+                    mid_url = f"https://clob.polymarket.com/midpoint?token_id={quote(tid, safe='')}"
+                    req = urllib.request.Request(mid_url, headers={"User-Agent": "PolyWeather/1.0"})
+                    with urllib.request.urlopen(req, timeout=5) as resp:
+                        mid_data = json.loads(resp.read().decode("utf-8"))
+                        mid = mid_data.get("mid")
+                        if mid is not None:
+                            live_prices[tid] = float(mid)
+                except Exception:
+                    pass
+
+            # 5. Build comparisons
             comparisons = []
             for t in trades:
                 key = (
@@ -220,7 +235,8 @@ class handler(BaseHTTPRequestHandler):
                     if latest_edge is not None and orig_edge != 0:
                         edge_improved = abs(latest_edge) > abs(orig_edge)
 
-                rec, gap, captured_pct = get_recommendation(t, latest_scan)
+                live_price = live_prices.get(t.get("token_id"))
+                rec, gap, captured_pct = get_recommendation(t, latest_scan, live_price)
 
                 comparisons.append({
                     "trade": {
