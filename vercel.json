@@ -22,7 +22,8 @@
     { "source": "/login", "destination": "/login.html" },
     { "source": "/pnl", "destination": "/pnl.html" },
     { "source": "/analysis", "destination": "/analysis.html" },
-    { "source": "/compare", "destination": "/compare.html" }
+    { "source": "/compare", "destination": "/compare.html" },
+    { "source": "/exits", "destination": "/exits.html" }
   ],
   "crons": [
     {
