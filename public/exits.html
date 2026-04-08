@@ -667,9 +667,13 @@ function render(positions, opportunities) {
 
   // ── Info Box ──
   html += `<div class="info-box">
-    <strong>Forecast Comparison:</strong> Compares your original trade forecast against the latest scanner data.
-    "Original" shows conditions when the trade was placed. "Latest" shows the most recent forecast.
-    If the edge improved, the position may be worth adding to rather than exiting.
+    <strong>How recommendations work:</strong> Each position is evaluated by how far the latest weather forecast is from the temperature band threshold.
+    <br><br>
+    <strong style="color:var(--green);">Safe (&gt;3\u00B0C gap):</strong> Forecast is well away from the band \u2014 low risk of losing.
+    <strong style="color:var(--amber);">Watch (1-3\u00B0C gap):</strong> Forecast is moderately close \u2014 monitor for changes.
+    <strong style="color:var(--red);">Danger (&lt;1\u00B0C gap):</strong> Forecast is very close to the band \u2014 high risk.
+    <br><br>
+    Combined with captured upside: positions that have captured &gt;80% of max profit are recommended as "Take Profit" to free capital. Positions where the forecast has moved INTO the band are "Exit \u2014 Thesis Broken".
   </div>`;
 
   // ── Summary Cards ──
