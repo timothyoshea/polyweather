@@ -532,7 +532,21 @@ function getRecommendation(trade) {
   const pnlPct = parseFloat(trade.unrealized_pnl_pct || 0);
   const hoursLeft = getHoursToResolution(trade.date);
   const utilization = getUtilization();
+  const comp = forecastComparisons[trade.id];
 
+  // Use forecast-compare recommendation if available
+  if (comp && comp.recommendation) {
+    const rec = comp.recommendation;
+    if (rec === 'exit_forecast_changed') {
+      // If also losing, escalate to stop loss
+      if (pnlPct < -5) return { label: 'Stop Loss', cls: 'badge-stop' };
+      return { label: 'Exit \u2014 Forecast Changed', cls: 'badge-exit' };
+    }
+    if (rec === 'double_down') return { label: 'Double Down', cls: 'badge-double' };
+    if (rec === 'consider_exit') return { label: 'Consider Exit', cls: 'badge-consider' };
+  }
+
+  // Fallback to price-only logic
   if (pnlPct < -5) return { label: 'Stop Loss', cls: 'badge-stop' };
   if (pnlPct > 4 && hoursLeft > 24 && utilization > 80) return { label: 'Exit Now', cls: 'badge-exit' };
   if (pnlPct > 3 && hoursLeft > 48) return { label: 'Consider Exit', cls: 'badge-consider' };
