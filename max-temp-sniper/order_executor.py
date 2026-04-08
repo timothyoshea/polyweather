@@ -145,6 +145,39 @@ class OrderExecutor:
             logger.warning(f"CLOB midpoint fetch failed for {token_id}: {e}")
             return None
 
+    def _fetch_book_depth(self, token_id: str) -> dict:
+        """
+        Fetch order book depth from CLOB API. Best-effort — returns Nones on failure.
+        Returns {best_bid, best_ask, bid_depth_usdc, ask_depth_usdc}.
+        """
+        empty = {"best_bid": None, "best_ask": None, "bid_depth_usdc": None, "ask_depth_usdc": None}
+        if not token_id:
+            return empty
+
+        try:
+            url = f"{CLOB_BASE}/book?token_id={token_id}"
+            req = urllib.request.Request(url, headers={"User-Agent": "MaxTempSniper/1.0"})
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read().decode())
+
+            bids = data.get("bids", [])
+            asks = data.get("asks", [])
+
+            best_bid = max((float(b["price"]) for b in bids), default=None)
+            best_ask = min((float(a["price"]) for a in asks), default=None)
+            bid_depth_usdc = round(sum(float(b["price"]) * float(b["size"]) for b in bids), 4) if bids else None
+            ask_depth_usdc = round(sum(float(a["price"]) * float(a["size"]) for a in asks), 4) if asks else None
+
+            return {
+                "best_bid": best_bid,
+                "best_ask": best_ask,
+                "bid_depth_usdc": bid_depth_usdc,
+                "ask_depth_usdc": ask_depth_usdc,
+            }
+        except Exception as e:
+            logger.warning(f"CLOB book depth fetch failed for {token_id}: {e}")
+            return empty
+
     def _insert_signal(self, trigger: TriggerResult) -> Optional[str]:
         """Insert a signal record into sniper_signals table."""
         if not self._supabase_url or not self._supabase_key:
