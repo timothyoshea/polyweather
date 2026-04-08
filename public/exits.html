@@ -310,6 +310,49 @@
   .opp-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
   .opp-detail { font-size: 11px; color: var(--text2); font-family: var(--mono); }
   .opp-edge { font-family: var(--mono); font-size: 14px; font-weight: 600; }
+
+  /* ── History Summary Cards ────────────────── */
+  .history-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .history-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .history-card .hc-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: var(--text);
+    font-family: var(--sans);
+  }
+  .history-card .hc-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-bottom: 4px;
+    font-family: var(--mono);
+  }
+  .history-card .hc-row .hc-label { color: var(--text2); }
+  .history-card .hc-row .hc-val { color: var(--text); font-weight: 500; }
+  .history-card .hc-winrate {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--card-border);
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    font-family: var(--mono);
+  }
+
+  /* ── History sort ─────────────────────────── */
+  .hist-th { cursor: pointer; user-select: none; }
+  .hist-th:hover { color: var(--cyan); }
 </style>
 </head>
 <body>
