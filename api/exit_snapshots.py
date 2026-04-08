@@ -37,11 +37,22 @@ def build_summary(snapshots):
         "hypothetical_profits": [],
         "actual_profits": [],
         "exit_vs_holds": [],
+        "hours_to_resolution": [],
+        "capital_locked": [],
     })
 
     for snap in snapshots:
         rec = snap.get("recommendation", "unknown") or "unknown"
         by_rec[rec]["total"] += 1
+
+        # Time and capital metrics (available before resolution)
+        htr = snap.get("hours_to_resolution")
+        if htr is not None:
+            by_rec[rec]["hours_to_resolution"].append(float(htr))
+        cl = snap.get("capital_locked")
+        if cl is not None:
+            by_rec[rec]["capital_locked"].append(float(cl))
+
         if snap.get("actual_outcome") is not None:
             by_rec[rec]["resolved"] += 1
             hp = float(snap.get("hypothetical_profit", 0) or 0)
@@ -57,8 +68,12 @@ def build_summary(snapshots):
         hps = data["hypothetical_profits"]
         aps = data["actual_profits"]
         evhs = data["exit_vs_holds"]
+        htrs = data["hours_to_resolution"]
+        cls = data["capital_locked"]
         exit_better = sum(1 for v in evhs if v > 0)
         hold_better = sum(1 for v in evhs if v < 0)
+        # Capital-hours: sum of (capital × hours) that would be freed by exiting
+        capital_hours_freed = sum(c * h for c, h in zip(cls, htrs)) if cls and htrs and len(cls) == len(htrs) else 0
         result.append({
             "recommendation": rec,
             "total": data["total"],
@@ -69,6 +84,10 @@ def build_summary(snapshots):
             "exit_better_count": exit_better,
             "hold_better_count": hold_better,
             "exit_better_pct": round(exit_better / resolved * 100, 1) if resolved > 0 else 0,
+            # Opportunity cost metrics
+            "avg_hours_to_resolution": round(sum(htrs) / len(htrs), 1) if htrs else None,
+            "total_capital_locked": round(sum(cls), 2) if cls else 0,
+            "total_capital_hours_freed": round(capital_hours_freed, 1),
         })
 
     return {"by_recommendation": result}
