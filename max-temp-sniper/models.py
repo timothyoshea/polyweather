@@ -28,6 +28,8 @@ class Market:
     slug: str               # URL slug
     end_date: str           # Market close date
     neg_risk_market_id: str = ""  # negRisk market ID for the event
+    city: str = ""          # City name (e.g. "London")
+    station: str = ""       # ICAO METAR station (e.g. "EGLC")
     bands: list[Band] = field(default_factory=list)
 
     @property
