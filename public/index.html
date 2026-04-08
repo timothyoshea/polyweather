@@ -4041,6 +4041,10 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
 
 <!-- Mobile Bottom Nav -->
 <nav class="mobile-nav">
+  <div style="display:flex;border-bottom:1px solid var(--card-border);padding:4px 8px;">
+    <a href="/" style="flex:1;text-align:center;font-size:10px;font-weight:600;color:var(--cyan);padding:4px;text-decoration:none;font-family:var(--sans);">Temp Predictions</a>
+    <a href="/sniper" style="flex:1;text-align:center;font-size:10px;font-weight:600;color:var(--text2);padding:4px;text-decoration:none;font-family:var(--sans);">Sniper</a>
+  </div>
   <div class="mobile-nav-inner">
     <a href="/compare.html"><span class="nav-icon">&#x1F4CA;</span>Dashboard</a>
     <button class="active" onclick="switchTab('trades')"><span class="nav-icon">&#x1F4CB;</span>Trades</button>
