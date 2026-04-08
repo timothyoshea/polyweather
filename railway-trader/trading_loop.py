@@ -801,6 +801,19 @@ class TradingLoop:
                 if not trades:
                     continue
 
+                # Build opportunity index (city, date, band_c, side) -> latest forecast_c
+                # Uses the cached self._opportunities which refreshes every 60s
+                opp_index = {}
+                for opp in self._opportunities:
+                    key = (
+                        opp.get("city", ""),
+                        opp.get("date", ""),
+                        opp.get("band_c", ""),
+                        opp.get("side", ""),
+                    )
+                    if key not in opp_index:  # first = latest (ordered by created_at desc)
+                        opp_index[key] = opp.get("forecast_c")
+
                 count = 0
                 for trade in trades:
                     try:
@@ -811,7 +824,16 @@ class TradingLoop:
                         # live_price in cents (0-100)
                         live_price = self._midpoints[token_id] * 100
 
-                        recommendation, gap, captured_pct = _get_exit_recommendation(trade, live_price)
+                        # Look up latest forecast from scanner opportunities
+                        trade_key = (
+                            trade.get("city", ""),
+                            trade.get("date", ""),
+                            trade.get("band_c", ""),
+                            trade.get("side", ""),
+                        )
+                        latest_forecast_c = opp_index.get(trade_key)
+
+                        recommendation, gap, captured_pct = _get_exit_recommendation(trade, live_price, latest_forecast_c)
 
                         # Only snapshot non-hold recommendations
                         if recommendation == "hold":
