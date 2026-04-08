@@ -698,7 +698,7 @@ function render(positions, opportunities) {
       // Forecast comparison data
       const comp = forecastComparisons[t.id];
       const origForecast = t.forecast_c != null ? fmt(t.forecast_c, 1) + '\u00B0C' : '\u2014';
-      const origEdge = t.edge != null ? fmtPct(parseFloat(t.edge) * 100) : '\u2014';
+      const origEdge = t.edge != null ? fmtPct(parseFloat(t.edge)) : '\u2014';
 
       let latestForecast = '\u2014';
       let currEdge = '\u2014';
