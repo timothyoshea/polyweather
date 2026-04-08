@@ -490,15 +490,42 @@ async function loadData() {
       }
     }
 
-    // Fetch scanner opportunities for the "Available Opportunities" section
+    // Fetch latest scanner opportunities, filtered by portfolio strategy
     let opportunities = [];
     try {
-      const scanRes = await fetch('/api/trades?limit=5&status=open');
+      // Get portfolio strategy for filtering
+      const pfRes = await fetch('/api/portfolios?id=' + currentPortfolioId);
+      const pfData = await pfRes.json();
+      const strategy = pfData.strategy || {};
+      const allowedSides = strategy.allowed_sides || [];
+      const allowedBetTypes = strategy.allowed_bet_types || [];
+      const blockedCities = strategy.blocked_cities || [];
+      const allowedCities = strategy.allowed_cities || [];
+
+      // Fetch recent opportunities from scanner
+      const scanRes = await fetch('/api/trades?limit=200&status=open&portfolio_id=' + currentPortfolioId);
       const scanData = await scanRes.json();
-      // Filter out trades from current portfolio to show only other opportunities
-      opportunities = (scanData.trades || scanData || [])
-        .filter(t => t.portfolio_id !== currentPortfolioId)
-        .slice(0, 5);
+      const existingKeys = new Set((scanData.trades || scanData || []).map(t =>
+        (t.city || '') + '|' + (t.date || '') + '|' + (t.band_c || '') + '|' + (t.side || '')));
+
+      // Fetch from a different portfolio (datagrab) which has all opportunities
+      const dgRes = await fetch('/api/trades?limit=200&status=open&portfolio_id=e8e35085-43a6-4031-8159-32083dbedcbe');
+      const dgData = await dgRes.json();
+      const allOpps = dgData.trades || dgData || [];
+
+      opportunities = allOpps.filter(opp => {
+        // Apply portfolio strategy filters
+        if (allowedSides.length && !allowedSides.includes(opp.side)) return false;
+        if (allowedBetTypes.length && !allowedBetTypes.includes(opp.bet_type)) return false;
+        if (blockedCities.length && blockedCities.includes(opp.city)) return false;
+        if (allowedCities.length && !allowedCities.includes(opp.city)) return false;
+        // Don't show opportunities already in this portfolio
+        const key = (opp.city||'') + '|' + (opp.date||'') + '|' + (opp.band_c||'') + '|' + (opp.side||'');
+        if (existingKeys.has(key)) return false;
+        return true;
+      })
+      .sort((a, b) => (parseFloat(b.edge) || 0) - (parseFloat(a.edge) || 0))
+      .slice(0, 10);
     } catch (e) {
       console.log('Could not fetch opportunities:', e);
     }
