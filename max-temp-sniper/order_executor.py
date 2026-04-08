@@ -231,7 +231,14 @@ class OrderExecutor:
 
         return signal_id
 
-    def _insert_trade(self, trade: Trade):
+    def _insert_trade(
+        self,
+        trade: Trade,
+        token_id: Optional[str] = None,
+        city: Optional[str] = None,
+        market_date: Optional[str] = None,
+        book_depth: Optional[dict] = None,
+    ):
         """Insert a trade record into sniper_trades table."""
         if not self._supabase_url or not self._supabase_key:
             logger.debug("No Supabase config, skipping trade insert")
@@ -240,6 +247,7 @@ class OrderExecutor:
         # Calculate total_shares from size and price
         total_shares = round(trade.size_usdc / trade.entry_price, 4) if trade.entry_price > 0 else 0
 
+        bd = book_depth or {}
         payload = json.dumps({
             "signal_id": trade.signal_id,
             "market_id": trade.market_id,
@@ -253,6 +261,13 @@ class OrderExecutor:
             "size_usdc": trade.size_usdc,
             "total_shares": total_shares,
             "status": trade.status,
+            "token_id": token_id,
+            "city": city,
+            "market_date": market_date,
+            "best_bid": bd.get("best_bid"),
+            "best_ask": bd.get("best_ask"),
+            "bid_depth_usdc": bd.get("bid_depth_usdc"),
+            "ask_depth_usdc": bd.get("ask_depth_usdc"),
         }).encode()
 
         try:
