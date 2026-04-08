@@ -300,11 +300,8 @@ let portfolios = [];
 
 function selectPortfolio(id) {
   localStorage.setItem('pw-portfolio-id', id);
-  const nameEl = document.getElementById('portfolio-name-display');
-  const p = portfolios.find(p => p.id === id);
-  if (nameEl) nameEl.textContent = p ? (p.name || p.id) : id;
-  document.getElementById('portfolio-picker').style.display = 'none';
-  updatePickerList(id);
+  // Navigate to Trades tab with this portfolio selected
+  window.location.href = '/index.html';
 }
 
 function updatePickerList(currentId) {
