@@ -8,6 +8,7 @@ and returns both original and latest forecast data with a recommendation.
 """
 import os
 import json
+import re
 import urllib.request
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs, quote
