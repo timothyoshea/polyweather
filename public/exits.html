@@ -739,7 +739,7 @@ function render(positions, opportunities) {
         const ls = comp.latest_scan;
         latestForecast = ls.forecast_c != null ? fmt(ls.forecast_c, 1) + '\u00B0C' : '\u2014';
         // Calculate real current edge from latest my_p minus current live price
-        const latestMyP = ls.my_p != null ? parseFloat(ls.my_p) * 100 : null;
+        const latestMyP = ls.my_p != null ? parseFloat(ls.my_p) : null;
         const realCurrEdge = (latestMyP != null && livePrice > 0) ? (latestMyP - livePrice) : null;
         currEdge = realCurrEdge != null ? fmtEdge(realCurrEdge) : (ls.edge != null ? fmtEdge(parseFloat(ls.edge)) : '\u2014');
 
