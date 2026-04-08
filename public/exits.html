@@ -707,7 +707,7 @@ function render(positions, opportunities) {
       if (comp && comp.latest_scan) {
         const ls = comp.latest_scan;
         latestForecast = ls.forecast_c != null ? fmt(ls.forecast_c, 1) + '\u00B0C' : '\u2014';
-        currEdge = ls.edge != null ? fmtPct(parseFloat(ls.edge) * 100) : '\u2014';
+        currEdge = ls.edge != null ? fmtPct(parseFloat(ls.edge)) : '\u2014';
 
         // Determine change direction based on edge
         if (t.edge != null && ls.edge != null) {
