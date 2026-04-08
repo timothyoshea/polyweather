@@ -24,8 +24,10 @@ TOP_BAND_PATTERNS = re.compile(r"(or higher|or more|or above|above|\+|≥|and ab
 # Patterns to detect the bottom band ("15°C or below", "≤15°C")
 BOTTOM_BAND_PATTERNS = re.compile(r"(or below|or less|or lower|below|≤)", re.IGNORECASE)
 
-# Extract numeric temperature from text
-TEMP_EXTRACT = re.compile(r"(-?\d+(?:\.\d+)?)\s*°?[CcFf]?")
+# Extract numeric temperature and unit from text
+TEMP_EXTRACT = re.compile(r"(-?\d+(?:\.\d+)?)\s*°?\s*([CcFf])?")
+# Detect Fahrenheit in question text
+FAHRENHEIT_PATTERN = re.compile(r"°\s*F\b|fahrenheit", re.IGNORECASE)
 
 # Fallback ICAO station mapping for cities where regex extraction fails
 FALLBACK_STATIONS = {
