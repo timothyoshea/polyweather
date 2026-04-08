@@ -686,18 +686,42 @@ function render(positions, opportunities) {
       <tbody>`;
 
   if (sorted.length === 0) {
-    html += `<tr><td colspan="12" style="text-align:center;color:var(--text2);padding:40px;">No open positions</td></tr>`;
+    html += `<tr><td colspan="14" style="text-align:center;color:var(--text2);padding:40px;">No open positions</td></tr>`;
   } else {
     for (const t of sorted) {
       const rec = getRecommendation(t);
-      const pnl = parseFloat(t.unrealized_pnl || 0);
       const pnlPct = parseFloat(t.unrealized_pnl_pct || 0);
       const hoursLeft = getHoursToResolution(t.date);
-      const score = getValueScore(t);
       const entryPrice = parseFloat(t.entry_price || 0) * 100;
       const livePrice = parseFloat(t.live_price || 0);
 
-      const scoreColor = score > 60 ? 'var(--red)' : score > 30 ? 'var(--amber)' : 'var(--green)';
+      // Forecast comparison data
+      const comp = forecastComparisons[t.id];
+      const origForecast = t.forecast_c != null ? fmt(t.forecast_c, 1) + '\u00B0C' : '\u2014';
+      const origEdge = t.edge != null ? fmtPct(parseFloat(t.edge) * 100) : '\u2014';
+
+      let latestForecast = '\u2014';
+      let currEdge = '\u2014';
+      let changeIcon = '<span class="forecast-change-flat">\u2014</span>';
+
+      if (comp && comp.latest_scan) {
+        const ls = comp.latest_scan;
+        latestForecast = ls.forecast_c != null ? fmt(ls.forecast_c, 1) + '\u00B0C' : '\u2014';
+        currEdge = ls.edge != null ? fmtPct(parseFloat(ls.edge) * 100) : '\u2014';
+
+        // Determine change direction based on edge
+        if (t.edge != null && ls.edge != null) {
+          const origE = Math.abs(parseFloat(t.edge));
+          const currE = Math.abs(parseFloat(ls.edge));
+          if (currE > origE * 1.05) {
+            changeIcon = '<span class="forecast-change-up">\u25B2</span>';
+          } else if (currE < origE * 0.95) {
+            changeIcon = '<span class="forecast-change-down">\u25BC</span>';
+          } else {
+            changeIcon = '<span class="forecast-change-flat">\u2500</span>';
+          }
+        }
+      }
 
       html += `<tr>
         <td><span class="badge ${rec.cls}">${rec.label}</span></td>
@@ -705,13 +729,15 @@ function render(positions, opportunities) {
         <td>${t.date || '\u2014'}</td>
         <td>${t.band_f || t.band_c || '\u2014'}</td>
         <td>${(t.side || '').toUpperCase()}</td>
-        <td>${t.bet_type || '\u2014'}</td>
         <td>${fmt(entryPrice, 1)}\u00A2</td>
         <td>${fmt(livePrice, 1)}\u00A2</td>
-        <td class="${pnl >= 0 ? 'val-pos' : 'val-neg'}">${pnl >= 0 ? '+' : ''}${fmtUsd(pnl)}</td>
         <td class="${pnlPct >= 0 ? 'val-pos' : 'val-neg'}">${pnlPct >= 0 ? '+' : ''}${fmtPct(pnlPct)}</td>
+        <td>${origForecast}</td>
+        <td>${latestForecast}</td>
+        <td>${origEdge}</td>
+        <td>${currEdge}</td>
+        <td style="text-align:center;">${changeIcon}</td>
         <td>${hoursLeft < 1 ? '<1h' : fmt(hoursLeft, 0) + 'h'}</td>
-        <td><span class="score-bar"><span class="score-bar-fill" style="width:${Math.min(score, 100)}%;background:${scoreColor};"></span></span>${fmt(score, 0)}</td>
       </tr>`;
     }
   }
