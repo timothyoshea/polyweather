@@ -19,6 +19,29 @@ logger = logging.getLogger("sniper.executor")
 
 CLOB_BASE = "https://clob.polymarket.com"
 
+# Month name -> number mapping for date extraction
+_MONTH_MAP = {
+    "january": 1, "february": 2, "march": 3, "april": 4,
+    "may": 5, "june": 6, "july": 7, "august": 8,
+    "september": 9, "october": 10, "november": 11, "december": 12,
+}
+
+
+def _extract_market_date(question: str) -> Optional[str]:
+    """
+    Parse market date from question text.
+    E.g. "Highest temperature in Amsterdam on April 12?" -> "2026-04-12"
+    """
+    m = re.search(r"on\s+(\w+)\s+(\d{1,2})\b", question, re.IGNORECASE)
+    if not m:
+        return None
+    month_name = m.group(1).lower()
+    day = int(m.group(2))
+    month_num = _MONTH_MAP.get(month_name)
+    if month_num is None:
+        return None
+    return f"2026-{month_num:02d}-{day:02d}"
+
 
 class OrderExecutor:
     """Executes trades in paper or live mode."""
