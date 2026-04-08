@@ -29,43 +29,84 @@ def supabase_get(path):
         return json.loads(resp.read().decode("utf-8"))
 
 
+def parse_band_threshold(band_c):
+    """Extract the threshold temperature from a band string like '26°C', '>=29°C', '16-16°C'."""
+    if not band_c:
+        return None
+    # ">=29°C" or "≥29°C"
+    m = re.search(r'[>≥]=?\s*(-?\d+)', band_c)
+    if m:
+        return float(m.group(1))
+    # "<=8°C" or "≤8°C"
+    m = re.search(r'[<≤]=?\s*(-?\d+)', band_c)
+    if m:
+        return float(m.group(1))
+    # "26°C" or "26-26°C" or "16-16°C"
+    m = re.search(r'(-?\d+)', band_c)
+    if m:
+        return float(m.group(1))
+    return None
+
+
 def get_recommendation(trade, latest_scan):
-    """Determine recommendation based on original vs latest forecast."""
+    """Determine recommendation based on forecast distance from band threshold."""
     if latest_scan is None:
-        return "hold"
+        return "hold", None, 0
 
-    orig_edge = float(trade.get("edge") or 0)
-    orig_my_p = float(trade.get("my_p") or 0)  # 0-100 scale
-    latest_edge = float(latest_scan.get("edge") or 0)
-    latest_my_p = float(latest_scan.get("my_p") or 0)  # 0-100 scale
+    # Parse band threshold
+    band = trade.get("band_c", "")
+    threshold = parse_band_threshold(band)
+    if threshold is None:
+        return "hold", None, 0
 
-    # Forecast flipped direction (was >50% now <50% or vice versa)
-    # my_p is 0-100 scale, so midpoint is 50
-    if orig_my_p > 50 and latest_my_p < 50:
-        return "exit_forecast_changed"
-    if orig_my_p < 50 and latest_my_p > 50:
-        return "exit_forecast_changed"
+    # Get latest forecast
+    latest_fc = float(latest_scan.get("forecast_c") or trade.get("forecast_c") or 0)
+    side = trade.get("side", "").upper()
+    band_type = trade.get("band_type", "exact")
 
-    # Edge collapsed significantly (dropped by more than 60%)
-    # Only trigger if orig edge was meaningful (> 3pp)
-    if orig_edge > 3 and latest_edge > 0 and latest_edge < orig_edge * 0.4:
-        return "exit_forecast_changed"
+    # Calculate forecast gap from band
+    if side == "NO":
+        if band_type == "above":  # >=X, NO wins if temp < X
+            gap = threshold - latest_fc
+        elif band_type == "below":  # <=X, NO wins if temp > X
+            gap = latest_fc - threshold
+        else:  # exact band, NO wins if temp not in band
+            gap = abs(latest_fc - threshold)
+    else:  # YES
+        if band_type == "above":
+            gap = latest_fc - threshold
+        elif band_type == "below":
+            gap = threshold - latest_fc
+        else:
+            gap = -abs(latest_fc - threshold)  # negative = outside band
 
-    # Edge went negative (forecast no longer supports position)
-    if orig_edge > 3 and latest_edge < 0:
-        return "exit_forecast_changed"
+    # Calculate captured upside
+    shares = float(trade.get("total_shares", 0) or 0)
+    cost = float(trade.get("total_cost_usd", 0) or 0)
+    max_profit = shares - cost
+    unrealized = float(trade.get("unrealized_pnl", 0) or 0)
+    captured_pct = (unrealized / max_profit * 100) if max_profit > 0 else 0
 
-    # Edge improved significantly (50%+ increase)
-    # Only trigger if the improvement is meaningful (> 5pp increase)
-    if orig_edge > 3 and latest_edge > orig_edge * 1.5 and (latest_edge - orig_edge) > 5:
-        return "double_down"
+    # Recommendation matrix
+    if gap < 0:  # Forecast IN or PAST the band — thesis broken
+        return "exit_forecast_changed", gap, captured_pct
 
-    # Profitable with time remaining — could free capital
-    pnl_pct = float(trade.get("unrealized_pnl_pct") or 0)
-    if pnl_pct > 3:
-        return "consider_exit"
+    if gap < 1.0:  # Danger zone — very close to band
+        if captured_pct > 50:
+            return "exit_forecast_changed", gap, captured_pct
+        return "danger", gap, captured_pct
 
-    return "hold"
+    if gap < 3.0:  # Watch zone
+        if captured_pct > 80:
+            return "take_profit", gap, captured_pct
+        return "hold", gap, captured_pct
+
+    # Safe zone (gap >= 3°C)
+    if captured_pct > 80:
+        return "take_profit", gap, captured_pct
+    if captured_pct > 50:
+        return "consider_exit", gap, captured_pct
+    return "hold", gap, captured_pct
 
 
 class handler(BaseHTTPRequestHandler):
