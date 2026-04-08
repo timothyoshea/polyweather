@@ -573,8 +573,40 @@ function sortCompare(key) {
   renderTable(_compareMetrics);
 }
 
+function filterMetrics(metrics) {
+  let filtered = metrics;
+  const pnl = document.getElementById('filter-pnl')?.value;
+  if (pnl === 'profit') filtered = filtered.filter(m => m.totalProfit > 0);
+  else if (pnl === 'loss') filtered = filtered.filter(m => m.totalProfit < 0);
+
+  const rel = document.getElementById('filter-reliability')?.value;
+  if (rel) filtered = filtered.filter(m => m.reliability === rel);
+
+  const mode = document.getElementById('filter-mode')?.value;
+  if (mode) filtered = filtered.filter(m => m.tradeMode === mode);
+
+  const minTrades = document.getElementById('filter-min-trades')?.value;
+  if (minTrades) filtered = filtered.filter(m => m.closedTrades >= Number(minTrades));
+
+  const betType = document.getElementById('filter-bet-type')?.value;
+  if (betType) {
+    filtered = filtered.filter(m => {
+      const types = m.allowedBetTypes;
+      if (!types || types.length === 0) return betType === 'mixed';
+      const hasEdge = types.includes('edge');
+      const hasSafeNo = types.includes('safe_no');
+      if (betType === 'edge') return hasEdge && !hasSafeNo;
+      if (betType === 'safe_no') return hasSafeNo && !hasEdge;
+      if (betType === 'mixed') return hasEdge && hasSafeNo;
+      return true;
+    });
+  }
+  return filtered;
+}
+
 function renderTable(metrics) {
   _compareMetrics = metrics;
+  metrics = filterMetrics(metrics);
   const columns = [
     { key: 'name', label: 'Portfolio', format: (v, m) => v + (m.tradeMode === 'live' ? ' <span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(0,230,118,0.15);color:var(--green);">LIVE</span>' : '') + (m.description.includes('Claude Code Chosen') ? ' <span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(79,195,247,0.08);color:var(--cyan);">CC</span>' : ''), best: null },
     { key: 'totalTrades', label: 'Total', format: v => v.toLocaleString(), best: 'max' },
