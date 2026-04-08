@@ -89,7 +89,7 @@ class handler(BaseHTTPRequestHandler):
             if resolved == "true":
                 filters.append("actual_outcome=not.is.null")
 
-            query = "exit_snapshots?select=*&order=created_at.desc"
+            query = "exit_snapshots?select=*&order=snapshot_time.desc"
             if filters:
                 query += "&" + "&".join(filters)
 
