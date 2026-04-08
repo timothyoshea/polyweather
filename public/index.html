@@ -1683,9 +1683,15 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
   function updateSettingsPortfolioInfo() {
     const sel = document.getElementById('portfolio-select');
     const nameEl = document.getElementById('settings-portfolio-name');
+    const descEl = document.getElementById('settings-portfolio-desc');
     if (sel && nameEl) {
       const selected = sel.options[sel.selectedIndex];
       nameEl.textContent = selected ? selected.textContent : '--';
+    }
+    // Show portfolio description
+    if (descEl && activePortfolioId && allPortfolios) {
+      const pf = allPortfolios.find(p => p.id === activePortfolioId);
+      descEl.textContent = pf && pf.description ? pf.description : '';
     }
     // Load capital status
     loadCapitalStatus();
