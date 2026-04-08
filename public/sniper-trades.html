@@ -31,7 +31,7 @@
     line-height: 1.5;
   }
 
-  /* ── Sidebar ─────────────────────────────────── */
+  /* -- Sidebar ---------------------------------------- */
   .sidebar {
     position: fixed; left: 0; top: 0; bottom: 0; width: 200px;
     background: #0d0d14; border-right: 1px solid var(--card-border);
@@ -103,7 +103,7 @@
   .mobile-nav .nav-icon { font-size: 18px; }
   @media (max-width: 768px) { .mobile-nav { display: block; } }
 
-  /* ── Layout ─────────────────────────────────── */
+  /* -- Layout ----------------------------------------- */
   .container { max-width: 100%; margin: 0 auto; padding: 24px; }
 
   .page-header {
@@ -124,7 +124,44 @@
   .section-title .icon { font-size: 18px; }
   .section { margin-bottom: 32px; }
 
-  /* ── Filters ─────────────────────────────────── */
+  /* -- Summary Cards ---------------------------------- */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px; margin-bottom: 32px;
+  }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 10px; padding: 16px; text-align: center;
+  }
+  .stat-card .label {
+    font-size: 11px; color: var(--text2); text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 6px;
+  }
+  .stat-card .value {
+    font-family: var(--mono); font-size: 22px; font-weight: 600;
+  }
+  .stat-card .sub {
+    font-family: var(--mono); font-size: 12px; color: var(--text2); margin-top: 4px;
+  }
+
+  /* -- City Breakdown --------------------------------- */
+  .city-breakdown {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px;
+  }
+  .city-chip {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 8px; padding: 8px 14px; font-size: 12px;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+  }
+  .city-chip .city-name {
+    font-family: var(--sans); font-weight: 600; font-size: 11px; color: var(--text);
+  }
+  .city-chip .city-stat {
+    font-family: var(--mono); font-size: 11px;
+  }
+
+  /* -- Filters ---------------------------------------- */
   .filter-bar {
     display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
     margin-bottom: 20px;
@@ -142,7 +179,7 @@
     outline: none; border-color: var(--cyan);
   }
 
-  /* ── Tables ─────────────────────────────────── */
+  /* -- Tables ----------------------------------------- */
   .table-card {
     background: var(--card); border: 1px solid var(--card-border);
     border-radius: 10px; overflow: hidden; margin-bottom: 32px;
@@ -172,12 +209,41 @@
   .val-neg { color: var(--red); }
   .val-neutral { color: var(--text2); }
 
+  /* -- Badges ----------------------------------------- */
+  .badge {
+    display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px;
+    border-radius: 4px; text-transform: uppercase; letter-spacing: 0.03em;
+    font-family: var(--mono);
+  }
+  .badge-yes { background: rgba(0,230,118,0.15); color: var(--green); border: 1px solid rgba(0,230,118,0.3); }
+  .badge-no { background: rgba(255,82,82,0.15); color: var(--red); border: 1px solid rgba(255,82,82,0.3); }
+  .badge-open { background: rgba(79,195,247,0.15); color: var(--cyan); border: 1px solid rgba(79,195,247,0.3); }
+  .badge-won { background: rgba(0,230,118,0.15); color: var(--green); border: 1px solid rgba(0,230,118,0.3); }
+  .badge-lost { background: rgba(255,82,82,0.15); color: var(--red); border: 1px solid rgba(255,82,82,0.3); }
+
   .empty-state {
     text-align: center; padding: 40px 20px; color: var(--text2); font-size: 13px;
   }
 
   .trade-count {
     font-size: 12px; color: var(--text2); font-family: var(--mono);
+  }
+
+  /* -- Avg Entry Cards -------------------------------- */
+  .avg-entry-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px; margin-bottom: 24px;
+  }
+  .avg-entry-card {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 10px; padding: 14px; text-align: center;
+  }
+  .avg-entry-card .ae-label {
+    font-size: 11px; color: var(--text2); text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 4px;
+  }
+  .avg-entry-card .ae-value {
+    font-family: var(--mono); font-size: 18px; font-weight: 600;
   }
 </style>
 </head>
@@ -188,7 +254,7 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
   .catch(() => { window.location.href = '/login.html'; });
 </script>
 
-<!-- ── Sidebar ─────────────────────────────────── -->
+<!-- -- Sidebar ---------------------------------------- -->
 <nav class="sidebar">
   <a href="/" class="sidebar-logo">
     <span class="logo-icon">&#x26C8;</span>
@@ -207,7 +273,7 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
   </div>
 </nav>
 
-<!-- ── Main Content ────────────────────────────── -->
+<!-- -- Main Content ----------------------------------- -->
 <div class="main-content">
 <div class="container">
 
@@ -217,8 +283,51 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
     <span class="badge-paper">Paper Mode</span>
   </div>
 
+  <!-- Summary Stats -->
+  <div class="section">
+    <div class="summary-grid">
+      <div class="stat-card">
+        <div class="label">Total Trades</div>
+        <div class="value" id="stat-total">0</div>
+        <div class="sub">all time</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Win Rate</div>
+        <div class="value" id="stat-winrate">--</div>
+        <div class="sub" id="stat-wl">0W / 0L</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Total P&amp;L</div>
+        <div class="value" id="stat-pnl">$0.00</div>
+        <div class="sub">cumulative</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Avg Entry (Top Band)</div>
+        <div class="value" id="stat-avg-tb" style="color:var(--green);">--</div>
+        <div class="sub">top band yes</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Avg Entry (NO Sweep)</div>
+        <div class="value" id="stat-avg-ns" style="color:var(--red);">--</div>
+        <div class="sub">lower band no</div>
+      </div>
+    </div>
+
+    <!-- City Breakdown -->
+    <div class="section-title"><span class="icon">&#x1F30D;</span> By City</div>
+    <div class="city-breakdown" id="city-breakdown">
+      <!-- populated by JS -->
+    </div>
+  </div>
+
   <!-- Filters -->
   <div class="filter-bar">
+    <div>
+      <label>City</label><br>
+      <select id="filter-city" onchange="applyFilters()">
+        <option value="all">All Cities</option>
+      </select>
+    </div>
     <div>
       <label>Status</label><br>
       <select id="filter-status" onchange="applyFilters()">
@@ -259,17 +368,25 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
         <thead>
           <tr>
             <th data-sort="time" onclick="sortBy('time')">Time <span class="sort-arrow" id="sort-time">&#x25BC;</span></th>
+            <th data-sort="city" onclick="sortBy('city')">City <span class="sort-arrow" id="sort-city"></span></th>
+            <th data-sort="market_date" onclick="sortBy('market_date')">Market Date <span class="sort-arrow" id="sort-market_date"></span></th>
             <th data-sort="band" onclick="sortBy('band')">Band <span class="sort-arrow" id="sort-band"></span></th>
             <th data-sort="side" onclick="sortBy('side')">Side <span class="sort-arrow" id="sort-side"></span></th>
-            <th data-sort="trade_type" onclick="sortBy('trade_type')">Trade Type <span class="sort-arrow" id="sort-trade_type"></span></th>
-            <th data-sort="temp_observed" onclick="sortBy('temp_observed')">Temp <span class="sort-arrow" id="sort-temp_observed"></span></th>
+            <th data-sort="trade_type" onclick="sortBy('trade_type')">Type <span class="sort-arrow" id="sort-trade_type"></span></th>
+            <th data-sort="temp_observed" onclick="sortBy('temp_observed')">METAR Temp <span class="sort-arrow" id="sort-temp_observed"></span></th>
             <th data-sort="entry_price" onclick="sortBy('entry_price')">Entry Price <span class="sort-arrow" id="sort-entry_price"></span></th>
+            <th>Best Bid</th>
+            <th>Best Ask</th>
+            <th>Bid Depth</th>
+            <th>Ask Depth</th>
+            <th data-sort="total_shares" onclick="sortBy('total_shares')">Shares <span class="sort-arrow" id="sort-total_shares"></span></th>
+            <th data-sort="size_usdc" onclick="sortBy('size_usdc')">Size ($) <span class="sort-arrow" id="sort-size_usdc"></span></th>
             <th data-sort="status" onclick="sortBy('status')">Status <span class="sort-arrow" id="sort-status"></span></th>
-            <th data-sort="pnl" onclick="sortBy('pnl')">Profit <span class="sort-arrow" id="sort-pnl"></span></th>
+            <th data-sort="pnl" onclick="sortBy('pnl')">P&amp;L <span class="sort-arrow" id="sort-pnl"></span></th>
           </tr>
         </thead>
         <tbody id="trades-tbody">
-          <tr><td colspan="8" class="empty-state">Loading trades...</td></tr>
+          <tr><td colspan="16" class="empty-state">Loading trades...</td></tr>
         </tbody>
       </table>
     </div>
@@ -278,7 +395,7 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
 </div>
 </div>
 
-<!-- ── Mobile Nav ─────────────────────────────── -->
+<!-- -- Mobile Nav ------------------------------------- -->
 <nav class="mobile-nav">
   <div style="display:flex;border-bottom:1px solid var(--card-border);padding:4px 8px;">
     <a href="/" style="flex:1;text-align:center;font-size:10px;font-weight:600;color:var(--text2);padding:4px;text-decoration:none;font-family:var(--sans);">Temp Predictions</a>
@@ -309,17 +426,44 @@ function fmtTime(ts) {
          d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
 
+function fmtDate(ts) {
+  if (!ts) return '--';
+  const d = new Date(ts);
+  return d.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' });
+}
+
 function statusBadge(status) {
   if (!status) return '<span class="val-neutral">--</span>';
-  const colors = { won: 'val-pos', lost: 'val-neg', open: 'val-neutral', pending: 'val-neutral' };
-  return `<span class="${colors[status] || 'val-neutral'}">${status.toUpperCase()}</span>`;
+  const cls = { won: 'badge-won', lost: 'badge-lost', open: 'badge-open' };
+  return `<span class="badge ${cls[status] || 'badge-open'}">${status.toUpperCase()}</span>`;
 }
 
 function tradeTypeBadge(type) {
   if (!type) return '--';
-  if (type === 'top_band_yes') return '<span style="color:var(--green);">Top Band YES</span>';
-  if (type === 'lower_band_no') return '<span style="color:var(--red);">NO Sweep</span>';
+  if (type === 'top_band_yes') return '<span class="badge badge-yes">Top Band YES</span>';
+  if (type === 'lower_band_no') return '<span class="badge badge-no">NO Sweep</span>';
   return type;
+}
+
+function sideBadge(side) {
+  if (!side) return '--';
+  const s = side.toUpperCase();
+  if (s === 'YES') return '<span style="color:var(--green);font-weight:600;">YES</span>';
+  if (s === 'NO') return '<span style="color:var(--red);font-weight:600;">NO</span>';
+  return side;
+}
+
+function fmtCents(v) {
+  if (v === undefined || v === null) return '--';
+  const n = Number(v);
+  // If value looks like a decimal (0-1 range), convert to cents
+  if (n > 0 && n < 1) return (n * 100).toFixed(1) + '\u00A2';
+  return n.toFixed(1) + '\u00A2';
+}
+
+function fmtUsd(v) {
+  if (v === undefined || v === null) return '--';
+  return '$' + Number(v).toFixed(0);
 }
 
 async function loadTrades() {
@@ -328,21 +472,105 @@ async function loadTrades() {
     if (!resp.ok) throw new Error('API error');
     const data = await resp.json();
     allTrades = Array.isArray(data) ? data : (data.trades || []);
+
+    // Populate city filter
+    const cities = [...new Set(allTrades.map(t => t.city).filter(Boolean))].sort();
+    const citySelect = $('#filter-city');
+    cities.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = c;
+      citySelect.appendChild(opt);
+    });
+
+    // Compute summary stats
+    computeSummary(allTrades);
+
+    // City breakdown
+    renderCityBreakdown(allTrades);
+
     applyFilters();
   } catch (e) {
     console.error('Error loading trades:', e);
-    $('#trades-tbody').innerHTML = '<tr><td colspan="8" class="empty-state">No trade data available</td></tr>';
+    $('#trades-tbody').innerHTML = '<tr><td colspan="16" class="empty-state">No trade data available</td></tr>';
     $('#trade-count').textContent = '0 trades';
   }
 }
 
+function computeSummary(trades) {
+  const total = trades.length;
+  const won = trades.filter(t => t.status === 'won').length;
+  const lost = trades.filter(t => t.status === 'lost').length;
+  const resolved = won + lost;
+  const winRate = resolved > 0 ? ((won / resolved) * 100).toFixed(1) + '%' : '--';
+
+  let totalPnl = 0;
+  trades.forEach(t => {
+    totalPnl += Number(t.profit_usd || t.pnl || 0);
+  });
+
+  $('#stat-total').textContent = total;
+  $('#stat-winrate').textContent = winRate;
+  $('#stat-wl').textContent = `${won}W / ${lost}L`;
+  $('#stat-pnl').innerHTML = fmtMoney(totalPnl);
+
+  // Avg entry by type
+  const tbTrades = trades.filter(t => t.trade_type === 'top_band_yes' && t.entry_price !== undefined);
+  const nsTrades = trades.filter(t => t.trade_type === 'lower_band_no' && t.entry_price !== undefined);
+
+  if (tbTrades.length > 0) {
+    const avg = tbTrades.reduce((s, t) => s + Number(t.entry_price), 0) / tbTrades.length;
+    $('#stat-avg-tb').textContent = fmtCents(avg);
+  }
+  if (nsTrades.length > 0) {
+    const avg = nsTrades.reduce((s, t) => s + Number(t.entry_price), 0) / nsTrades.length;
+    $('#stat-avg-ns').textContent = fmtCents(avg);
+  }
+}
+
+function renderCityBreakdown(trades) {
+  const byCityMap = {};
+  trades.forEach(t => {
+    const city = t.city || 'Unknown';
+    if (!byCityMap[city]) byCityMap[city] = { trades: 0, pnl: 0, won: 0, lost: 0 };
+    byCityMap[city].trades++;
+    byCityMap[city].pnl += Number(t.profit_usd || t.pnl || 0);
+    if (t.status === 'won') byCityMap[city].won++;
+    if (t.status === 'lost') byCityMap[city].lost++;
+  });
+
+  const container = $('#city-breakdown');
+  const cities = Object.entries(byCityMap).sort((a, b) => b[1].trades - a[1].trades);
+
+  if (cities.length === 0) {
+    container.innerHTML = '<span style="color:var(--text2);font-size:12px;">No city data yet</span>';
+    return;
+  }
+
+  container.innerHTML = cities.map(([city, d]) => {
+    const pnlCls = d.pnl > 0 ? 'val-pos' : d.pnl < 0 ? 'val-neg' : 'val-neutral';
+    const pnlStr = (d.pnl >= 0 ? '+' : '') + '$' + Math.abs(d.pnl).toFixed(2);
+    const resolved = d.won + d.lost;
+    const wr = resolved > 0 ? ((d.won / resolved) * 100).toFixed(0) + '%' : '--';
+    return `
+      <div class="city-chip">
+        <span class="city-name">${city}</span>
+        <span class="city-stat">${d.trades} trades</span>
+        <span class="city-stat ${pnlCls}">${pnlStr}</span>
+        <span class="city-stat" style="color:var(--text2);">${wr} WR</span>
+      </div>`;
+  }).join('');
+}
+
 function applyFilters() {
+  const city = $('#filter-city').value;
   const status = $('#filter-status').value;
   const type = $('#filter-type').value;
   const from = $('#filter-from').value;
   const to = $('#filter-to').value;
 
   filteredTrades = allTrades.filter(t => {
+    if (city !== 'all' && t.city !== city) return false;
     if (status !== 'all' && t.status !== status) return false;
     if (type !== 'all' && t.trade_type !== type) return false;
     const tDate = (t.created_at || t.time || '').slice(0, 10);
@@ -379,6 +607,12 @@ function sortTrades() {
     if (field === 'time') {
       va = a.created_at || a.time || '';
       vb = b.created_at || b.time || '';
+    } else if (field === 'pnl') {
+      va = Number(a.profit_usd || a.pnl || 0);
+      vb = Number(b.profit_usd || b.pnl || 0);
+    } else if (field === 'band') {
+      va = a.band_temp || a.band_label || a.band || '';
+      vb = b.band_temp || b.band_label || b.band || '';
     } else {
       va = a[field]; vb = b[field];
     }
@@ -397,22 +631,34 @@ function renderTrades() {
   $('#trade-count').textContent = filteredTrades.length + ' trade' + (filteredTrades.length !== 1 ? 's' : '');
 
   if (filteredTrades.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No trades match filters</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="16" class="empty-state">No trades match filters</td></tr>';
     return;
   }
 
-  tbody.innerHTML = filteredTrades.map(t => `
+  tbody.innerHTML = filteredTrades.map(t => {
+    const band = t.band_label || t.band || (t.band_temp !== undefined ? t.band_temp + '\u00B0C' : '--');
+    const mktDate = t.market_date ? fmtDate(t.market_date) : '--';
+    const pnl = t.profit_usd !== undefined ? t.profit_usd : (t.pnl !== undefined ? t.pnl : undefined);
+    return `
     <tr>
       <td>${fmtTime(t.created_at || t.time)}</td>
-      <td>${t.band || '--'}</td>
-      <td>${t.side || '--'}</td>
+      <td style="font-family:var(--sans);font-weight:600;">${t.city || '--'}</td>
+      <td>${mktDate}</td>
+      <td>${band}</td>
+      <td>${sideBadge(t.side)}</td>
       <td>${tradeTypeBadge(t.trade_type)}</td>
       <td>${t.temp_observed !== undefined ? t.temp_observed + '\u00B0C' : '--'}</td>
-      <td>${t.entry_price !== undefined ? t.entry_price.toFixed(2) + '\u00A2' : '--'}</td>
+      <td>${fmtCents(t.entry_price)}</td>
+      <td>${t.best_bid !== undefined ? fmtCents(t.best_bid) : '--'}</td>
+      <td>${t.best_ask !== undefined ? fmtCents(t.best_ask) : '--'}</td>
+      <td>${t.bid_depth_usdc !== undefined ? fmtUsd(t.bid_depth_usdc) : '--'}</td>
+      <td>${t.ask_depth_usdc !== undefined ? fmtUsd(t.ask_depth_usdc) : '--'}</td>
+      <td>${t.total_shares !== undefined ? Number(t.total_shares).toFixed(1) : '--'}</td>
+      <td>${t.size_usdc !== undefined ? '$' + Number(t.size_usdc).toFixed(2) : '--'}</td>
       <td>${statusBadge(t.status)}</td>
-      <td>${t.pnl !== undefined ? fmtMoney(t.pnl) : '--'}</td>
-    </tr>
-  `).join('');
+      <td>${pnl !== undefined ? fmtMoney(pnl) : '--'}</td>
+    </tr>`;
+  }).join('');
 }
 
 // Initial load
