@@ -740,6 +740,24 @@ def resolve_open_trades(supabase_url, supabase_service_key, city_geo):
             _supabase_request(update_url, update_data, headers, method="PATCH")
             resolved += 1
 
+            # Backfill exit snapshots for this trade
+            try:
+                snapshot_url = (
+                    f"{supabase_url}/rest/v1/exit_snapshots"
+                    f"?trade_id=eq.{trade_id}&actual_outcome=is.null"
+                )
+                snapshots = _supabase_get(snapshot_url, headers)
+                for snap in snapshots:
+                    snap_update = {
+                        "actual_outcome": outcome,
+                        "actual_profit": round(profit, 4),
+                        "exit_vs_hold": round(float(snap.get("hypothetical_profit", 0) or 0) - profit, 4),
+                    }
+                    snap_patch_url = f"{supabase_url}/rest/v1/exit_snapshots?id=eq.{snap['id']}"
+                    _supabase_request(snap_patch_url, snap_update, headers, method="PATCH")
+            except Exception as snap_err:
+                print(f"[WARN] Exit snapshot backfill error: {snap_err}")
+
             print(f"[RESOLVED] {city} {trade_date} {trade.get('band_c')} "
                   f"side={side} market={winning_side} → {outcome} "
                   f"profit=${profit:.2f}")
