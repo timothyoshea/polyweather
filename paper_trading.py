@@ -748,10 +748,12 @@ def resolve_open_trades(supabase_url, supabase_service_key, city_geo):
                 )
                 snapshots = _supabase_get(snapshot_url, headers)
                 for snap in snapshots:
+                    now_iso = datetime.utcnow().isoformat() + "Z"
                     snap_update = {
                         "actual_outcome": outcome,
                         "actual_profit": round(profit, 4),
                         "exit_vs_hold": round(float(snap.get("hypothetical_profit", 0) or 0) - profit, 4),
+                        "actual_resolved_at": now_iso,
                     }
                     snap_patch_url = f"{supabase_url}/rest/v1/exit_snapshots?id=eq.{snap['id']}"
                     _supabase_request(snap_patch_url, snap_update, headers, method="PATCH")
