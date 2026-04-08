@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PolyWeather — Max Temp Sniper</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --card: #12121a;
+    --card-border: #1e1e2e;
+    --green: #00e676;
+    --red: #ff5252;
+    --amber: #ffc107;
+    --cyan: #4fc3f7;
+    --text: #e0e0e0;
+    --text2: #888;
+    --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* ── Sidebar ─────────────────────────────────── */
+  .sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0; width: 200px;
+    background: #0d0d14; border-right: 1px solid var(--card-border);
+    display: flex; flex-direction: column; padding: 20px 0; z-index: 100;
+  }
+  .sidebar-logo {
+    display: flex; align-items: center; gap: 8px; padding: 0 16px 20px;
+    font-size: 16px; font-weight: 700; text-decoration: none; color: var(--text);
+  }
+  .sidebar-logo .logo-icon {
+    font-size: 20px;
+    filter: drop-shadow(0 0 6px rgba(79, 195, 247, 0.5));
+  }
+  .sidebar-logo span:not(.logo-icon) {
+    background: linear-gradient(135deg, var(--cyan), var(--green));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .strategy-switcher {
+    display: flex; margin: 0 12px 16px; border-radius: 6px; overflow: hidden;
+    border: 1px solid var(--card-border); background: var(--bg);
+  }
+  .strategy-switcher a {
+    flex: 1; padding: 6px 4px; text-align: center; font-size: 11px; font-weight: 600;
+    color: var(--text2); text-decoration: none; transition: all 0.2s;
+    font-family: var(--sans); cursor: pointer;
+  }
+  .strategy-switcher a:hover { color: var(--text); }
+  .strategy-switcher a.active {
+    background: rgba(79,195,247,0.15); color: var(--cyan);
+  }
+  .sidebar-nav { display: flex; flex-direction: column; gap: 2px; }
+  .sidebar-link {
+    display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+    color: var(--text2); font-size: 13px; font-weight: 500; text-decoration: none;
+    border-left: 3px solid transparent; transition: all 0.2s;
+  }
+  .sidebar-link:hover { color: var(--text); background: rgba(79,195,247,0.05); }
+  .sidebar-link.active {
+    color: var(--cyan); border-left-color: var(--cyan);
+    background: rgba(79,195,247,0.08);
+  }
+  .main-content { margin-left: 200px; min-height: 100vh; }
+
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main-content { margin-left: 0; padding-bottom: 70px; }
+  }
+  .mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--card);
+    border-top: 1px solid var(--card-border);
+    z-index: 500;
+    padding: 6px 0 env(safe-area-inset-bottom, 6px);
+  }
+  .mobile-nav-inner {
+    display: flex; justify-content: space-around; align-items: center;
+  }
+  .mobile-nav a {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    background: none; border: none; color: var(--text2);
+    font-size: 10px; font-family: var(--sans); cursor: pointer;
+    padding: 6px 8px; text-decoration: none; transition: color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mobile-nav a:hover { color: var(--text); }
+  .mobile-nav .active { color: var(--cyan); }
+  .mobile-nav .nav-icon { font-size: 18px; }
+  @media (max-width: 768px) { .mobile-nav { display: block; } }
+
+  /* ── Layout ─────────────────────────────────── */
+  .container { max-width: 100%; margin: 0 auto; padding: 24px; }
+
+  .page-header {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 24px;
+  }
+  .page-header h1 {
+    font-size: 22px; font-weight: 700;
+  }
+  .badge-paper {
+    display: inline-block; font-size: 10px; font-weight: 700; padding: 3px 10px;
+    border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em;
+    font-family: var(--mono); background: rgba(255,193,7,0.15);
+    color: var(--amber); border: 1px solid rgba(255,193,7,0.3);
+  }
+
+  .section-title {
+    font-size: 16px; font-weight: 600; margin-bottom: 16px; color: var(--text);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title .icon { font-size: 18px; }
+  .section { margin-bottom: 32px; }
+
+  /* ── Summary Cards ─────────────────────────── */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px; margin-bottom: 32px;
+  }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 10px; padding: 16px; text-align: center;
+  }
+  .stat-card .label {
+    font-size: 11px; color: var(--text2); text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 6px;
+  }
+  .stat-card .value {
+    font-family: var(--mono); font-size: 22px; font-weight: 600;
+  }
+  .stat-card .sub {
+    font-family: var(--mono); font-size: 12px; color: var(--text2); margin-top: 4px;
+  }
+
+  /* ── Tables ─────────────────────────────────── */
+  .table-card {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 10px; overflow: hidden; margin-bottom: 32px;
+  }
+  .table-card .table-header {
+    padding: 16px 20px; border-bottom: 1px solid var(--card-border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .table-card .table-header h3 { font-size: 14px; font-weight: 600; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th {
+    text-align: left; padding: 10px 14px; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2);
+    border-bottom: 1px solid var(--card-border); font-weight: 600;
+    font-family: var(--sans);
+  }
+  td {
+    padding: 10px 14px; border-bottom: 1px solid var(--card-border);
+    font-family: var(--mono); white-space: nowrap;
+  }
+  tr:hover td { background: rgba(79, 195, 247, 0.03); }
+
+  .val-pos { color: var(--green); }
+  .val-neg { color: var(--red); }
+  .val-neutral { color: var(--text2); }
+
+  /* ── Chart ─────────────────────────────────── */
+  .chart-card {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 10px; padding: 20px; margin-bottom: 32px;
+  }
+  .chart-card canvas { width: 100% !important; max-height: 300px; }
+
+  /* ── Info Box ─────────────────────────────── */
+  .info-box {
+    background: rgba(79, 195, 247, 0.06);
+    border: 1px solid rgba(79, 195, 247, 0.15);
+    border-radius: 8px; padding: 14px 18px; margin-bottom: 24px;
+    font-size: 12px; color: var(--text2); line-height: 1.6;
+  }
+  .info-box strong { color: var(--text); }
+
+  /* ── Breakdown Cards ───────────────────────── */
+  .breakdown-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px; margin-bottom: 32px;
+  }
+  .breakdown-card {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 10px; padding: 20px;
+  }
+  .breakdown-card h4 {
+    font-size: 13px; font-weight: 600; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .breakdown-card .metric-row {
+    display: flex; justify-content: space-between; padding: 6px 0;
+    font-size: 12px; border-bottom: 1px solid var(--card-border);
+  }
+  .breakdown-card .metric-row:last-child { border-bottom: none; }
+  .breakdown-card .metric-label { color: var(--text2); }
+  .breakdown-card .metric-value { font-family: var(--mono); font-weight: 600; }
+
+  /* ── Analysis Metrics ──────────────────────── */
+  .analysis-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px; margin-bottom: 32px;
+  }
+  .analysis-metric {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 10px; padding: 16px;
+  }
+  .analysis-metric .metric-title {
+    font-size: 11px; color: var(--text2); text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 8px;
+  }
+  .analysis-metric .metric-big {
+    font-family: var(--mono); font-size: 28px; font-weight: 700;
+  }
+  .analysis-metric .metric-detail {
+    font-size: 11px; color: var(--text2); margin-top: 4px;
+  }
+
+  /* ── Loading ─────────────────────────────── */
+  .loading {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 60px 0; gap: 16px; color: var(--text2);
+  }
+  .spinner {
+    width: 32px; height: 32px; border: 3px solid var(--card-border);
+    border-top-color: var(--cyan); border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty-state {
+    text-align: center; padding: 40px 20px; color: var(--text2); font-size: 13px;
+  }
+</style>
+</head>
+<body>
+<script>
+fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({action:'check'}) })
+  .then(r => r.json()).then(d => { if (!d.authenticated) window.location.href = '/login.html'; })
+  .catch(() => { window.location.href = '/login.html'; });
+</script>
+
+<!-- ── Sidebar ─────────────────────────────────── -->
+<nav class="sidebar">
+  <a href="/" class="sidebar-logo">
+    <span class="logo-icon">&#x26C8;</span>
+    <span>PolyWeather</span>
+  </a>
+  <div class="strategy-switcher">
+    <a href="/">Temp Predictions</a>
+    <a class="active" href="/sniper">Max Temp Sniper</a>
+  </div>
+  <div class="sidebar-nav">
+    <a class="sidebar-link active" href="/sniper">Dashboard</a>
+    <a class="sidebar-link" href="/sniper/trades">Trade History</a>
+  </div>
+  <div style="padding:0 16px 16px;">
+    <button onclick="fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'logout'})}).then(()=>window.location.href='/login.html')" style="background:none;border:1px solid var(--card-border);color:var(--text2);padding:6px 14px;border-radius:6px;font-size:11px;cursor:pointer;font-family:var(--sans);width:100%;transition:color 0.15s;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text2)'">Sign Out</button>
+  </div>
+</nav>
+
+<!-- ── Main Content ────────────────────────────── -->
+<div class="main-content">
+<div class="container">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>Max Temp Sniper</h1>
+    <span class="badge-paper">Paper Mode</span>
+    <span id="last-refresh" style="font-size:11px;color:var(--text2);margin-left:auto;">Loading...</span>
+  </div>
+
+  <!-- Section 1: Live Status -->
+  <div class="section">
+    <div class="section-title"><span class="icon">&#x1F6F0;</span> Live Status</div>
+    <div class="summary-grid" id="status-grid">
+      <div class="stat-card">
+        <div class="label">METAR Temp</div>
+        <div class="value" id="metar-temp">--</div>
+        <div class="sub" id="metar-station">EGLC</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Last Signal</div>
+        <div class="value" id="last-signal-time">--</div>
+        <div class="sub">time</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Today's Signals</div>
+        <div class="value" id="today-signals">0</div>
+        <div class="sub">detected</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Today's Trades</div>
+        <div class="value" id="today-trades">0</div>
+        <div class="sub">executed</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Bot Status</div>
+        <div class="value" style="color:var(--amber);" id="bot-status">Paper</div>
+        <div class="sub">mode</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Today's Signals & Trades -->
+  <div class="section">
+    <div class="section-title"><span class="icon">&#x26A1;</span> Today's Signals</div>
+    <div class="table-card">
+      <div class="table-header">
+        <h3>Recent Signals</h3>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Temp Observed</th>
+              <th>Previous Temp</th>
+              <th>Bands Locked</th>
+              <th>Traded</th>
+            </tr>
+          </thead>
+          <tbody id="signals-tbody">
+            <tr><td colspan="5" class="empty-state">Loading signals...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section-title"><span class="icon">&#x1F4B9;</span> Today's Trades</div>
+    <div class="table-card">
+      <div class="table-header">
+        <h3>Trade Executions</h3>
+        <a href="/sniper/trades" style="font-size:11px;color:var(--cyan);text-decoration:none;">View All &rarr;</a>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Band</th>
+              <th>Side</th>
+              <th>Trade Type</th>
+              <th>Entry Price</th>
+              <th>Status</th>
+              <th>P&amp;L</th>
+            </tr>
+          </thead>
+          <tbody id="trades-tbody">
+            <tr><td colspan="7" class="empty-state">Loading trades...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: P&L Summary -->
+  <div class="section">
+    <div class="section-title"><span class="icon">&#x1F4B0;</span> P&amp;L Summary</div>
+    <div class="summary-grid">
+      <div class="stat-card">
+        <div class="label">Total P&amp;L</div>
+        <div class="value" id="total-pnl">$0.00</div>
+        <div class="sub" id="total-pnl-pct">0%</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Win Rate</div>
+        <div class="value" id="win-rate">--</div>
+        <div class="sub" id="win-loss-count">0W / 0L</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Total Trades</div>
+        <div class="value" id="total-trades-count">0</div>
+        <div class="sub">all time</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Avg Win</div>
+        <div class="value val-pos" id="avg-win">$0.00</div>
+        <div class="sub">per trade</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Avg Loss</div>
+        <div class="value val-neg" id="avg-loss">$0.00</div>
+        <div class="sub">per trade</div>
+      </div>
+    </div>
+
+    <div class="breakdown-grid">
+      <div class="breakdown-card">
+        <h4><span style="color:var(--green);">&#x2191;</span> Top Band YES</h4>
+        <div class="metric-row">
+          <span class="metric-label">Trades</span>
+          <span class="metric-value" id="tb-trades">0</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Win Rate</span>
+          <span class="metric-value" id="tb-winrate">--</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">P&amp;L</span>
+          <span class="metric-value" id="tb-pnl">$0.00</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Avg Entry</span>
+          <span class="metric-value" id="tb-avg-entry">--</span>
+        </div>
+      </div>
+      <div class="breakdown-card">
+        <h4><span style="color:var(--red);">&#x2193;</span> NO Sweep</h4>
+        <div class="metric-row">
+          <span class="metric-label">Trades</span>
+          <span class="metric-value" id="ns-trades">0</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Win Rate</span>
+          <span class="metric-value" id="ns-winrate">--</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">P&amp;L</span>
+          <span class="metric-value" id="ns-pnl">$0.00</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Avg Entry</span>
+          <span class="metric-value" id="ns-avg-entry">--</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <canvas id="pnl-chart"></canvas>
+    </div>
+  </div>
+
+  <!-- Section 4: Sniper Analysis -->
+  <div class="section">
+    <div class="section-title"><span class="icon">&#x1F3AF;</span> Sniper Analysis</div>
+    <div class="analysis-grid">
+      <div class="analysis-metric">
+        <div class="metric-title">Hit Rate</div>
+        <div class="metric-big val-pos" id="hit-rate">--</div>
+        <div class="metric-detail">signals that were profitable</div>
+      </div>
+      <div class="analysis-metric">
+        <div class="metric-title">Miss Rate</div>
+        <div class="metric-big val-neg" id="miss-rate">--</div>
+        <div class="metric-detail">signals not traded</div>
+      </div>
+      <div class="analysis-metric">
+        <div class="metric-title">Avg Speed</div>
+        <div class="metric-big" id="avg-speed" style="color:var(--cyan);">--</div>
+        <div class="metric-detail">METAR to trade (seconds)</div>
+      </div>
+      <div class="analysis-metric">
+        <div class="metric-title">Best Band</div>
+        <div class="metric-big" id="best-band" style="color:var(--amber);">--</div>
+        <div class="metric-detail">most profitable band</div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header">
+        <h3>Band Performance</h3>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Band</th>
+              <th>Trades</th>
+              <th>Win Rate</th>
+              <th>P&amp;L</th>
+              <th>Avg Entry</th>
+            </tr>
+          </thead>
+          <tbody id="band-analysis-tbody">
+            <tr><td colspan="5" class="empty-state">Loading analysis...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ── Mobile Nav ─────────────────────────────── -->
+<nav class="mobile-nav">
+  <div style="display:flex;border-bottom:1px solid var(--card-border);padding:4px 8px;">
+    <a href="/" style="flex:1;text-align:center;font-size:10px;font-weight:600;color:var(--text2);padding:4px;text-decoration:none;font-family:var(--sans);">Temp Predictions</a>
+    <a href="/sniper" style="flex:1;text-align:center;font-size:10px;font-weight:600;color:var(--cyan);padding:4px;text-decoration:none;font-family:var(--sans);">Sniper</a>
+  </div>
+  <div class="mobile-nav-inner">
+    <a href="/sniper" class="active"><span class="nav-icon">&#x1F3AF;</span>Dashboard</a>
+    <a href="/sniper/trades"><span class="nav-icon">&#x1F4CB;</span>Trades</a>
+  </div>
+</nav>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+let pnlChart = null;
+
+function fmtMoney(v) {
+  const n = Number(v) || 0;
+  const cls = n > 0 ? 'val-pos' : n < 0 ? 'val-neg' : 'val-neutral';
+  return `<span class="${cls}">${n >= 0 ? '+' : ''}$${Math.abs(n).toFixed(2)}</span>`;
+}
+
+function fmtPct(v) {
+  const n = Number(v) || 0;
+  const cls = n > 0 ? 'val-pos' : n < 0 ? 'val-neg' : 'val-neutral';
+  return `<span class="${cls}">${n >= 0 ? '+' : ''}${n.toFixed(1)}%</span>`;
+}
+
+function fmtTime(ts) {
+  if (!ts) return '--';
+  const d = new Date(ts);
+  return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+function statusBadge(status) {
+  if (!status) return '<span class="val-neutral">--</span>';
+  const colors = { won: 'val-pos', lost: 'val-neg', open: 'val-neutral', pending: 'val-neutral' };
+  return `<span class="${colors[status] || 'val-neutral'}">${status.toUpperCase()}</span>`;
+}
+
+function tradeTypeBadge(type) {
+  if (!type) return '--';
+  if (type === 'top_band_yes') return '<span style="color:var(--green);">Top Band YES</span>';
+  if (type === 'lower_band_no') return '<span style="color:var(--red);">NO Sweep</span>';
+  return type;
+}
+
+async function loadSignals() {
+  try {
+    const resp = await fetch('/api/sniper_signals');
+    if (!resp.ok) throw new Error('API error');
+    const data = await resp.json();
+    const signals = Array.isArray(data) ? data : (data.signals || []);
+
+    const today = new Date().toISOString().slice(0, 10);
+    const todaySignals = signals.filter(s => (s.created_at || s.time || '').startsWith(today));
+
+    $('#today-signals').textContent = todaySignals.length;
+
+    if (todaySignals.length > 0) {
+      const last = todaySignals[0];
+      $('#last-signal-time').textContent = fmtTime(last.created_at || last.time);
+      if (last.temp_observed !== undefined) {
+        $('#metar-temp').textContent = last.temp_observed + '\u00B0C';
+      }
+    }
+
+    const tbody = $('#signals-tbody');
+    if (todaySignals.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No signals today</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = todaySignals.slice(0, 20).map(s => `
+      <tr>
+        <td>${fmtTime(s.created_at || s.time)}</td>
+        <td>${s.temp_observed !== undefined ? s.temp_observed + '\u00B0C' : '--'}</td>
+        <td>${s.previous_temp !== undefined ? s.previous_temp + '\u00B0C' : '--'}</td>
+        <td>${s.bands_locked || '--'}</td>
+        <td>${s.traded ? '<span class="val-pos">YES</span>' : '<span class="val-neutral">NO</span>'}</td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    console.error('Error loading signals:', e);
+    $('#signals-tbody').innerHTML = '<tr><td colspan="5" class="empty-state">No signal data available</td></tr>';
+  }
+}
+
+async function loadTrades() {
+  try {
+    const resp = await fetch('/api/sniper_trades');
+    if (!resp.ok) throw new Error('API error');
+    const data = await resp.json();
+    const trades = Array.isArray(data) ? data : (data.trades || []);
+
+    const today = new Date().toISOString().slice(0, 10);
+    const todayTrades = trades.filter(t => (t.created_at || t.time || '').startsWith(today));
+
+    $('#today-trades').textContent = todayTrades.length;
+
+    const tbody = $('#trades-tbody');
+    if (todayTrades.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No trades today</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = todayTrades.slice(0, 20).map(t => `
+      <tr>
+        <td>${fmtTime(t.created_at || t.time)}</td>
+        <td>${t.band || '--'}</td>
+        <td>${t.side || '--'}</td>
+        <td>${tradeTypeBadge(t.trade_type)}</td>
+        <td>${t.entry_price !== undefined ? t.entry_price.toFixed(2) + '\u00A2' : '--'}</td>
+        <td>${statusBadge(t.status)}</td>
+        <td>${t.pnl !== undefined ? fmtMoney(t.pnl) : '--'}</td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    console.error('Error loading trades:', e);
+    $('#trades-tbody').innerHTML = '<tr><td colspan="7" class="empty-state">No trade data available</td></tr>';
+  }
+}
+
+async function loadPnl() {
+  try {
+    const resp = await fetch('/api/sniper_pnl');
+    if (!resp.ok) throw new Error('API error');
+    const data = await resp.json();
+
+    // Summary
+    const summary = data.summary || data;
+    $('#total-pnl').innerHTML = fmtMoney(summary.total_pnl || 0);
+    if (summary.total_pnl_pct !== undefined) {
+      $('#total-pnl-pct').innerHTML = fmtPct(summary.total_pnl_pct);
+    }
+
+    const wins = summary.wins || 0;
+    const losses = summary.losses || 0;
+    const total = summary.total_trades || (wins + losses);
+    const winRate = total > 0 ? ((wins / total) * 100).toFixed(1) + '%' : '--';
+    $('#win-rate').textContent = winRate;
+    $('#win-loss-count').textContent = `${wins}W / ${losses}L`;
+    $('#total-trades-count').textContent = total;
+    $('#avg-win').innerHTML = fmtMoney(summary.avg_win || 0);
+    $('#avg-loss').innerHTML = fmtMoney(summary.avg_loss || 0);
+
+    // Breakdown
+    const tb = data.top_band_yes || {};
+    $('#tb-trades').textContent = tb.trades || 0;
+    $('#tb-winrate').textContent = tb.win_rate ? tb.win_rate.toFixed(1) + '%' : '--';
+    $('#tb-pnl').innerHTML = fmtMoney(tb.pnl || 0);
+    $('#tb-avg-entry').textContent = tb.avg_entry ? tb.avg_entry.toFixed(1) + '\u00A2' : '--';
+
+    const ns = data.lower_band_no || {};
+    $('#ns-trades').textContent = ns.trades || 0;
+    $('#ns-winrate').textContent = ns.win_rate ? ns.win_rate.toFixed(1) + '%' : '--';
+    $('#ns-pnl').innerHTML = fmtMoney(ns.pnl || 0);
+    $('#ns-avg-entry').textContent = ns.avg_entry ? ns.avg_entry.toFixed(1) + '\u00A2' : '--';
+
+    // Analysis
+    const analysis = data.analysis || {};
+    $('#hit-rate').textContent = analysis.hit_rate ? analysis.hit_rate.toFixed(1) + '%' : '--';
+    $('#miss-rate').textContent = analysis.miss_rate ? analysis.miss_rate.toFixed(1) + '%' : '--';
+    $('#avg-speed').textContent = analysis.avg_speed_seconds ? analysis.avg_speed_seconds.toFixed(1) + 's' : '--';
+    $('#best-band').textContent = analysis.best_band || '--';
+
+    // Band analysis table
+    const bands = data.band_analysis || [];
+    const bandTbody = $('#band-analysis-tbody');
+    if (bands.length === 0) {
+      bandTbody.innerHTML = '<tr><td colspan="5" class="empty-state">No band data yet</td></tr>';
+    } else {
+      bandTbody.innerHTML = bands.map(b => `
+        <tr>
+          <td style="font-family:var(--sans);font-weight:600;">${b.band}</td>
+          <td>${b.trades || 0}</td>
+          <td>${b.win_rate ? b.win_rate.toFixed(1) + '%' : '--'}</td>
+          <td>${fmtMoney(b.pnl || 0)}</td>
+          <td>${b.avg_entry ? b.avg_entry.toFixed(1) + '\u00A2' : '--'}</td>
+        </tr>
+      `).join('');
+    }
+
+    // Daily P&L chart
+    const daily = data.daily_pnl || [];
+    renderPnlChart(daily);
+
+  } catch (e) {
+    console.error('Error loading P&L:', e);
+  }
+}
+
+function renderPnlChart(dailyData) {
+  const canvas = $('#pnl-chart');
+  if (!canvas) return;
+
+  if (pnlChart) { pnlChart.destroy(); }
+
+  if (dailyData.length === 0) {
+    canvas.parentElement.innerHTML = '<div class="empty-state">No daily P&L data yet</div>';
+    return;
+  }
+
+  const labels = dailyData.map(d => d.date);
+  let cumulative = 0;
+  const cumulativeData = dailyData.map(d => { cumulative += (d.pnl || 0); return cumulative; });
+  const dailyValues = dailyData.map(d => d.pnl || 0);
+
+  pnlChart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          type: 'line',
+          label: 'Cumulative P&L',
+          data: cumulativeData,
+          borderColor: '#4fc3f7',
+          backgroundColor: 'rgba(79,195,247,0.1)',
+          fill: true,
+          tension: 0.3,
+          borderWidth: 2,
+          pointRadius: 3,
+          yAxisID: 'y1',
+          order: 1
+        },
+        {
+          type: 'bar',
+          label: 'Daily P&L',
+          data: dailyValues,
+          backgroundColor: dailyValues.map(v => v >= 0 ? 'rgba(0,230,118,0.5)' : 'rgba(255,82,82,0.5)'),
+          borderColor: dailyValues.map(v => v >= 0 ? '#00e676' : '#ff5252'),
+          borderWidth: 1,
+          yAxisID: 'y',
+          order: 2
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#888', font: { size: 11 } } }
+      },
+      scales: {
+        x: {
+          ticks: { color: '#888', font: { size: 10 }, maxRotation: 45 },
+          grid: { color: 'rgba(255,255,255,0.05)' }
+        },
+        y: {
+          position: 'left',
+          ticks: { color: '#888', font: { size: 10 }, callback: v => '$' + v.toFixed(2) },
+          grid: { color: 'rgba(255,255,255,0.05)' }
+        },
+        y1: {
+          position: 'right',
+          ticks: { color: '#4fc3f7', font: { size: 10 }, callback: v => '$' + v.toFixed(2) },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+}
+
+async function loadAll() {
+  const now = new Date();
+  $('#last-refresh').textContent = 'Last refresh: ' + now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  await Promise.all([loadSignals(), loadTrades(), loadPnl()]);
+}
+
+// Initial load
+loadAll();
+
+// Auto-refresh every 60 seconds
+setInterval(loadAll, 60000);
+</script>
+</body>
+</html>
