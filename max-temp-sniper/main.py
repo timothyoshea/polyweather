@@ -55,6 +55,16 @@ async def market_refresh_loop():
             )
             signal_engine.update_markets(markets)
 
+            # Build station metadata mapping for METAR poller
+            station_meta = {}
+            for m in markets:
+                if m.station and m.station not in station_meta:
+                    station_meta[m.station] = {
+                        "city": m.city,
+                        "resolution_source": m.resolution_source,
+                    }
+            poller.set_station_metadata(station_meta)
+
             band_count = sum(len(m.bands) for m in markets)
             stations = set(m.station for m in markets)
             cities = set(m.city for m in markets)
