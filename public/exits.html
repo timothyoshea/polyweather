@@ -614,8 +614,8 @@ function sortPositions(positions, col, asc) {
     curr_edge: (a, b) => {
       const ca = forecastComparisons[a.id], cb = forecastComparisons[b.id];
       const lpA = parseFloat(a.live_price || 0), lpB = parseFloat(b.live_price || 0);
-      const myPa = ca && ca.latest_scan && ca.latest_scan.my_p != null ? parseFloat(ca.latest_scan.my_p) * 100 : null;
-      const myPb = cb && cb.latest_scan && cb.latest_scan.my_p != null ? parseFloat(cb.latest_scan.my_p) * 100 : null;
+      const myPa = ca && ca.latest_scan && ca.latest_scan.my_p != null ? parseFloat(ca.latest_scan.my_p) : null;
+      const myPb = cb && cb.latest_scan && cb.latest_scan.my_p != null ? parseFloat(cb.latest_scan.my_p) : null;
       const ea = myPa != null && lpA > 0 ? myPa - lpA : (ca && ca.latest_scan ? parseFloat(ca.latest_scan.edge || 0) : parseFloat(a.edge || 0));
       const eb = myPb != null && lpB > 0 ? myPb - lpB : (cb && cb.latest_scan ? parseFloat(cb.latest_scan.edge || 0) : parseFloat(b.edge || 0));
       return ea - eb;
