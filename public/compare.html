@@ -261,6 +261,40 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
   </div>
 
   <div id="content" style="display:none;">
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px;font-size:12px;">
+      <span style="color:var(--text2);">Filter:</span>
+      <select id="filter-pnl" onchange="renderTable(_compareMetrics)" style="padding:4px 8px;border-radius:6px;font-size:11px;background:var(--card);border:1px solid var(--card-border);color:var(--text);cursor:pointer;">
+        <option value="">All P&L</option>
+        <option value="profit">Profitable</option>
+        <option value="loss">Losing</option>
+      </select>
+      <select id="filter-reliability" onchange="renderTable(_compareMetrics)" style="padding:4px 8px;border-radius:6px;font-size:11px;background:var(--card);border:1px solid var(--card-border);color:var(--text);cursor:pointer;">
+        <option value="">All Reliability</option>
+        <option value="Strong">Strong</option>
+        <option value="Likely">Likely</option>
+        <option value="Possible">Possible</option>
+        <option value="Inconclusive">Inconclusive</option>
+        <option value="Too few">Too few</option>
+      </select>
+      <select id="filter-mode" onchange="renderTable(_compareMetrics)" style="padding:4px 8px;border-radius:6px;font-size:11px;background:var(--card);border:1px solid var(--card-border);color:var(--text);cursor:pointer;">
+        <option value="">All Modes</option>
+        <option value="live">Live</option>
+        <option value="paper">Paper</option>
+      </select>
+      <select id="filter-min-trades" onchange="renderTable(_compareMetrics)" style="padding:4px 8px;border-radius:6px;font-size:11px;background:var(--card);border:1px solid var(--card-border);color:var(--text);cursor:pointer;">
+        <option value="">All Trades</option>
+        <option value="5">5+</option>
+        <option value="10">10+</option>
+        <option value="20">20+</option>
+        <option value="50">50+</option>
+      </select>
+      <select id="filter-bet-type" onchange="renderTable(_compareMetrics)" style="padding:4px 8px;border-radius:6px;font-size:11px;background:var(--card);border:1px solid var(--card-border);color:var(--text);cursor:pointer;">
+        <option value="">All Bet Types</option>
+        <option value="edge">Edge only</option>
+        <option value="safe_no">Safe NO only</option>
+        <option value="mixed">Mixed</option>
+      </select>
+    </div>
     <div class="compare-table-wrap">
       <table class="compare-table" id="compare-table">
         <thead><tr id="table-header"></tr></thead>
