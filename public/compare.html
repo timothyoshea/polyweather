@@ -245,16 +245,10 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
 
 <!-- ── Main Content ────────────────────────────── -->
 <div class="main-content">
-<div class="top-bar" style="position:relative;">
-  <div style="display:flex;align-items:center;gap:10px;">
-    <span style="font-size:12px;color:var(--text2);font-weight:500;">Portfolio:</span>
-    <span id="portfolio-name-display" style="font-size:22px;font-weight:700;color:var(--text);">All Portfolios</span>
-    <button onclick="document.getElementById('portfolio-picker').style.display=document.getElementById('portfolio-picker').style.display==='none'?'block':'none'" style="background:none;border:1px solid var(--card-border);color:var(--cyan);padding:4px 12px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;font-family:var(--sans);">Change</button>
-  </div>
-  <div id="portfolio-picker" style="display:none;position:absolute;left:0;top:40px;background:var(--card);border:1px solid var(--card-border);border-radius:8px;padding:8px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,0.5);min-width:200px;">
-    <div id="portfolio-picker-list"></div>
-  </div>
+<div class="top-bar" style="display:none;">
   <select id="portfolio-select" style="display:none;"><option value="">All Portfolios</option></select>
+  <span id="portfolio-name-display" style="display:none;">All Portfolios</span>
+  <div id="portfolio-picker" style="display:none;"><div id="portfolio-picker-list"></div></div>
 </div>
 
 <div class="container">
