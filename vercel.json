@@ -28,11 +28,11 @@
   "crons": [
     {
       "path": "/api/scan?mode=tomorrow",
-      "schedule": "*/10 * * * *"
+      "schedule": "0,10,20,30,40,50 * * * *"
     },
     {
       "path": "/api/scan?mode=all",
-      "schedule": "*/10 * * * *"
+      "schedule": "5,15,25,35,45,55 * * * *"
     },
     {
       "path": "/api/resolve",
