@@ -244,4 +244,8 @@ def _short_label(temp: float, is_top: bool, is_bottom: bool, unit: str = "C", te
         return f"{t}{u} or higher"
     if is_bottom:
         return f"{t}{u} or below"
+    # Show range for 2°F bands
+    if temp_high is not None and temp_high != temp:
+        th = int(temp_high) if temp_high == int(temp_high) else temp_high
+        return f"{t}-{th}{u}"
     return f"{t}{u}"
