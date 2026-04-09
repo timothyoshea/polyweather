@@ -49,16 +49,21 @@ class PriceTracker:
 
         for lb in trigger.locked_bands:
             try:
-                token_id = lb.band.no_token_id if lb.side == "NO" else lb.band.yes_token_id
-                if not token_id:
-                    logger.warning(f"No token_id for {lb.band.label} {lb.side}, skip tracking")
+                # Always fetch midpoint using YES token (NO tokens 404 on negRisk markets)
+                fetch_token_id = lb.band.yes_token_id
+                if not fetch_token_id:
+                    logger.warning(f"No yes_token_id for {lb.band.label} {lb.side}, skip tracking")
                     continue
 
-                # Fetch current midpoint as price_at_signal
-                price_at_signal = self._fetch_midpoint(token_id)
-                if price_at_signal is None:
+                # Fetch YES midpoint, invert for NO side
+                yes_mid = self._fetch_midpoint(fetch_token_id)
+                if yes_mid is None:
                     logger.warning(f"No midpoint for {lb.band.label} {lb.side}, skip tracking")
                     continue
+
+                price_at_signal = round(1.0 - yes_mid, 6) if lb.side == "NO" else yes_mid
+                # Store the YES token for subsequent fetches (it always works)
+                token_id = fetch_token_id
 
                 track_id = str(uuid.uuid4())
 
