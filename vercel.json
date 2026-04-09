@@ -19,6 +19,7 @@
     { "source": "/sniper", "destination": "/sniper.html" },
     { "source": "/sniper/trades", "destination": "/sniper-trades.html" },
     { "source": "/sniper/history", "destination": "/sniper-history.html" },
+    { "source": "/sniper/settings", "destination": "/sniper-settings.html" },
     { "source": "/", "destination": "/compare.html" },
     { "source": "/dashboard", "destination": "/compare.html" },
     { "source": "/scanner", "destination": "/index.html" },
