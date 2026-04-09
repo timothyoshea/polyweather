@@ -447,26 +447,37 @@ function cityToSlug(city) {
   return city.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 }
 
+// City timezone offsets (hours from UTC) — approximate, for local date calculation
+const CITY_TZ = {
+  'Amsterdam':1,'Ankara':3,'Atlanta':-4,'Austin':-5,'Beijing':8,'Buenos Aires':-3,
+  'Busan':9,'Chengdu':8,'Chicago':-5,'Chongqing':8,'Dallas':-5,'Denver':-6,
+  'Helsinki':3,'Hong Kong':8,'Houston':-5,'Istanbul':3,'Jakarta':7,
+  'Kuala Lumpur':8,'London':1,'Los Angeles':-7,'Lucknow':5.5,'Madrid':2,
+  'Mexico City':-6,'Miami':-4,'Milan':2,'Moscow':3,'Munich':2,'NYC':-4,
+  'Panama City':-5,'Paris':2,'San Francisco':-7,'Sao Paulo':-3,'Seattle':-7,
+  'Seoul':9,'Shanghai':8,'Shenzhen':8,'Singapore':8,'Taipei':8,'Tel Aviv':3,
+  'Tokyo':9,'Toronto':-4,'Warsaw':2,'Wellington':12,'Wuhan':8,
+};
+
 function buildMarketLinks(city) {
   if (!city) return '--';
   const slug = cityToSlug(city);
+  const tzOffset = CITY_TZ[city] || 0;
+
+  // Get the city's current local date
   const now = new Date();
-  const utcToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  const utcTomorrow = new Date(utcToday.getTime() + 86400000);
+  const cityNow = new Date(now.getTime() + tzOffset * 3600000);
+  const localDate = new Date(Date.UTC(cityNow.getUTCFullYear(), cityNow.getUTCMonth(), cityNow.getUTCDate()));
 
-  function fmtMarketDate(d) {
-    const months = ['january','february','march','april','may','june','july','august','september','october','november','december'];
-    return `${months[d.getUTCMonth()]}-${d.getUTCDate()}-${d.getUTCFullYear()}`;
-  }
-  function fmtLabel(d) {
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    return `${months[d.getUTCMonth()]} ${d.getUTCDate()}`;
-  }
+  const months = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+  const monthsShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-  const todayUrl = `https://polymarket.com/event/highest-temperature-in-${slug}-on-${fmtMarketDate(utcToday)}`;
-  const tomorrowUrl = `https://polymarket.com/event/highest-temperature-in-${slug}-on-${fmtMarketDate(utcTomorrow)}`;
+  function fmtSlug(d) { return `${months[d.getUTCMonth()]}-${d.getUTCDate()}-${d.getUTCFullYear()}`; }
+  function fmtLabel(d) { return `${monthsShort[d.getUTCMonth()]} ${d.getUTCDate()}`; }
 
-  return `<a href="${todayUrl}" target="_blank" class="market-link" onclick="event.stopPropagation()">${fmtLabel(utcToday)}</a><a href="${tomorrowUrl}" target="_blank" class="market-link" onclick="event.stopPropagation()">${fmtLabel(utcTomorrow)}</a>`;
+  const url = `https://polymarket.com/event/highest-temperature-in-${slug}-on-${fmtSlug(localDate)}`;
+
+  return `<a href="${url}" target="_blank" class="market-link" onclick="event.stopPropagation()" title="Resolving market for ${city} (local date)">${fmtLabel(localDate)}</a>`;
 }
 
 function buildSignal(s) {
