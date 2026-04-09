@@ -203,6 +203,20 @@ async def heartbeat_loop():
             logger.error(f"Heartbeat error: {e}")
 
 
+async def price_track_loop():
+    """Check pending price tracks every 10 seconds."""
+    while True:
+        await asyncio.sleep(10)
+        try:
+            pending = price_tracker.pending_count()
+            if pending > 0:
+                await asyncio.get_event_loop().run_in_executor(
+                    None, price_tracker.check_pending
+                )
+        except Exception as e:
+            logger.error(f"Price track loop error: {e}")
+
+
 async def main():
     """Start all loops."""
     logger.info("=" * 60)
