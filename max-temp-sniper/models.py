@@ -32,6 +32,7 @@ class Market:
     city: str = ""          # City name (e.g. "London")
     station: str = ""       # ICAO METAR station (e.g. "EGLC")
     resolution_source: str = ""  # Resolution source URL (e.g. Weather Underground)
+    market_date: str = ""   # ISO date from title (e.g. "2026-04-09")
     bands: list[Band] = field(default_factory=list)
 
     @property
