@@ -237,6 +237,7 @@ async def main():
         market_refresh_loop(),
         metar_poll_loop(),
         heartbeat_loop(),
+        price_track_loop(),
     )
 
 
