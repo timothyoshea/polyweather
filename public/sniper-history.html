@@ -595,6 +595,16 @@ async function loadChart() {
   });
 }
 
+// Click a station in the overview to load its chart
+function selectStationChart(station) {
+  const sel = $('#chart-station');
+  // Deselect all, then select the clicked station
+  Array.from(sel.options).forEach(o => o.selected = (o.value === station));
+  // Scroll chart into view
+  document.getElementById('temp-chart').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  loadChart();
+}
+
 $('#chart-station').addEventListener('change', loadChart);
 $('#chart-hours').addEventListener('change', loadChart);
 
