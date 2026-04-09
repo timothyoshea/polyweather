@@ -1218,7 +1218,7 @@ function renderSpeedChart(summaryData) {
 async function loadAll() {
   const now = new Date();
   $('#last-refresh').textContent = 'Last refresh: ' + now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  await Promise.all([loadSignals(), loadTrades(), loadPnl(), loadLastMetar()]);
+  await Promise.all([loadSignals(), loadTrades(), loadPnl(), loadLastMetar(), loadSpeedReport()]);
 }
 
 // Initial load
