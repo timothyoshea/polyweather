@@ -44,6 +44,7 @@ tracker = PositionTracker()
 risk = RiskManager()
 notifier = Notifier()
 signal_engine = SignalEngine(markets=[])
+price_tracker = PriceTracker()
 
 
 async def market_refresh_loop():
