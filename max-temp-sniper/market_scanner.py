@@ -122,7 +122,7 @@ def _parse_event(event: dict) -> Optional[Market]:
             neg_risk_market_id=event.get("negRiskMarketID", ""),
             city=city,
             station=station,
-            resolution_source=event.get("resolutionSource", ""),
+            resolution_source=event.get("resolutionSource", "") or FALLBACK_RESOLUTION_SOURCES.get(station, ""),
         )
 
         for m in event_markets:
