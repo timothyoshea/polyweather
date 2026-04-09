@@ -44,12 +44,19 @@ def supabase_update(table, row_id, data):
 
 
 def fetch_gamma_market(market_id):
-    """Fetch market data from Gamma API."""
-    url = f"{GAMMA_API}?id={market_id}"
-    req = urllib.request.Request(url)
-    with urllib.request.urlopen(req, timeout=10) as resp:
-        markets = json.loads(resp.read().decode("utf-8"))
-        return markets[0] if markets else None
+    """Fetch market data from Gamma API by event ID or market ID."""
+    # Try as event first (sniper stores event IDs as market_id)
+    for endpoint in [f"events?id={market_id}", f"markets?id={market_id}"]:
+        try:
+            url = f"https://gamma-api.polymarket.com/{endpoint}"
+            req = urllib.request.Request(url, headers={"User-Agent": "PolyWeather/1.0"})
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                if data:
+                    return data[0] if isinstance(data, list) else data
+        except Exception:
+            continue
+    return None
 
 
 def resolve_trades():
