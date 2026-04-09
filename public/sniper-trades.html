@@ -646,6 +646,25 @@ function renderTrades() {
     const band = t.band_label || t.band || (t.band_temp !== undefined ? t.band_temp + '\u00B0C' : '--');
     const mktDate = t.market_date ? fmtDate(t.market_date) : '--';
     const pnl = t.profit_usd !== undefined ? t.profit_usd : (t.pnl !== undefined ? t.pnl : undefined);
+    // Entry price: prefer fill_price, fallback to entry_price
+    const displayPrice = t.fill_price !== undefined ? t.fill_price : t.entry_price;
+    const isNoEdge = displayPrice !== undefined && Number(displayPrice) >= 0.99;
+    const priceStr = displayPrice !== undefined
+      ? (isNoEdge ? '<span style="color:var(--amber);">' + fmtCents(displayPrice) + ' (no edge)</span>' : fmtCents(displayPrice))
+      : '--';
+    // Size: prefer available_liquidity_usdc, fallback to size_usdc
+    const sizeStr = t.available_liquidity_usdc !== undefined
+      ? '$' + Number(t.available_liquidity_usdc).toFixed(2)
+      : (t.size_usdc !== undefined ? '$' + Number(t.size_usdc).toFixed(2) : '--');
+    // Book depth columns: show num_levels if available
+    let bidDepthStr = t.bid_depth_usdc !== undefined ? fmtUsd(t.bid_depth_usdc) : '--';
+    let askDepthStr = t.ask_depth_usdc !== undefined ? fmtUsd(t.ask_depth_usdc) : '--';
+    if (t.num_levels !== undefined) {
+      bidDepthStr = t.num_levels + ' levels';
+      if (t.available_liquidity_usdc !== undefined) {
+        askDepthStr = '$' + Number(t.available_liquidity_usdc / 1000).toFixed(0) + 'k';
+      }
+    }
     return `
     <tr>
       <td>${fmtTime(t.created_at || t.time)}</td>
@@ -655,13 +674,13 @@ function renderTrades() {
       <td>${sideBadge(t.side)}</td>
       <td>${tradeTypeBadge(t.trade_type)}</td>
       <td>${t.temp_observed !== undefined ? t.temp_observed + '\u00B0C' : '--'}</td>
-      <td>${fmtCents(t.entry_price)}</td>
+      <td>${priceStr}</td>
       <td>${t.best_bid !== undefined ? fmtCents(t.best_bid) : '--'}</td>
       <td>${t.best_ask !== undefined ? fmtCents(t.best_ask) : '--'}</td>
-      <td>${t.bid_depth_usdc !== undefined ? fmtUsd(t.bid_depth_usdc) : '--'}</td>
-      <td>${t.ask_depth_usdc !== undefined ? fmtUsd(t.ask_depth_usdc) : '--'}</td>
+      <td>${bidDepthStr}</td>
+      <td>${askDepthStr}</td>
       <td>${t.total_shares !== undefined ? Number(t.total_shares).toFixed(1) : '--'}</td>
-      <td>${t.size_usdc !== undefined ? '$' + Number(t.size_usdc).toFixed(2) : '--'}</td>
+      <td>${sizeStr}</td>
       <td>${statusBadge(t.status)}</td>
       <td>${pnl !== undefined ? fmtMoney(pnl) : '--'}</td>
     </tr>`;
