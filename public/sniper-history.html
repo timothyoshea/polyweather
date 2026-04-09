@@ -436,7 +436,7 @@ async function loadOverview() {
     $('#station-count').textContent = summaryData.length + ' stations';
     $('#last-refresh').textContent = 'Updated ' + new Date().toLocaleTimeString();
   } catch (e) {
-    $('#overview-tbody').innerHTML = `<tr><td colspan="9" class="empty-state">Error: ${e.message}</td></tr>`;
+    $('#overview-tbody').innerHTML = `<tr><td colspan="10" class="empty-state">Error: ${e.message}</td></tr>`;
   }
 }
 
