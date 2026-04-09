@@ -891,6 +891,12 @@ function onPortfolioChange() {
   const sel = document.getElementById('portfolio-select');
   currentPortfolioId = sel.value;
   localStorage.setItem('pw-portfolio-id', currentPortfolioId);
+  // Hide Smart Exits for non-live portfolios
+  const pf = allPortfolios.find(p => p.id === currentPortfolioId);
+  const isLive = pf && pf.trade_mode === 'live';
+  document.querySelectorAll('.nav-smart-exits').forEach(el => {
+    el.style.display = isLive ? '' : 'none';
+  });
   updateAnalysisPortfolioDisplay();
   if (!currentPortfolioId) {
     document.getElementById('app').innerHTML = '<div class="empty-state">Select a portfolio to view analysis</div>';
