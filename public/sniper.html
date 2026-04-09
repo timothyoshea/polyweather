@@ -713,7 +713,26 @@ async function loadTrades() {
       for (const t of group.trades) {
         const mktDate = t.market_date ? fmtDate(t.market_date) : '--';
         const band = t.band_label || t.band || (t.band_temp !== undefined ? t.band_temp + '\u00B0C' : '--');
-        const depth = t.bid_depth_usdc !== undefined ? '$' + Number(t.bid_depth_usdc).toFixed(0) : '--';
+        // Book depth: prefer num_levels + available_liquidity_usdc
+        let depth = '--';
+        if (t.num_levels !== undefined && t.available_liquidity_usdc !== undefined) {
+          depth = t.num_levels + ' levels, $' + Number(t.available_liquidity_usdc / 1000).toFixed(0) + 'k';
+        } else if (t.num_levels !== undefined) {
+          depth = t.num_levels + ' levels';
+        } else if (t.bid_depth_usdc !== undefined) {
+          depth = '$' + Number(t.bid_depth_usdc).toFixed(0);
+        }
+        // Entry price: prefer fill_price, fallback to entry_price
+        const displayPrice = t.fill_price !== undefined ? t.fill_price : t.entry_price;
+        const priceVal = displayPrice !== undefined ? (displayPrice > 0 && displayPrice < 1 ? (displayPrice * 100).toFixed(1) : Number(displayPrice).toFixed(1)) : null;
+        const isNoEdge = displayPrice !== undefined && displayPrice >= 0.99;
+        const priceStr = priceVal !== null
+          ? (isNoEdge ? '<span style="color:var(--amber);">' + priceVal + '\u00A2 (no edge)</span>' : priceVal + '\u00A2')
+          : '--';
+        // Size: prefer available_liquidity_usdc, fallback to size_usdc
+        const sizeStr = t.available_liquidity_usdc !== undefined
+          ? '$' + Number(t.available_liquidity_usdc).toFixed(2)
+          : (t.size_usdc !== undefined ? '$' + Number(t.size_usdc).toFixed(2) : '--');
         html += `
           <tr>
             <td>${fmtTime(t.created_at || t.time)}</td>
@@ -723,10 +742,10 @@ async function loadTrades() {
             <td>${sideBadge(t.side)}</td>
             <td>${tradeTypeBadge(t.trade_type)}</td>
             <td>${t.temp_observed !== undefined ? t.temp_observed + '\u00B0C' : '--'}</td>
-            <td>${t.entry_price !== undefined ? (t.entry_price * 100 < 100 ? (t.entry_price * 100).toFixed(1) : t.entry_price.toFixed(1)) + '\u00A2' : '--'}</td>
+            <td>${priceStr}</td>
             <td>${depth}</td>
             <td>${t.total_shares !== undefined ? Number(t.total_shares).toFixed(1) : '--'}</td>
-            <td>${t.size_usdc !== undefined ? '$' + Number(t.size_usdc).toFixed(2) : '--'}</td>
+            <td>${sizeStr}</td>
             <td>${statusBadge(t.status)}</td>
             <td>${t.profit_usd !== undefined ? fmtMoney(t.profit_usd) : (t.pnl !== undefined ? fmtMoney(t.pnl) : '--')}</td>
           </tr>`;
