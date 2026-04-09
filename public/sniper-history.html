@@ -671,7 +671,7 @@ function renderReadings() {
     const weather = r.weather || r.wx_string || '--';
     const raw = r.metar_raw || r.raw_ob || '--';
     return `<tr>
-      <td>${fmtDateTime(r.created_at)}</td>
+      <td>${fmtDateTime(r.polled_at || r.created_at)}</td>
       <td>${r.city || '--'}</td>
       <td>${r.station || '--'}</td>
       <td>${tempC}\u00B0C</td>
