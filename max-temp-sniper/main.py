@@ -201,6 +201,7 @@ async def main():
     logger.info(f"  Max trade size: ${risk.max_trade_size_usdc}")
     logger.info(f"  Daily loss limit: ${risk.daily_loss_limit_usdc}")
     logger.info(f"  Max positions: {risk.max_open_positions}")
+    logger.info(f"  Max entry price: {MAX_ENTRY_PRICE}")
     logger.info("=" * 60)
 
     tracker.load_from_supabase()
