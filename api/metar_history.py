@@ -121,12 +121,12 @@ class handler(BaseHTTPRequestHandler):
             limit = int(params.get("limit", ["500"])[0])
             summary = params.get("summary", ["false"])[0].lower() == "true"
 
-            # Time filter
-            cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
+            # Time filter — use simple format without timezone offset for Supabase
+            cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
             # Build query
             query = f"metar_readings?select=*&order=polled_at.desc&limit={limit}"
-            query += f"&polled_at=gte.{quote(cutoff)}"
+            query += f"&polled_at=gte.{cutoff}"
 
             if station:
                 query += f"&station=eq.{quote(station)}"
