@@ -19,6 +19,9 @@ logger = logging.getLogger("sniper.executor")
 
 CLOB_BASE = "https://clob.polymarket.com"
 
+# Maximum entry price — skip trades above this (no profit potential)
+MAX_ENTRY_PRICE = float(os.getenv("MAX_ENTRY_PRICE", "0.98"))
+
 # Month name -> number mapping for date extraction
 _MONTH_MAP = {
     "january": 1, "february": 2, "march": 3, "april": 4,
