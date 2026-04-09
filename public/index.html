@@ -2062,6 +2062,11 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
       }
     }
 
+    // Show/hide Smart Exits nav based on trade mode
+    document.querySelectorAll('.nav-smart-exits').forEach(el => {
+      el.style.display = mode === 'live' ? '' : 'none';
+    });
+
     // Go Live card
     if (mode === 'live') {
       goLiveBtn.style.display = 'none';
