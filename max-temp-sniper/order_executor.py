@@ -226,7 +226,11 @@ class OrderExecutor:
         return trade
 
     def _fetch_midpoint(self, token_id: str) -> Optional[float]:
-        """Fetch midpoint price from CLOB API."""
+        """Fetch midpoint price from CLOB API.
+
+        Note: For negRisk temperature markets, NO token IDs return 404.
+        Callers should pass the YES token ID and invert for NO side.
+        """
         if not token_id:
             return None
         try:
