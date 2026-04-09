@@ -77,37 +77,56 @@ class OrderExecutor:
         return trades
 
     def _execute_single(self, locked: LockedBand, signal_id: Optional[str], trade_size: float) -> Optional[Trade]:
-        """Execute a single paper trade for a locked band."""
-        # Determine which token to get the midpoint for
-        if locked.side == "YES":
-            token_id = locked.band.yes_token_id
-        else:
-            token_id = locked.band.no_token_id
+        """Execute a single paper trade for a locked band.
 
-        # Fetch midpoint price
-        midpoint = self._fetch_midpoint(token_id)
+        For paper trades: grabs the full order book, calculates realistic VWAP
+        fill price, and sizes the trade based on ALL available liquidity.
+        """
+        token_id = locked.band.no_token_id if locked.side == "NO" else locked.band.yes_token_id
 
-        if midpoint is None or midpoint <= 0:
-            logger.warning(f"SKIP (bad price): {locked.band.label} {locked.side} @ {midpoint}")
+        # Fetch the full order book
+        book = self._fetch_full_book(token_id)
+        if not book or not book["levels"]:
+            logger.warning(f"SKIP (no book): {locked.band.label} {locked.side}")
             return None
 
-        if midpoint >= MAX_ENTRY_PRICE:
+        # For buying: we hit the asks (sell orders)
+        # Calculate VWAP across ALL available levels (no size limit)
+        levels = book["levels"]  # sorted best price first
+        vwap_price = book["vwap_price"]
+        total_available = book["total_available_usdc"]
+        total_shares = book["total_shares"]
+
+        if vwap_price is None or vwap_price <= 0:
+            logger.warning(f"SKIP (bad book price): {locked.band.label} {locked.side}")
+            return None
+
+        if vwap_price >= MAX_ENTRY_PRICE:
             logger.info(
                 f"SKIP (price too high): {locked.band.label} {locked.side} "
-                f"@ {midpoint:.4f} >= {MAX_ENTRY_PRICE} — no profit potential"
+                f"VWAP={vwap_price:.4f} >= {MAX_ENTRY_PRICE} — no profit potential"
             )
             return None
 
         if self.mode == "paper":
-            return self._paper_trade(locked, signal_id, midpoint, trade_size)
+            return self._paper_trade(locked, signal_id, book, token_id)
         else:
-            # Future: live trading via CLOB
             logger.warning("Live mode not yet implemented, falling back to paper")
-            return self._paper_trade(locked, signal_id, midpoint, trade_size)
+            return self._paper_trade(locked, signal_id, book, token_id)
 
-    def _paper_trade(self, locked: LockedBand, signal_id: Optional[str], midpoint: float, trade_size: float) -> Trade:
-        """Record a paper trade to Supabase."""
+    def _paper_trade(self, locked: LockedBand, signal_id: Optional[str], book: dict, token_id: str) -> Trade:
+        """Record a paper trade using the full order book snapshot.
+
+        Uses VWAP fill price and total available liquidity — not a fixed size.
+        This shows what we'd actually get if we swept the entire book.
+        """
         now = datetime.now(timezone.utc).isoformat()
+
+        vwap_price = book["vwap_price"]
+        total_cost = book["total_available_usdc"]
+        total_shares = book["total_shares"]
+        levels = book["levels"]
+        num_levels = len(levels)
 
         trade = Trade(
             id=str(uuid.uuid4()),
@@ -119,8 +138,8 @@ class OrderExecutor:
             side=locked.side,
             trade_type=locked.trade_type,
             temp_observed=locked.temp_observed,
-            entry_price=midpoint,
-            size_usdc=trade_size,
+            entry_price=vwap_price,
+            size_usdc=round(total_cost, 4),
             status="open",
             profit_usd=None,
             resolved_at=None,
@@ -128,17 +147,28 @@ class OrderExecutor:
         )
 
         logger.info(
-            f"PAPER TRADE: {locked.side} {locked.band.label} @ {midpoint:.4f} "
-            f"(${trade_size}) | type={locked.trade_type} | temp={locked.temp_observed}°C"
+            f"PAPER TRADE: {locked.side} {locked.band.label} VWAP={vwap_price:.4f} "
+            f"${total_cost:.2f} ({total_shares:.1f} shares, {num_levels} levels) | "
+            f"type={locked.trade_type} | temp={locked.temp_observed}°C"
         )
 
-        # Insert to Supabase with enriched data
-        token_id = locked.band.no_token_id if locked.side == "NO" else locked.band.yes_token_id
         city = locked.market.city or None
         market_date = _extract_market_date(locked.market.question)
-        book_depth = self._fetch_book_depth(token_id)
 
-        self._insert_trade(trade, token_id=token_id, city=city, market_date=market_date, book_depth=book_depth)
+        self._insert_trade(
+            trade, token_id=token_id, city=city, market_date=market_date,
+            book_depth={
+                "best_bid": book.get("best_bid"),
+                "best_ask": book.get("best_ask"),
+                "bid_depth_usdc": book.get("bid_depth_usdc"),
+                "ask_depth_usdc": book.get("ask_depth_usdc"),
+            },
+            book_levels=levels,
+            fill_price=vwap_price,
+            available_liquidity=total_cost,
+            num_levels=num_levels,
+            total_shares=total_shares,
+        )
 
         return trade
 
