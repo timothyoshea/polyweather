@@ -69,17 +69,20 @@ class SignalEngine:
 
         # Determine comparison temp based on market's unit
         # All bands in a market use the same unit
+        # WU resolves to WHOLE degrees — we must round to match
         sample_band = market.bands[0] if market.bands else None
         if sample_band and sample_band.unit == "F":
-            temp_compare = self._c_to_f(temp_c)
+            temp_f_raw = self._c_to_f(temp_c)
+            temp_compare = round(temp_f_raw)  # WU rounds to whole °F
             unit_label = "°F"
         else:
-            temp_compare = temp_c
+            temp_compare = round(temp_c)  # WU rounds to whole °C
             unit_label = "°C"
 
-        # 1. Top band YES: if temp exceeds top band threshold
+        # 1. Top band YES: if rounded temp >= top band threshold
+        # (WU shows whole degrees, so rounded temp == threshold means it hit)
         top = market.top_band
-        if top and temp_compare > top.temp_value:
+        if top and temp_compare >= top.temp_value:
             locked.append(LockedBand(
                 band=top,
                 market=market,
