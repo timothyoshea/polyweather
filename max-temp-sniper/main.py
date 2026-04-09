@@ -155,10 +155,14 @@ async def metar_poll_loop():
                         None, executor.execute_signal, trigger, trade_size
                     )
 
+                    # Filter out None entries (skipped due to price/bad data)
+                    trades = [t for t in trades if t is not None]
+
                     for lb, trade in zip(new_bands, trades):
                         tracker.record_position(lb, trade.entry_price, trade.size_usdc)
 
-                    notifier.notify_trades(trades)
+                    if trades:
+                        notifier.notify_trades(trades)
                     logger.info(f"  Executed {len(trades)} paper trades for {market.city}")
 
         except Exception as e:
