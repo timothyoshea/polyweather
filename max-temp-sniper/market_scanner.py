@@ -131,6 +131,7 @@ def _parse_event(event: dict) -> Optional[Market]:
         title = event.get("title", "")
         city = _extract_city(title)
         station = _extract_station(event, city)
+        market_date = _extract_market_date(title)
 
         if not station:
             logger.warning(f"No METAR station found for {city}, skipping")
