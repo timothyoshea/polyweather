@@ -172,33 +172,18 @@ class OrderExecutor:
 
         return trade
 
-    def _fetch_midpoint(self, token_id: str) -> Optional[float]:
-        """Fetch the current midpoint price for a token from CLOB API."""
+    def _fetch_full_book(self, token_id: str) -> Optional[dict]:
+        """Fetch full order book from CLOB API.
+
+        Returns dict with:
+          levels: list of {price, size, side} dicts (the asks we'd buy into, sorted best first)
+          vwap_price: volume-weighted average price across all levels
+          total_available_usdc: total cost to sweep the entire book
+          total_shares: total shares available
+          best_bid, best_ask, bid_depth_usdc, ask_depth_usdc
+        """
         if not token_id:
             return None
-
-        try:
-            url = f"{CLOB_BASE}/midpoint?token_id={token_id}"
-            req = urllib.request.Request(url, headers={"User-Agent": "MaxTempSniper/1.0"})
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                data = json.loads(resp.read().decode())
-
-            mid = data.get("mid")
-            if mid is not None:
-                return float(mid)
-            return None
-        except Exception as e:
-            logger.warning(f"CLOB midpoint fetch failed for {token_id}: {e}")
-            return None
-
-    def _fetch_book_depth(self, token_id: str) -> dict:
-        """
-        Fetch order book depth from CLOB API. Best-effort — returns Nones on failure.
-        Returns {best_bid, best_ask, bid_depth_usdc, ask_depth_usdc}.
-        """
-        empty = {"best_bid": None, "best_ask": None, "bid_depth_usdc": None, "ask_depth_usdc": None}
-        if not token_id:
-            return empty
 
         try:
             url = f"{CLOB_BASE}/book?token_id={token_id}"
@@ -209,20 +194,50 @@ class OrderExecutor:
             bids = data.get("bids", [])
             asks = data.get("asks", [])
 
+            if not asks and not bids:
+                return None
+
+            # Parse and sort asks (what we'd buy into) — lowest price first
+            parsed_asks = sorted(
+                [{"price": float(a["price"]), "size": float(a["size"])} for a in asks],
+                key=lambda x: x["price"]
+            )
+
+            # Calculate VWAP and totals across ALL ask levels
+            total_cost = 0.0
+            total_shares = 0.0
+            levels = []
+            for a in parsed_asks:
+                cost = a["price"] * a["size"]
+                total_cost += cost
+                total_shares += a["size"]
+                levels.append({
+                    "price": round(a["price"], 4),
+                    "size": round(a["size"], 2),
+                    "cost": round(cost, 4),
+                })
+
+            vwap_price = round(total_cost / total_shares, 6) if total_shares > 0 else None
+
+            # Bid side summary
             best_bid = max((float(b["price"]) for b in bids), default=None)
             best_ask = min((float(a["price"]) for a in asks), default=None)
             bid_depth_usdc = round(sum(float(b["price"]) * float(b["size"]) for b in bids), 4) if bids else None
-            ask_depth_usdc = round(sum(float(a["price"]) * float(a["size"]) for a in asks), 4) if asks else None
+            ask_depth_usdc = round(total_cost, 4)
 
             return {
+                "levels": levels,
+                "vwap_price": vwap_price,
+                "total_available_usdc": round(total_cost, 4),
+                "total_shares": round(total_shares, 4),
                 "best_bid": best_bid,
                 "best_ask": best_ask,
                 "bid_depth_usdc": bid_depth_usdc,
                 "ask_depth_usdc": ask_depth_usdc,
             }
         except Exception as e:
-            logger.warning(f"CLOB book depth fetch failed for {token_id}: {e}")
-            return empty
+            logger.warning(f"CLOB book fetch failed for {token_id}: {e}")
+            return None
 
     def _insert_signal(self, trigger: TriggerResult) -> Optional[str]:
         """Insert a signal record into sniper_signals table."""
