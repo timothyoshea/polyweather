@@ -293,14 +293,20 @@ class OrderExecutor:
         city: Optional[str] = None,
         market_date: Optional[str] = None,
         book_depth: Optional[dict] = None,
+        book_levels: Optional[list] = None,
+        fill_price: Optional[float] = None,
+        available_liquidity: Optional[float] = None,
+        num_levels: Optional[int] = None,
+        total_shares: Optional[float] = None,
     ):
         """Insert a trade record into sniper_trades table."""
         if not self._supabase_url or not self._supabase_key:
             logger.debug("No Supabase config, skipping trade insert")
             return
 
-        # Calculate total_shares from size and price
-        total_shares = round(trade.size_usdc / trade.entry_price, 4) if trade.entry_price > 0 else 0
+        # Use provided total_shares or calculate from size/price
+        if total_shares is None:
+            total_shares = round(trade.size_usdc / trade.entry_price, 4) if trade.entry_price > 0 else 0
 
         bd = book_depth or {}
         payload = json.dumps({
@@ -314,7 +320,7 @@ class OrderExecutor:
             "temp_observed": trade.temp_observed,
             "entry_price": trade.entry_price,
             "size_usdc": trade.size_usdc,
-            "total_shares": total_shares,
+            "total_shares": round(total_shares, 4),
             "status": trade.status,
             "token_id": token_id,
             "city": city,
@@ -323,6 +329,10 @@ class OrderExecutor:
             "best_ask": bd.get("best_ask"),
             "bid_depth_usdc": bd.get("bid_depth_usdc"),
             "ask_depth_usdc": bd.get("ask_depth_usdc"),
+            "book_levels": book_levels,
+            "fill_price": fill_price,
+            "available_liquidity_usdc": available_liquidity,
+            "num_levels": num_levels,
         }).encode()
 
         try:
