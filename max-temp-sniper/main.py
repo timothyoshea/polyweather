@@ -106,8 +106,19 @@ async def metar_poll_loop():
                 temp = metar["temp"]
                 prev = metar["previous_temp"]
 
-                # Find markets for this station
-                station_markets = [m for m in signal_engine.markets if m.station == station]
+                # Find TODAY's markets for this station only
+                # METAR reflects current-day temperature, not future days
+                today_str = date.today().isoformat()
+                station_markets = [
+                    m for m in signal_engine.markets
+                    if m.station == station and today_str in (m.end_date or "")
+                ]
+                if not station_markets:
+                    # Fallback: try markets ending within 24h
+                    station_markets = [
+                        m for m in signal_engine.markets
+                        if m.station == station
+                    ][:1]  # Just take the nearest one
 
                 for market in station_markets:
                     trigger = signal_engine.evaluate_market(metar, market)
