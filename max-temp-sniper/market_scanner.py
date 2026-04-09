@@ -87,6 +87,28 @@ def _extract_city(title: str) -> str:
     return m.group(1) if m else ""
 
 
+def _extract_market_date(title: str) -> str:
+    """Extract ISO date from event title like 'Highest temperature in London on April 9?'
+    Returns e.g. '2026-04-09' or '' if unparseable."""
+    MONTHS = {
+        "january": 1, "february": 2, "march": 3, "april": 4,
+        "may": 5, "june": 6, "july": 7, "august": 8,
+        "september": 9, "october": 10, "november": 11, "december": 12,
+    }
+    m = re.search(r"on (\w+) (\d+)", title, re.IGNORECASE)
+    if not m:
+        return ""
+    month_name = m.group(1).lower()
+    day = int(m.group(2))
+    month_num = MONTHS.get(month_name)
+    if not month_num:
+        return ""
+    # Assume current year
+    from datetime import date
+    year = date.today().year
+    return f"{year}-{month_num:02d}-{day:02d}"
+
+
 def _extract_station(event: dict, city: str) -> str:
     """Extract ICAO station code from resolution source URL or description."""
     for text in [event.get("resolutionSource", ""), event.get("description", "")]:
