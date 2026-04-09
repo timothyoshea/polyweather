@@ -610,6 +610,12 @@ function onPortfolioChange() {
   const sel = $('#portfolio-select');
   currentPortfolioId = sel.value;
   localStorage.setItem('pw-portfolio-id', currentPortfolioId);
+  // Hide Smart Exits for non-live portfolios
+  const pf = pnlAllPortfolios.find(p => p.id === currentPortfolioId);
+  const isLive = pf && pf.trade_mode === 'live';
+  document.querySelectorAll('.nav-smart-exits').forEach(el => {
+    el.style.display = isLive ? '' : 'none';
+  });
   updatePnlPortfolioDisplay();
   if (!currentPortfolioId) {
     $('#app').innerHTML = '<div class="loading">Select a portfolio to view P&L</div>';
