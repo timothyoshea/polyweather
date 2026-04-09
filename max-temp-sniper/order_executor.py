@@ -191,6 +191,21 @@ class OrderExecutor:
 
         return trade
 
+    def _fetch_midpoint(self, token_id: str) -> Optional[float]:
+        """Fetch midpoint price from CLOB API."""
+        if not token_id:
+            return None
+        try:
+            url = f"{CLOB_BASE}/midpoint?token_id={token_id}"
+            req = urllib.request.Request(url, headers={"User-Agent": "MaxTempSniper/1.0"})
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read().decode())
+            mid = data.get("mid")
+            return float(mid) if mid is not None else None
+        except Exception as e:
+            logger.warning(f"Midpoint fetch failed for {token_id[:20]}...: {e}")
+            return None
+
     def _fetch_full_book(self, token_id: str) -> Optional[dict]:
         """Fetch full order book from CLOB API.
 
