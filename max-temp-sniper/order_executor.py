@@ -86,9 +86,17 @@ class OrderExecutor:
 
         # Fetch midpoint price
         midpoint = self._fetch_midpoint(token_id)
-        if midpoint is None:
-            logger.warning(f"Could not fetch midpoint for {locked.band.label} {locked.side}, using 0.50")
-            midpoint = 0.50
+
+        if midpoint is None or midpoint <= 0:
+            logger.warning(f"SKIP (bad price): {locked.band.label} {locked.side} @ {midpoint}")
+            return None
+
+        if midpoint >= MAX_ENTRY_PRICE:
+            logger.info(
+                f"SKIP (price too high): {locked.band.label} {locked.side} "
+                f"@ {midpoint:.4f} >= {MAX_ENTRY_PRICE} — no profit potential"
+            )
+            return None
 
         if self.mode == "paper":
             return self._paper_trade(locked, signal_id, midpoint, trade_size)
