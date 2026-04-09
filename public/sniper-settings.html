@@ -512,13 +512,15 @@ function buildMarketsTable(data) {
       const lowC = s.today_low !== null ? s.today_low.toFixed(1) : '--';
       const lowF = s.today_low !== null ? cToF(s.today_low).toFixed(1) : '--';
       const freq = s.avg_interval_min !== null ? s.avg_interval_min + ' min' : '--';
+      const metarLink = `<a class="res-link" href="https://aviationweather.gov/api/data/metar?ids=${s.station}&format=json&hours=1" target="_blank">aviationweather.gov/${s.station}</a>`;
       const resLink = s.resolution_source
-        ? `<a class="res-link" href="${s.resolution_source}" target="_blank">${s.resolution_source.replace('https://www.wunderground.com/history/daily/', '')}</a>`
+        ? `<a class="res-link" href="${s.resolution_source}" target="_blank">Weather Underground</a>`
         : '<span style="color:var(--text2)">--</span>';
 
       html += '<tr>';
       html += `<td style="font-family:var(--sans)">${s.city || '--'}</td>`;
       html += `<td>${s.station}</td>`;
+      html += `<td>${metarLink}</td>`;
       html += `<td>${resLink}</td>`;
       html += `<td>${tempC}&deg;C <span style="color:var(--text2)">(${tempF}&deg;F)</span></td>`;
       html += `<td>${highC} <span style="color:var(--text2)">/ ${lowC}&deg;C</span></td>`;
