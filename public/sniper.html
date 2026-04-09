@@ -698,9 +698,7 @@ async function loadTrades() {
     // Update status cards
     $('#today-trades').textContent = todayTrades.length;
 
-    // Count unique markets from all trades
-    const uniqueMarkets = new Set(allTrades.map(t => t.market_question || t.city || '').filter(Boolean));
-    $('#markets-tracked').textContent = uniqueMarkets.size || '--';
+    // Markets tracked count comes from loadLastMetar (metar_history summary)
 
     const tbody = $('#trades-tbody');
     if (todayTrades.length === 0) {
