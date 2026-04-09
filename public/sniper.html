@@ -825,7 +825,8 @@ async function loadTrades() {
             <td>${t.total_shares !== undefined ? Number(t.total_shares).toFixed(1) : '--'}</td>
             <td>${sizeStr}</td>
             <td>${statusBadge(t.status)}</td>
-            <td>${t.profit_usd !== undefined ? fmtMoney(t.profit_usd) : (t.pnl !== undefined ? fmtMoney(t.pnl) : '--')}</td>
+            <td style="color:${(t.expected_profit||0) > 0 ? 'var(--green)' : 'var(--text2)'}">${t.expected_profit != null ? fmtMoney(t.expected_profit) : '--'}</td>
+            <td>${t.profit_usd != null && t.status !== 'open' ? fmtMoney(t.profit_usd) : '--'}</td>
           </tr>`;
       }
     }
