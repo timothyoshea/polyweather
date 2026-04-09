@@ -1114,13 +1114,29 @@ async function loadSpeedReport() {
     }
     $('#speed-track-count').textContent = tracks.length + ' track' + (tracks.length !== 1 ? 's' : '');
 
-    tbody.innerHTML = tracks.map(t => `
+    tbody.innerHTML = tracks.map(t => {
+      const isF = (t.band_label || '').includes('F');
+      const tempStr = t.temp_observed != null
+        ? (isF ? (t.temp_observed * 9/5 + 32).toFixed(1) + '°F' : t.temp_observed + '°C')
+        : '--';
+      // Build Polymarket link from signal_time date + city
+      let mktLink = '--';
+      if (t.city && t.signal_time) {
+        const d = new Date(t.signal_time);
+        const slug = (t.city||'').toLowerCase().replace(/ +/g,'-').replace(/[^a-z0-9-]/g,'');
+        const ms = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+        const ml = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const url = 'https://polymarket.com/event/highest-temperature-in-' + slug + '-on-' + ms[d.getUTCMonth()] + '-' + d.getUTCDate() + '-' + d.getUTCFullYear();
+        mktLink = '<a href="' + url + '" target="_blank" style="color:var(--cyan);text-decoration:none;">' + ml[d.getUTCMonth()] + ' ' + d.getUTCDate() + ' ↗</a>';
+      }
+      return `
       <tr>
         <td>${fmtTime(t.signal_time)}</td>
         <td style="font-family:var(--sans);font-weight:600;">${t.city || '--'}</td>
+        <td>${mktLink}</td>
         <td>${t.band_label || '--'}</td>
         <td>${sideBadge(t.side)}</td>
-        <td>${t.temp_observed != null ? t.temp_observed + '\u00B0C' : '--'}</td>
+        <td>${tempStr}</td>
         <td>${fmtPrice(t.price_at_signal)}</td>
         <td>${fmtPrice(t.price_at_30s)}</td>
         <td>${fmtPrice(t.price_at_1m)}</td>
@@ -1129,8 +1145,8 @@ async function loadSpeedReport() {
         <td>${fmtPrice(t.price_at_10m)}</td>
         <td>${t.time_to_95pct != null ? fmtSeconds(t.time_to_95pct) : '--'}</td>
         <td>${t.time_to_99pct != null ? fmtSeconds(t.time_to_99pct) : '--'}</td>
-      </tr>
-    `).join('');
+      </tr>`;
+    }).join('');
   } catch (e) {
     console.error('Error loading speed report:', e);
     $('#speed-tbody').innerHTML = '<tr><td colspan="14" class="empty-state">Failed to load speed data</td></tr>';
