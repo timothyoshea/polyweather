@@ -1047,6 +1047,174 @@ async function loadLastMetar() {
   }
 }
 
+// -- Speed Report --
+let speedChart = null;
+
+function priceColor(p) {
+  if (p === null || p === undefined) return 'val-neutral';
+  const v = Number(p);
+  if (v < 0.95) return 'val-pos';   // green — tradeable
+  if (v < 0.98) return '';           // amber range
+  return 'val-neg';                  // red — no edge
+}
+
+function fmtPrice(p) {
+  if (p === null || p === undefined) return '--';
+  const v = Number(p);
+  const cents = (v <= 1 ? v * 100 : v).toFixed(1);
+  const cls = v < 0.95 ? 'val-pos' : v < 0.98 ? '' : 'val-neg';
+  const style = (!cls && v >= 0.95 && v < 0.98) ? ' style="color:var(--amber);"' : '';
+  return `<span class="${cls}"${style}>${cents}\u00A2</span>`;
+}
+
+function fmtSeconds(s) {
+  if (s === null || s === undefined) return '--';
+  const v = Number(s);
+  if (v < 60) return v.toFixed(0) + 's';
+  return Math.round(v / 60) + 'm ' + (v % 60).toFixed(0) + 's';
+}
+
+async function loadSpeedReport() {
+  try {
+    const [summaryResp, tracksResp] = await Promise.all([
+      fetch('/api/sniper_speed?summary=true'),
+      fetch('/api/sniper_speed?hours=24')
+    ]);
+    const summaryData = await summaryResp.json();
+    const tracks = await tracksResp.json();
+
+    // Cards
+    const o = summaryData.overall || {};
+    $('#speed-avg-price').textContent = o.avg_price_at_signal != null
+      ? (o.avg_price_at_signal * 100).toFixed(1) + '\u00A2' : '--';
+    $('#speed-time-95').textContent = o.avg_time_to_95pct_seconds != null
+      ? fmtSeconds(o.avg_time_to_95pct_seconds) : '--';
+    $('#speed-time-99').textContent = o.avg_time_to_99pct_seconds != null
+      ? fmtSeconds(o.avg_time_to_99pct_seconds) : '--';
+    $('#speed-tradeable').textContent = o.pct_under_95_at_signal != null
+      ? o.pct_under_95_at_signal.toFixed(0) + '%' : '--';
+
+    // Chart
+    renderSpeedChart(summaryData);
+
+    // Table
+    const tbody = $('#speed-tbody');
+    if (!Array.isArray(tracks) || tracks.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="13" class="empty-state">No speed data in last 24h</td></tr>';
+      $('#speed-track-count').textContent = '0 tracks';
+      return;
+    }
+    $('#speed-track-count').textContent = tracks.length + ' track' + (tracks.length !== 1 ? 's' : '');
+
+    tbody.innerHTML = tracks.map(t => `
+      <tr>
+        <td>${fmtTime(t.signal_time)}</td>
+        <td style="font-family:var(--sans);font-weight:600;">${t.city || '--'}</td>
+        <td>${t.band_label || '--'}</td>
+        <td>${sideBadge(t.side)}</td>
+        <td>${t.temp_observed != null ? t.temp_observed + '\u00B0C' : '--'}</td>
+        <td>${fmtPrice(t.price_at_signal)}</td>
+        <td>${fmtPrice(t.price_at_30s)}</td>
+        <td>${fmtPrice(t.price_at_1m)}</td>
+        <td>${fmtPrice(t.price_at_2m)}</td>
+        <td>${fmtPrice(t.price_at_5m)}</td>
+        <td>${fmtPrice(t.price_at_10m)}</td>
+        <td>${t.time_to_95pct != null ? fmtSeconds(t.time_to_95pct) : '--'}</td>
+        <td>${t.time_to_99pct != null ? fmtSeconds(t.time_to_99pct) : '--'}</td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    console.error('Error loading speed report:', e);
+    $('#speed-tbody').innerHTML = '<tr><td colspan="13" class="empty-state">Failed to load speed data</td></tr>';
+  }
+}
+
+function renderSpeedChart(summaryData) {
+  const canvas = $('#speed-chart');
+  if (!canvas) return;
+  if (speedChart) { speedChart.destroy(); }
+
+  const labels = ['Signal', '+30s', '+1m', '+2m', '+5m', '+10m'];
+  const fields = ['avg_price_at_signal', 'avg_price_at_30s', 'avg_price_at_1m', 'avg_price_at_2m', 'avg_price_at_5m', 'avg_price_at_10m'];
+
+  const datasets = [];
+  const cityColors = ['#4fc3f7', '#00e676', '#ffc107', '#ff5252', '#ce93d8', '#ff8a65', '#80deea', '#a5d6a7'];
+
+  // Overall average line
+  const overall = summaryData.overall || {};
+  const overallData = fields.map(f => overall[f] != null ? +(overall[f] * 100).toFixed(2) : null);
+
+  if (overallData.some(v => v !== null)) {
+    datasets.push({
+      label: 'All Cities',
+      data: overallData,
+      borderColor: '#ffffff',
+      backgroundColor: 'rgba(255,255,255,0.08)',
+      fill: true,
+      borderWidth: 3,
+      pointRadius: 5,
+      pointBackgroundColor: '#ffffff',
+      tension: 0.3,
+    });
+  }
+
+  // Per-city lines
+  const byCity = summaryData.by_city || [];
+  byCity.forEach((c, i) => {
+    const data = fields.map(f => c[f] != null ? +(c[f] * 100).toFixed(2) : null);
+    if (data.some(v => v !== null)) {
+      datasets.push({
+        label: c.city + ' (' + c.tracks + ')',
+        data,
+        borderColor: cityColors[i % cityColors.length],
+        borderWidth: 2,
+        pointRadius: 3,
+        tension: 0.3,
+        borderDash: [4, 2],
+      });
+    }
+  });
+
+  if (datasets.length === 0) {
+    canvas.parentElement.querySelector('div').textContent = 'No speed data available';
+    return;
+  }
+
+  speedChart = new Chart(canvas, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#888', font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            label: ctx => ctx.dataset.label + ': ' + (ctx.parsed.y != null ? ctx.parsed.y.toFixed(1) + '\u00A2' : '--')
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: '#888', font: { size: 11 } },
+          grid: { color: 'rgba(255,255,255,0.05)' }
+        },
+        y: {
+          min: 50,
+          max: 100,
+          ticks: {
+            color: '#888',
+            font: { size: 10 },
+            callback: v => v + '\u00A2'
+          },
+          grid: { color: 'rgba(255,255,255,0.05)' }
+        }
+      }
+    }
+  });
+}
+
 async function loadAll() {
   const now = new Date();
   $('#last-refresh').textContent = 'Last refresh: ' + now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
