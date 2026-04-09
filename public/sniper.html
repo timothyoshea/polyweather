@@ -941,10 +941,27 @@ function renderPnlChart(dailyData) {
 
 async function loadLastMetar() {
   try {
-    const resp = await fetch('/api/metar_history?limit=1&hours=1');
-    const data = await resp.json();
-    if (Array.isArray(data) && data.length > 0) {
-      const r = data[0];
+    // Fetch latest reading and summary in parallel
+    const [latestResp, summaryResp] = await Promise.all([
+      fetch('/api/metar_history?limit=1&hours=1'),
+      fetch('/api/metar_history?summary=true&hours=24'),
+    ]);
+    const latest = await latestResp.json();
+    const summary = await summaryResp.json();
+
+    // Update markets tracked and cities from summary
+    if (Array.isArray(summary)) {
+      $('#markets-tracked').textContent = summary.length;
+      const activeCities = summary.filter(s => {
+        if (!s.last_update) return false;
+        return (Date.now() - new Date(s.last_update).getTime()) < 3600000; // active in last hour
+      });
+      $('#cities-active').textContent = activeCities.length;
+    }
+
+    // Update last check and latest reading
+    if (Array.isArray(latest) && latest.length > 0) {
+      const r = latest[0];
       const ts = new Date(r.polled_at || r.created_at);
       const timeStr = ts.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       const ago = Math.round((Date.now() - ts.getTime()) / 1000);
@@ -959,7 +976,7 @@ async function loadLastMetar() {
       $('#latest-reading-city').textContent = (r.city || r.station || '--') + ' (' + (r.station || '') + ')';
     }
   } catch (e) {
-    console.error('Failed to load last METAR:', e);
+    console.error('Failed to load METAR status:', e);
   }
 }
 
