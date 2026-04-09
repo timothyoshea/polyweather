@@ -591,6 +591,8 @@ function updatePnlPortfolioDisplay() {
   const nameEl = $('#portfolio-name-display');
   const selected = sel.options[sel.selectedIndex];
   if (nameEl) nameEl.textContent = selected ? selected.textContent : 'Select portfolio';
+  const sidebarName = document.getElementById('sidebar-portfolio-name');
+  if (sidebarName) sidebarName.textContent = selected ? selected.textContent : '';
   const list = $('#portfolio-picker-list');
   if (list) {
     list.innerHTML = pnlAllPortfolios.map(p =>
