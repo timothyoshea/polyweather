@@ -468,8 +468,9 @@ function renderOverview() {
   }
 
   $('#overview-tbody').innerHTML = sorted.map(s => {
-    const sourceLink = s.resolution_source
-      ? `<a href="${s.resolution_source}" target="_blank" class="resolution-link">${new URL(s.resolution_source).hostname.replace('www.','')}</a>`
+    const metarLink = `<a href="https://aviationweather.gov/api/data/metar?ids=${s.station}&format=json&hours=1" target="_blank" class="resolution-link">aviationweather.gov/${s.station}</a>`;
+    const resLink = s.resolution_source
+      ? `<a href="${s.resolution_source}" target="_blank" class="resolution-link">Weather Underground</a>`
       : '--';
     return `<tr>
       <td>${s.city || '--'}</td>
@@ -480,7 +481,8 @@ function renderOverview() {
       <td>${s.reading_count}</td>
       <td>${s.avg_interval_min != null ? s.avg_interval_min + ' min' : '--'}</td>
       <td>${staleDot(s.last_update)}${fmtDateTime(s.last_update)}</td>
-      <td>${sourceLink}</td>
+      <td>${metarLink}</td>
+      <td>${resLink}</td>
     </tr>`;
   }).join('');
 }
