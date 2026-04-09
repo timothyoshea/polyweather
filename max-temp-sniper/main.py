@@ -30,6 +30,7 @@ from order_executor import OrderExecutor, MAX_ENTRY_PRICE
 from position_tracker import PositionTracker
 from risk_manager import RiskManager
 from notifier import Notifier
+from price_tracker import PriceTracker
 
 # Intervals (seconds)
 MARKET_REFRESH_INTERVAL = int(os.getenv("MARKET_REFRESH_INTERVAL", "900"))   # 15 min
