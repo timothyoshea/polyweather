@@ -497,7 +497,7 @@ function buildMarketsTable(data) {
   html += '<div class="table-wrap"><table><thead><tr>';
   html += '<th>City</th><th>ICAO</th><th>METAR Source</th><th>Market Resolves At</th>';
   html += '<th>Current Temp</th><th>Today High / Low</th>';
-  html += '<th>Update Freq</th><th>Readings</th><th>Status</th>';
+  html += '<th title="Average minutes between METAR updates from this station today. Lower = more frequent updates = faster signal detection.">Update Freq</th><th>Readings</th><th>Status</th>';
   html += '</tr></thead><tbody>';
 
   for (const [region, stations] of Object.entries(regions)) {
