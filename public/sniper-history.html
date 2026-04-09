@@ -472,7 +472,7 @@ function renderOverview() {
     const resLink = s.resolution_source
       ? `<a href="${s.resolution_source}" target="_blank" class="resolution-link">Weather Underground</a>`
       : '--';
-    return `<tr>
+    return `<tr style="cursor:pointer;" onclick="selectStationChart('${s.station}')">
       <td>${s.city || '--'}</td>
       <td>${s.station || '--'}</td>
       <td>${s.latest_temp_c != null ? s.latest_temp_c + '\u00B0C' : '--'}</td>
