@@ -519,13 +519,16 @@ function computeSummary(trades) {
   const winRate = resolved > 0 ? ((won / resolved) * 100).toFixed(1) + '%' : '--';
 
   let totalPnl = 0;
+  let totalExpected = 0;
   trades.forEach(t => {
     totalPnl += Number(t.profit_usd || t.pnl || 0);
+    totalExpected += Number(t.expected_profit || 0);
   });
 
   $('#stat-total').textContent = total;
   $('#stat-winrate').textContent = winRate;
   $('#stat-wl').textContent = `${won}W / ${lost}L`;
+  $('#stat-expected').innerHTML = fmtMoney(totalExpected);
   $('#stat-pnl').innerHTML = fmtMoney(totalPnl);
 
   // Avg entry by type
