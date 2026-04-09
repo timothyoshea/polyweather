@@ -78,10 +78,12 @@ class PriceTracker:
                 )
 
                 # Add to pending in-memory
+                # token_id is always the YES token; side tells us whether to invert
                 with self._lock:
                     self._pending[track_id] = {
                         "signal_time": signal_time,
                         "token_id": token_id,
+                        "side": lb.side,
                         "price_at_signal": price_at_signal,
                         "intervals_done": set(),
                     }
