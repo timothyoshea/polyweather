@@ -479,7 +479,7 @@ function renderOverview() {
       <td>${s.today_high != null ? s.today_high + '\u00B0C' : '--'}</td>
       <td>${s.today_low != null ? s.today_low + '\u00B0C' : '--'}</td>
       <td>${s.reading_count}</td>
-      <td>${s.avg_interval_min != null ? s.avg_interval_min + ' min' : '--'}</td>
+      <td title="This station updates its METAR on average every ${s.avg_interval_min || '?'} minutes">${s.avg_interval_min != null ? s.avg_interval_min + ' min' : '--'}</td>
       <td>${staleDot(s.last_update)}${fmtDateTime(s.last_update)}</td>
       <td>${metarLink}</td>
       <td>${resLink}</td>
