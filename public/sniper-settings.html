@@ -502,7 +502,7 @@ function buildMarketsTable(data) {
 
   for (const [region, stations] of Object.entries(regions)) {
     if (stations.length === 0) continue;
-    html += `<tr class="region-group-header"><td colspan="8">${region} (${stations.length} stations)</td></tr>`;
+    html += `<tr class="region-group-header"><td colspan="9">${region} (${stations.length} stations)</td></tr>`;
     stations.forEach(s => {
       const status = getStatusClass(s.last_update);
       const tempC = s.latest_temp_c !== null ? s.latest_temp_c.toFixed(1) : '--';
