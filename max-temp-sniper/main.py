@@ -113,14 +113,12 @@ async def metar_poll_loop():
                 today_str = date.today().isoformat()
                 station_markets = [
                     m for m in signal_engine.markets
-                    if m.station == station and today_str in (m.end_date or "")
+                    if m.station == station and m.market_date == today_str
                 ]
                 if not station_markets:
-                    # Fallback: try markets ending within 24h
-                    station_markets = [
-                        m for m in signal_engine.markets
-                        if m.station == station
-                    ][:1]  # Just take the nearest one
+                    # No today market found — skip. Don't trade future dates.
+                    logger.debug(f"No today market for {station}, skipping")
+                    continue
 
                 for market in station_markets:
                     trigger = signal_engine.evaluate_market(metar, market)
