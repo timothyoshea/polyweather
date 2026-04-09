@@ -54,7 +54,7 @@ def build_summary(rows):
 
         s = stations[key]
         temp = r.get("temp_c")
-        ts_str = r.get("created_at") or r.get("observed_at") or ""
+        ts_str = r.get("polled_at") or r.get("observed_at") or ""
 
         # Parse timestamp
         ts = None
@@ -125,8 +125,8 @@ class handler(BaseHTTPRequestHandler):
             cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
 
             # Build query
-            query = f"metar_readings?select=*&order=created_at.desc&limit={limit}"
-            query += f"&created_at=gte.{quote(cutoff)}"
+            query = f"metar_readings?select=*&order=polled_at.desc&limit={limit}"
+            query += f"&polled_at=gte.{quote(cutoff)}"
 
             if station:
                 query += f"&station=eq.{quote(station)}"
