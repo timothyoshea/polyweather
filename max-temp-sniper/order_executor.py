@@ -451,6 +451,7 @@ class OrderExecutor:
             "entry_price": trade.entry_price,
             "size_usdc": trade.size_usdc,
             "total_shares": round(total_shares, 4),
+            "expected_profit": round(total_shares - trade.size_usdc, 4) if total_shares > 0 else 0,
             "status": trade.status,
             "token_id": token_id,
             "city": city,
