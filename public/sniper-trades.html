@@ -682,7 +682,7 @@ function renderTrades() {
     <tr>
       <td>${fmtTime(t.created_at || t.time)}</td>
       <td style="font-family:var(--sans);font-weight:600;">${t.city || '--'}</td>
-      <td>${mktDate}</td>
+      <td>${mktDate}${t.city && t.market_date ? ` <a href="https://polymarket.com/event/highest-temperature-in-${(t.city||'').toLowerCase().replace(/\\s+/g,'-')}-on-${(() => { const d = new Date(t.market_date + 'T00:00:00Z'); const months = ['january','february','march','april','may','june','july','august','september','october','november','december']; return months[d.getUTCMonth()] + '-' + d.getUTCDate() + '-' + d.getUTCFullYear(); })()}" target="_blank" style="color:var(--cyan);font-size:10px;text-decoration:none;" title="View on Polymarket">↗</a>` : ''}</td>
       <td>${band}</td>
       <td>${sideBadge(t.side)}</td>
       <td>${tradeTypeBadge(t.trade_type)}</td>
