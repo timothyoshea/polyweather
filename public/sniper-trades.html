@@ -661,10 +661,13 @@ function renderTrades() {
     const pnl = t.profit_usd !== undefined ? t.profit_usd : (t.pnl !== undefined ? t.pnl : undefined);
     // Entry price: prefer fill_price, fallback to entry_price
     const displayPrice = t.fill_price !== undefined ? t.fill_price : t.entry_price;
-    const isNoEdge = displayPrice !== undefined && Number(displayPrice) >= 0.99;
-    const priceStr = displayPrice !== undefined
-      ? (isNoEdge ? '<span style="color:var(--amber);">' + fmtCents(displayPrice) + ' (no edge)</span>' : fmtCents(displayPrice))
-      : '--';
+    const profitPerShare = displayPrice != null ? (1 - Number(displayPrice)) : null;
+    let priceStr = '--';
+    if (displayPrice != null) {
+      const p = Number(displayPrice);
+      const color = profitPerShare > 0.05 ? 'var(--green)' : profitPerShare > 0.01 ? 'var(--amber)' : 'var(--red)';
+      priceStr = `<span style="color:${color}">${fmtCents(p)}</span> <span style="color:var(--text2);font-size:10px;">(+${(profitPerShare*100).toFixed(1)}¢)</span>`;
+    }
     // Size: prefer available_liquidity_usdc, fallback to size_usdc
     const sizeStr = t.available_liquidity_usdc !== undefined
       ? '$' + Number(t.available_liquidity_usdc).toFixed(2)
