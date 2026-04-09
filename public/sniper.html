@@ -303,6 +303,11 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
     <span id="last-refresh" style="font-size:11px;color:var(--text2);margin-left:auto;">Loading...</span>
   </div>
 
+  <!-- Data Source Info -->
+  <div style="background:var(--card);border:1px solid var(--card-border);border-radius:10px;padding:14px 20px;margin-bottom:24px;font-size:12px;line-height:1.6;color:var(--text2);">
+    <span style="color:var(--cyan);font-weight:600;">Data polled every 10s from <a href="https://aviationweather.gov" target="_blank" style="color:var(--cyan);text-decoration:none;">aviationweather.gov</a></span> (FAA METAR feed). Markets resolve against <a href="https://www.wunderground.com" target="_blank" style="color:var(--amber);text-decoration:none;font-weight:600;">Weather Underground</a> which publishes the same station data with a delay &mdash; that delay is the sniper's edge.
+  </div>
+
   <!-- Section 1: Live Status (multi-city overview) -->
   <div class="section">
     <div class="section-title"><span class="icon">&#x1F6F0;</span> Live Status</div>
