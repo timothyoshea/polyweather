@@ -1700,6 +1700,10 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
     const sel = document.getElementById('portfolio-select');
     activePortfolioId = sel.value;
     localStorage.setItem('pw-portfolio-id', activePortfolioId);
+    // Update sidebar portfolio name
+    const pf = allPortfolios.find(p => p.id === activePortfolioId);
+    const nameEl = document.getElementById('sidebar-portfolio-name');
+    if (nameEl) nameEl.textContent = pf ? pf.name : 'All Portfolios';
     updatePortfolioDisplay();
     loadPortfolioRules(activePortfolioId);
     if (tradingLoaded) loadTradeTable();
