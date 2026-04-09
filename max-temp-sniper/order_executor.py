@@ -208,7 +208,6 @@ class OrderExecutor:
             "num_bands_locked": len(trigger.locked_bands),
             "traded": True,
             "city": city,
-            "market_date": market_date,
         }).encode()
 
         try:
