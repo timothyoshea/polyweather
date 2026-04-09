@@ -49,7 +49,7 @@ class handler(BaseHTTPRequestHandler):
             # Supabase REST doesn't support now()-Xh natively; use a filter workaround
             # Actually, use the proper PostgREST interval syntax
             from datetime import datetime, timezone, timedelta
-            cutoff = (datetime.now(timezone.utc) - timedelta(hours=int(hours))).isoformat()
+            cutoff = (datetime.now(timezone.utc) - timedelta(hours=int(hours))).strftime("%Y-%m-%dT%H:%M:%SZ")
             query = (
                 f"sniper_potential_trades?select=*"
                 f"&order=signal_time.desc"
