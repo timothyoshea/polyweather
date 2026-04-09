@@ -692,6 +692,23 @@ def resolve_open_trades(supabase_url, supabase_service_key, city_geo):
                 resolution_cache[market_slug] = check_polymarket_resolution(market_slug)
 
             winning_side = resolution_cache[market_slug]
+
+            # Fallback: if Gamma API returns None (market removed/archived)
+            # and the trade date has passed, resolve using actual temperature
+            trade_date = trade.get("date", "")
+            if winning_side is None and trade_date < today_str:
+                city = trade.get("city", "")
+                band_c = trade.get("band_c", "")
+                actual_temp = fetch_actual_temperature(city, trade_date, city_geo)
+                if actual_temp is not None:
+                    winning_side = _resolve_from_actual_temp(
+                        actual_temp, band_c, trade.get("band_type", "exact")
+                    )
+                    if winning_side:
+                        resolution_cache[market_slug] = winning_side
+                        print(f"[FALLBACK] Resolved {city} {trade_date} {band_c} "
+                              f"from actual temp {actual_temp}°C → {winning_side} wins")
+
             if winning_side is None:
                 skipped += 1
                 continue
