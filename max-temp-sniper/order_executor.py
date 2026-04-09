@@ -84,18 +84,35 @@ class OrderExecutor:
         """
         token_id = locked.band.no_token_id if locked.side == "NO" else locked.band.yes_token_id
 
+        # For midpoint/book fetching, always use YES token (NO tokens 404 on negRisk markets)
+        # Then invert price for NO side
+        fetch_token_id = locked.band.yes_token_id
+
         # Fetch the full order book
         book = self._fetch_full_book(token_id)
+
+        # For YES midpoint (used for potential_trades logging and fallback)
+        yes_midpoint = self._fetch_midpoint(fetch_token_id)
+        no_midpoint = round(1.0 - yes_midpoint, 6) if yes_midpoint is not None else None
 
         # If no CLOB book, fall back to midpoint for paper trading
         # (most temp markets have AMM liquidity but empty order books)
         if not book or not book["levels"]:
-            midpoint = self._fetch_midpoint(token_id)
+            # Use the appropriate side's midpoint
+            midpoint = no_midpoint if locked.side == "NO" else yes_midpoint
             if midpoint is None or midpoint <= 0:
                 logger.warning(f"SKIP (no book & no midpoint): {locked.band.label} {locked.side}")
+                self._log_potential_trade(
+                    locked, signal_id, yes_midpoint, no_midpoint,
+                    None, None, 0, 0, "no_book_no_midpoint", False,
+                )
                 return None
             if midpoint >= MAX_ENTRY_PRICE:
                 logger.info(f"SKIP (price too high): {locked.band.label} {locked.side} mid={midpoint:.4f}")
+                self._log_potential_trade(
+                    locked, signal_id, yes_midpoint, no_midpoint,
+                    None, None, 0, 0, "price_too_high", False,
+                )
                 return None
             # Create a synthetic book from midpoint
             book = {
