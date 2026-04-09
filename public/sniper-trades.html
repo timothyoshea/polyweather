@@ -684,7 +684,8 @@ function renderTrades() {
       <td>${t.total_shares !== undefined ? Number(t.total_shares).toFixed(1) : '--'}</td>
       <td>${sizeStr}</td>
       <td>${statusBadge(t.status)}</td>
-      <td>${pnl !== undefined ? fmtMoney(pnl) : '--'}</td>
+      <td style="color:${(t.expected_profit||0) > 0 ? 'var(--green)' : 'var(--text2)'}">${t.expected_profit != null ? fmtMoney(t.expected_profit) : '--'}</td>
+      <td>${pnl !== undefined && t.status !== 'open' ? fmtMoney(pnl) : '--'}</td>
     </tr>`;
   }).join('');
 }
