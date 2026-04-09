@@ -541,7 +541,7 @@ async function loadChart() {
       datasets.push({
         label: `${city} (${station})`,
         data: data.map(r => ({
-          x: new Date(r.created_at),
+          x: new Date(r.polled_at || r.created_at),
           y: r.temp_c,
         })).reverse(),
         borderColor: color,
