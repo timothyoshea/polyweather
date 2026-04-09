@@ -120,10 +120,13 @@ class PriceTracker:
 
                 # Time to check this interval
                 try:
-                    current_price = self._fetch_midpoint(token_id)
-                    if current_price is None:
+                    # token_id is always YES token; invert for NO side
+                    yes_price = self._fetch_midpoint(token_id)
+                    if yes_price is None:
                         logger.warning(f"Midpoint fetch failed for track {track_id[:8]} at {col_name}")
                         continue
+                    side = info.get("side", "YES")
+                    current_price = round(1.0 - yes_price, 6) if side == "NO" else yes_price
 
                     # Calculate threshold crossings
                     updates = {col_name: current_price}
