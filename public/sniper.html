@@ -411,7 +411,7 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
             </tr>
           </thead>
           <tbody id="trades-tbody">
-            <tr><td colspan="13" class="empty-state">Loading trades...</td></tr>
+            <tr><td colspan="14" class="empty-state">Loading trades...</td></tr>
           </tbody>
         </table>
       </div>
@@ -555,7 +555,7 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
             </tr>
           </thead>
           <tbody id="speed-tbody">
-            <tr><td colspan="13" class="empty-state">Loading speed data...</td></tr>
+            <tr><td colspan="14" class="empty-state">Loading speed data...</td></tr>
           </tbody>
         </table>
       </div>
@@ -772,7 +772,7 @@ async function loadTrades() {
 
     const tbody = $('#trades-tbody');
     if (todayTrades.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="13" class="empty-state">No trades today</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="14" class="empty-state">No trades today</td></tr>';
       return;
     }
 
@@ -786,7 +786,7 @@ async function loadTrades() {
         const t0 = group.trades[0];
         const city = t0.city || '--';
         const rise = t0.temp_observed !== undefined ? t0.temp_observed + '\u00B0C' : '';
-        html += `<tr class="signal-group-header"><td colspan="13">${city} \u2014 METAR ${rise} \u2014 ${group.trades.length} trades</td></tr>`;
+        html += `<tr class="signal-group-header"><td colspan="14">${city} \u2014 METAR ${rise} \u2014 ${group.trades.length} trades</td></tr>`;
       }
       for (const t of group.trades) {
         const mktDate = t.market_date ? fmtDate(t.market_date) : '--';
@@ -834,7 +834,7 @@ async function loadTrades() {
     tbody.innerHTML = html;
   } catch (e) {
     console.error('Error loading trades:', e);
-    $('#trades-tbody').innerHTML = '<tr><td colspan="13" class="empty-state">No trade data available</td></tr>';
+    $('#trades-tbody').innerHTML = '<tr><td colspan="14" class="empty-state">No trade data available</td></tr>';
   }
 }
 
@@ -1104,7 +1104,7 @@ async function loadSpeedReport() {
     // Table
     const tbody = $('#speed-tbody');
     if (!Array.isArray(tracks) || tracks.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="13" class="empty-state">No speed data in last 24h</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="14" class="empty-state">No speed data in last 24h</td></tr>';
       $('#speed-track-count').textContent = '0 tracks';
       return;
     }
@@ -1129,7 +1129,7 @@ async function loadSpeedReport() {
     `).join('');
   } catch (e) {
     console.error('Error loading speed report:', e);
-    $('#speed-tbody').innerHTML = '<tr><td colspan="13" class="empty-state">Failed to load speed data</td></tr>';
+    $('#speed-tbody').innerHTML = '<tr><td colspan="14" class="empty-state">Failed to load speed data</td></tr>';
   }
 }
 
