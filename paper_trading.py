@@ -583,6 +583,41 @@ def determine_outcome(actual_temp_c, band_c, band_type, side):
         return "won" if not yes_wins else "lost"
 
 
+def _resolve_from_actual_temp(actual_temp, band_c, band_type):
+    """Determine winning side from actual temperature and band.
+
+    Returns "YES" or "NO", or None if can't determine.
+    """
+    if actual_temp is None or not band_c:
+        return None
+
+    # Parse threshold from band_c
+    threshold = None
+    m = re.search(r'(-?\d+)', band_c)
+    if m:
+        threshold = float(m.group(1))
+    if threshold is None:
+        return None
+
+    actual_rounded = round(actual_temp)
+
+    if band_type == "above" or ">=" in band_c or "≥" in band_c:
+        # ">=29°C" — YES wins if actual >= threshold
+        return "YES" if actual_rounded >= threshold else "NO"
+    elif band_type == "below" or "<=" in band_c or "≤" in band_c:
+        # "<=8°C" — YES wins if actual <= threshold
+        return "YES" if actual_rounded <= threshold else "NO"
+    else:
+        # Exact band "26°C" or "26-26°C" — YES wins if actual == threshold
+        # For range bands like "26-26°C", extract both numbers
+        range_match = re.search(r'(-?\d+)-(-?\d+)', band_c)
+        if range_match:
+            low = float(range_match.group(1))
+            high = float(range_match.group(2))
+            return "YES" if low <= actual_rounded <= high else "NO"
+        return "YES" if actual_rounded == threshold else "NO"
+
+
 def check_polymarket_resolution(market_slug):
     """Check if a Polymarket market has resolved via the Gamma API.
 
