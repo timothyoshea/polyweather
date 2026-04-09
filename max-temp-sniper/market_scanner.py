@@ -180,21 +180,53 @@ def _parse_event(event: dict) -> Optional[Market]:
 def _parse_band_from_question(
     question: str, yes_token_id: str, no_token_id: str, condition_id: str = ""
 ) -> Optional[Band]:
-    """Parse a band from a market question."""
+    """Parse a band from a market question.
+
+    Handles:
+    - °C: single degree bands "17°C" (YES if max == 17°C)
+    - °F: 2-degree range bands "between 38-39°F" (YES if max is 38 or 39°F)
+    - Bottom: "37°F or below" (YES if max <= 37°F)
+    - Top: "56°F or higher" (YES if max >= 56°F)
+
+    Polymarket rounds to whole degrees (WU data). So "17°C" means exactly 17°C.
+    For ranges: "38-39°F" means the max temp is 38°F or 39°F.
+    """
+    # Detect unit
+    unit = "F" if FAHRENHEIT_PATTERN.search(question) else "C"
+    is_top = bool(TOP_BAND_PATTERNS.search(question))
+    is_bottom = bool(BOTTOM_BAND_PATTERNS.search(question))
+
+    # Try to match range first: "between 38-39°F"
+    range_match = re.search(r'(\d+)\s*[-–]\s*(\d+)\s*°?\s*[CcFf]', question)
+    if range_match:
+        temp_low = float(range_match.group(1))
+        temp_high = float(range_match.group(2))
+        return Band(
+            label=_short_label(temp_low, is_top, is_bottom, unit, temp_high),
+            temp_value=temp_low,
+            temp_value_high=temp_high,
+            is_top_band=is_top,
+            is_bottom_band=is_bottom,
+            yes_token_id=yes_token_id,
+            no_token_id=no_token_id,
+            condition_id=condition_id,
+            unit=unit,
+        )
+
+    # Single value: "17°C" or "56°F or higher"
     temp_match = TEMP_EXTRACT.search(question)
     if not temp_match:
         return None
 
     temp_value = float(temp_match.group(1))
-    is_top = bool(TOP_BAND_PATTERNS.search(question))
-    is_bottom = bool(BOTTOM_BAND_PATTERNS.search(question))
-
-    # Detect unit from the question text
-    unit = "F" if FAHRENHEIT_PATTERN.search(question) else "C"
+    # For single °C bands, the range is just that degree
+    # For single °F (non-range), same
+    temp_high = temp_value
 
     return Band(
-        label=_short_label(temp_value, is_top, is_bottom, unit),
+        label=_short_label(temp_value, is_top, is_bottom, unit, temp_high),
         temp_value=temp_value,
+        temp_value_high=temp_high,
         is_top_band=is_top,
         is_bottom_band=is_bottom,
         yes_token_id=yes_token_id,
@@ -204,8 +236,8 @@ def _parse_band_from_question(
     )
 
 
-def _short_label(temp: float, is_top: bool, is_bottom: bool, unit: str = "C") -> str:
-    """Create a short band label like '22°C' or '76°F or higher'."""
+def _short_label(temp: float, is_top: bool, is_bottom: bool, unit: str = "C", temp_high: float = None) -> str:
+    """Create a short band label like '17°C', '38-39°F', or '56°F or higher'."""
     t = int(temp) if temp == int(temp) else temp
     u = f"°{unit}"
     if is_top:
