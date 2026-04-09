@@ -546,10 +546,12 @@ async function loadChart() {
         })).reverse(),
         borderColor: color,
         backgroundColor: color + '33',
-        pointRadius: 3,
-        pointHoverRadius: 5,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        pointBackgroundColor: color,
         tension: 0.2,
         fill: false,
+        showLine: true,
       });
     } catch (e) {
       console.error(`Failed to load chart data for ${station}:`, e);
