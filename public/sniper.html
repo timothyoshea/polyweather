@@ -941,17 +941,41 @@ function renderPnlChart(dailyData) {
   });
 }
 
+async function loadLastMetar() {
+  try {
+    const resp = await fetch('/api/metar_history?limit=1&hours=1');
+    const data = await resp.json();
+    if (Array.isArray(data) && data.length > 0) {
+      const r = data[0];
+      const ts = new Date(r.polled_at || r.created_at);
+      const timeStr = ts.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const ago = Math.round((Date.now() - ts.getTime()) / 1000);
+      const agoStr = ago < 60 ? ago + 's ago' : Math.round(ago / 60) + 'm ago';
+      const agoColor = ago < 30 ? 'var(--green)' : ago < 120 ? 'var(--amber)' : 'var(--red)';
+
+      $('#last-check-time').textContent = timeStr;
+      $('#last-check-ago').textContent = agoStr;
+      $('#last-check-ago').style.color = agoColor;
+
+      $('#latest-reading-temp').textContent = r.temp_c + '°C';
+      $('#latest-reading-city').textContent = (r.city || r.station || '--') + ' (' + (r.station || '') + ')';
+    }
+  } catch (e) {
+    console.error('Failed to load last METAR:', e);
+  }
+}
+
 async function loadAll() {
   const now = new Date();
   $('#last-refresh').textContent = 'Last refresh: ' + now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  await Promise.all([loadSignals(), loadTrades(), loadPnl()]);
+  await Promise.all([loadSignals(), loadTrades(), loadPnl(), loadLastMetar()]);
 }
 
 // Initial load
 loadAll();
 
-// Auto-refresh every 60 seconds
-setInterval(loadAll, 60000);
+// Auto-refresh every 30 seconds (faster to show bot is alive)
+setInterval(loadAll, 30000);
 </script>
 </body>
 </html>
