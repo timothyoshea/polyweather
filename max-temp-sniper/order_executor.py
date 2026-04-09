@@ -307,6 +307,64 @@ class OrderExecutor:
             logger.warning(f"CLOB book fetch failed for {token_id}: {e}")
             return None
 
+    def _log_potential_trade(
+        self,
+        locked: LockedBand,
+        signal_id: Optional[str],
+        midpoint_yes: Optional[float],
+        midpoint_no: Optional[float],
+        best_bid: Optional[float],
+        best_ask: Optional[float],
+        book_levels_count: int,
+        available_liquidity_usdc: float,
+        skip_reason: Optional[str],
+        was_traded: bool,
+    ):
+        """Log every band evaluation to sniper_potential_trades (traded or skipped)."""
+        if not self._supabase_url or not self._supabase_key:
+            return
+
+        payload = json.dumps({
+            "signal_id": signal_id,
+            "city": locked.market.city or None,
+            "station": locked.market.station or None,
+            "band_label": locked.band.label,
+            "side": locked.side,
+            "trade_type": locked.trade_type,
+            "temp_observed": locked.temp_observed,
+            "yes_token_id": locked.band.yes_token_id,
+            "no_token_id": locked.band.no_token_id,
+            "midpoint_yes": midpoint_yes,
+            "midpoint_no": midpoint_no,
+            "best_bid": best_bid,
+            "best_ask": best_ask,
+            "book_levels_count": book_levels_count,
+            "available_liquidity_usdc": round(available_liquidity_usdc, 4) if available_liquidity_usdc else 0,
+            "skip_reason": skip_reason,
+            "was_traded": was_traded,
+        }).encode()
+
+        try:
+            url = f"{self._supabase_url}/rest/v1/sniper_potential_trades"
+            req = urllib.request.Request(
+                url,
+                data=payload,
+                method="POST",
+                headers={
+                    "Content-Type": "application/json",
+                    "apikey": self._supabase_key,
+                    "Authorization": f"Bearer {self._supabase_key}",
+                    "Prefer": "return=minimal",
+                },
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                logger.debug(
+                    f"Potential trade logged: {locked.band.label} {locked.side} "
+                    f"traded={was_traded} skip={skip_reason} ({resp.status})"
+                )
+        except Exception as e:
+            logger.warning(f"Failed to log potential trade: {e}")
+
     def _insert_signal(self, trigger: TriggerResult) -> Optional[str]:
         """Insert a signal record into sniper_signals table."""
         if not self._supabase_url or not self._supabase_key:
