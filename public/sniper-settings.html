@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PolyWeather — Sniper Settings</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --card: #12121a;
+    --card-border: #1e1e2e;
+    --green: #00e676;
+    --red: #ff5252;
+    --amber: #ffc107;
+    --cyan: #4fc3f7;
+    --text: #e0e0e0;
+    --text2: #888;
+    --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* -- Sidebar ---------------------------------------- */
+  .sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0; width: 200px;
+    background: #0d0d14; border-right: 1px solid var(--card-border);
+    display: flex; flex-direction: column; padding: 20px 0; z-index: 100;
+  }
+  .sidebar-logo {
+    display: flex; align-items: center; gap: 8px; padding: 0 16px 20px;
+    font-size: 16px; font-weight: 700; text-decoration: none; color: var(--text);
+  }
+  .sidebar-logo .logo-icon {
+    font-size: 20px;
+    filter: drop-shadow(0 0 6px rgba(79, 195, 247, 0.5));
+  }
+  .sidebar-logo span:not(.logo-icon) {
+    background: linear-gradient(135deg, var(--cyan), var(--green));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .strategy-switcher {
+    display: flex; margin: 0 12px 16px; border-radius: 6px; overflow: hidden;
+    border: 1px solid var(--card-border); background: var(--bg);
+  }
+  .strategy-switcher a {
+    flex: 1; padding: 6px 4px; text-align: center; font-size: 11px; font-weight: 600;
+    color: var(--text2); text-decoration: none; transition: all 0.2s;
+    font-family: var(--sans); cursor: pointer;
+  }
+  .strategy-switcher a:hover { color: var(--text); }
+  .strategy-switcher a.active {
+    background: rgba(79,195,247,0.15); color: var(--cyan);
+  }
+  .sidebar-nav { display: flex; flex-direction: column; gap: 2px; }
+  .sidebar-link {
+    display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+    color: var(--text2); font-size: 13px; font-weight: 500; text-decoration: none;
+    border-left: 3px solid transparent; transition: all 0.2s;
+  }
+  .sidebar-link:hover { color: var(--text); background: rgba(79,195,247,0.05); }
+  .sidebar-link.active {
+    color: var(--cyan); border-left-color: var(--cyan);
+    background: rgba(79,195,247,0.08);
+  }
+  .main-content { margin-left: 200px; min-height: 100vh; }
+
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main-content { margin-left: 0; padding-bottom: 70px; }
+  }
+  .mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--card);
+    border-top: 1px solid var(--card-border);
+    z-index: 500;
+    padding: 6px 0 env(safe-area-inset-bottom, 6px);
+  }
+  .mobile-nav-inner {
+    display: flex; justify-content: space-around; align-items: center;
+  }
+  .mobile-nav a {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    background: none; border: none; color: var(--text2);
+    font-size: 10px; font-family: var(--sans); cursor: pointer;
+    padding: 6px 8px; text-decoration: none; transition: color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mobile-nav a:hover { color: var(--text); }
+  .mobile-nav .active { color: var(--cyan); }
+  .mobile-nav .nav-icon { font-size: 18px; }
+  @media (max-width: 768px) { .mobile-nav { display: block; } }
+
+  /* -- Layout ----------------------------------------- */
+  .container { max-width: 100%; margin: 0 auto; padding: 24px; }
+
+  .page-header {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 24px;
+  }
+  .page-header h1 { font-size: 22px; font-weight: 700; }
+
+  .section-title {
+    font-size: 16px; font-weight: 600; margin-bottom: 16px; color: var(--text);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title .icon { font-size: 18px; }
+  .section { margin-bottom: 32px; }
+
+  /* -- Summary Cards ---------------------------------- */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px; margin-bottom: 32px;
+  }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 10px; padding: 16px; text-align: center;
+  }
+  .stat-card .label {
+    font-size: 11px; color: var(--text2); text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 6px;
+  }
+  .stat-card .value {
+    font-family: var(--mono); font-size: 22px; font-weight: 600;
+  }
+  .stat-card .sub {
+    font-family: var(--mono); font-size: 12px; color: var(--text2); margin-top: 4px;
+  }
+
+  /* -- Tables ----------------------------------------- */
+  .table-card {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 10px; overflow: hidden; margin-bottom: 32px;
+  }
+  .table-card .table-header {
+    padding: 16px 20px; border-bottom: 1px solid var(--card-border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .table-card .table-header h3 { font-size: 14px; font-weight: 600; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th {
+    text-align: left; padding: 10px 14px; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2);
+    border-bottom: 1px solid var(--card-border); font-weight: 600;
+    font-family: var(--sans);
+  }
+  td {
+    padding: 10px 14px; border-bottom: 1px solid var(--card-border);
+    font-family: var(--mono); white-space: nowrap;
+  }
+  tr:hover td { background: rgba(79, 195, 247, 0.03); }
+
+  .val-pos { color: var(--green); }
+  .val-neg { color: var(--red); }
+  .val-neutral { color: var(--text2); }
+
+  /* -- Region group header row ------------------------ */
+  .region-group-header td {
+    background: rgba(79, 195, 247, 0.06);
+    border-bottom: 1px solid rgba(79, 195, 247, 0.15);
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--cyan);
+    padding: 8px 14px;
+  }
+
+  /* -- Config Cards ----------------------------------- */
+  .config-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px; margin-bottom: 32px;
+  }
+  .config-card {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 10px; padding: 16px;
+  }
+  .config-card .config-label {
+    font-size: 11px; color: var(--text2); text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 6px;
+  }
+  .config-card .config-value {
+    font-family: var(--mono); font-size: 18px; font-weight: 600;
+  }
+
+  /* -- Station Map ------------------------------------ */
+  .station-map {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 10px; padding: 20px; margin-bottom: 32px; overflow-x: auto;
+  }
+  .station-map-title {
+    font-size: 14px; font-weight: 600; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .map-grid {
+    display: flex; gap: 4px; align-items: end; min-height: 60px;
+    padding: 10px 0;
+  }
+  .map-station {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    min-width: 38px;
+  }
+  .map-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .map-dot.green { background: var(--green); box-shadow: 0 0 6px rgba(0,230,118,0.5); }
+  .map-dot.yellow { background: var(--amber); box-shadow: 0 0 6px rgba(255,193,7,0.5); }
+  .map-dot.red { background: var(--red); box-shadow: 0 0 6px rgba(255,82,82,0.5); }
+  .map-dot.grey { background: #555; }
+  .map-label {
+    font-family: var(--mono); font-size: 9px; color: var(--text2);
+    writing-mode: vertical-rl; transform: rotate(180deg);
+    max-height: 60px; overflow: hidden;
+  }
+  .map-city {
+    font-family: var(--sans); font-size: 8px; color: var(--text2);
+    max-width: 38px; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap; text-align: center;
+  }
+  .map-region-label {
+    font-family: var(--sans); font-size: 10px; font-weight: 600;
+    color: var(--cyan); padding: 4px 8px; white-space: nowrap;
+    display: flex; align-items: center;
+  }
+  .map-divider {
+    width: 1px; background: var(--card-border); min-height: 40px;
+    margin: 0 6px; flex-shrink: 0;
+  }
+
+  /* -- Status dot ------------------------------------- */
+  .status-dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    margin-right: 4px; vertical-align: middle;
+  }
+  .status-dot.green { background: var(--green); box-shadow: 0 0 4px rgba(0,230,118,0.5); }
+  .status-dot.yellow { background: var(--amber); box-shadow: 0 0 4px rgba(255,193,7,0.5); }
+  .status-dot.red { background: var(--red); box-shadow: 0 0 4px rgba(255,82,82,0.5); }
+  .status-dot.grey { background: #555; }
+
+  /* -- Resolution link -------------------------------- */
+  a.res-link {
+    color: var(--cyan); text-decoration: none; font-family: var(--mono);
+    font-size: 11px;
+  }
+  a.res-link:hover { text-decoration: underline; }
+
+  /* -- Legend ------------------------------------------ */
+  .legend {
+    display: flex; gap: 16px; align-items: center; margin-bottom: 16px;
+    font-size: 11px; color: var(--text2);
+  }
+  .legend-item { display: flex; align-items: center; gap: 4px; }
+
+  /* -- Loading ---------------------------------------- */
+  .loading {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 60px 0; gap: 16px; color: var(--text2);
+  }
+  .spinner {
+    width: 32px; height: 32px; border: 3px solid var(--card-border);
+    border-top-color: var(--cyan); border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty-state {
+    text-align: center; padding: 40px 20px; color: var(--text2); font-size: 13px;
+  }
+</style>
+</head>
+<body>
+<script>
+fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({action:'check'}) })
+  .then(r => r.json()).then(d => { if (!d.authenticated) window.location.href = '/login.html'; })
+  .catch(() => { window.location.href = '/login.html'; });
+</script>
+
+<!-- -- Sidebar ---------------------------------------- -->
+<nav class="sidebar">
+  <a href="/" class="sidebar-logo">
+    <span class="logo-icon">&#x26C8;</span>
+    <span>PolyWeather</span>
+  </a>
+  <div class="strategy-switcher">
+    <a href="/">Temp Predictions</a>
+    <a class="active" href="/sniper">Max Temp Sniper</a>
+  </div>
+  <div class="sidebar-nav">
+    <a class="sidebar-link" href="/sniper">Dashboard</a>
+    <a class="sidebar-link" href="/sniper/trades">Trade History</a>
+    <a class="sidebar-link" href="/sniper/history">Temp History</a>
+    <a class="sidebar-link active" href="/sniper/settings">Settings</a>
+  </div>
+  <div style="padding:0 16px 16px;">
+    <button onclick="fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'logout'})}).then(()=>window.location.href='/login.html')" style="background:none;border:1px solid var(--card-border);color:var(--text2);padding:6px 14px;border-radius:6px;font-size:11px;cursor:pointer;font-family:var(--sans);width:100%;transition:color 0.15s;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text2)'">Sign Out</button>
+  </div>
+</nav>
+
+<!-- -- Main Content ----------------------------------- -->
+<div class="main-content">
+<div class="container">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>Settings</h1>
+  </div>
+
+  <!-- Region Summary Cards -->
+  <div id="region-summary" class="summary-grid"></div>
+
+  <!-- Section 1: Tracked Markets -->
+  <div class="section">
+    <div class="section-title"><span class="icon">&#x1F4E1;</span> Tracked Markets</div>
+    <div class="legend">
+      <div class="legend-item"><span class="status-dot green"></span> Updated &lt; 30 min</div>
+      <div class="legend-item"><span class="status-dot yellow"></span> 30-60 min ago</div>
+      <div class="legend-item"><span class="status-dot red"></span> &gt; 60 min ago</div>
+      <div class="legend-item"><span class="status-dot grey"></span> No data</div>
+    </div>
+    <div id="markets-table" class="table-card">
+      <div class="loading"><div class="spinner"></div><div>Loading station data...</div></div>
+    </div>
+  </div>
+
+  <!-- Section 2: Bot Configuration -->
+  <div class="section">
+    <div class="section-title"><span class="icon">&#x2699;</span> Bot Configuration</div>
+    <div class="config-grid">
+      <div class="config-card">
+        <div class="config-label">Trade Mode</div>
+        <div class="config-value" style="color:var(--amber)">Paper</div>
+      </div>
+      <div class="config-card">
+        <div class="config-label">METAR Poll Interval</div>
+        <div class="config-value">10s</div>
+      </div>
+      <div class="config-card">
+        <div class="config-label">Market Refresh</div>
+        <div class="config-value">15 min</div>
+      </div>
+      <div class="config-card">
+        <div class="config-label">Max Trade Size</div>
+        <div class="config-value">$50</div>
+      </div>
+      <div class="config-card">
+        <div class="config-label">Daily Loss Limit</div>
+        <div class="config-value">$500</div>
+      </div>
+      <div class="config-card">
+        <div class="config-label">Max Open Positions</div>
+        <div class="config-value">20</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: Station Map -->
+  <div class="section">
+    <div class="section-title"><span class="icon">&#x1F5FA;</span> Station Coverage (West to East)</div>
+    <div class="legend">
+      <div class="legend-item"><span class="status-dot green"></span> Online</div>
+      <div class="legend-item"><span class="status-dot yellow"></span> Stale</div>
+      <div class="legend-item"><span class="status-dot red"></span> Offline</div>
+    </div>
+    <div id="station-map" class="station-map">
+      <div class="loading"><div class="spinner"></div><div>Loading station map...</div></div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- -- Mobile Nav ------------------------------------- -->
+<nav class="mobile-nav">
+  <div style="display:flex;border-bottom:1px solid var(--card-border);padding:4px 8px;">
+    <a href="/" style="flex:1;text-align:center;font-size:10px;font-weight:600;color:var(--text2);padding:4px;text-decoration:none;font-family:var(--sans);">Temp Predictions</a>
+    <a href="/sniper" style="flex:1;text-align:center;font-size:10px;font-weight:600;color:var(--cyan);padding:4px;text-decoration:none;font-family:var(--sans);">Sniper</a>
+  </div>
+  <div class="mobile-nav-inner">
+    <a href="/sniper"><span class="nav-icon">&#x1F3AF;</span>Dashboard</a>
+    <a href="/sniper/trades"><span class="nav-icon">&#x1F4CB;</span>Trades</a>
+    <a href="/sniper/history"><span class="nav-icon">&#x1F321;</span>Temps</a>
+    <a href="/sniper/settings" class="active"><span class="nav-icon">&#x2699;</span>Settings</a>
+  </div>
+</nav>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+// Station longitude lookup for west-to-east ordering
+const STATION_COORDS = {
+  // Americas (West)
+  KLAS: { lon: -115.15, region: 'Americas' },
+  KDEN: { lon: -104.67, region: 'Americas' },
+  KSAT: { lon: -98.47, region: 'Americas' },
+  KAUS: { lon: -97.67, region: 'Americas' },
+  KDFW: { lon: -97.03, region: 'Americas' },
+  KIAH: { lon: -95.34, region: 'Americas' },
+  KHOU: { lon: -95.28, region: 'Americas' },
+  KMSY: { lon: -90.26, region: 'Americas' },
+  KORD: { lon: -87.91, region: 'Americas' },
+  KATL: { lon: -84.43, region: 'Americas' },
+  KDTW: { lon: -83.35, region: 'Americas' },
+  KMIA: { lon: -80.29, region: 'Americas' },
+  KPHL: { lon: -75.24, region: 'Americas' },
+  KJFK: { lon: -73.78, region: 'Americas' },
+  KLGA: { lon: -73.87, region: 'Americas' },
+  KEWR: { lon: -74.17, region: 'Americas' },
+  KBOS: { lon: -71.01, region: 'Americas' },
+  SBGL: { lon: -43.25, region: 'Americas' },
+  SBGR: { lon: -46.47, region: 'Americas' },
+  // Europe
+  LPPT: { lon: -9.13, region: 'Europe' },
+  LEMD: { lon: -3.57, region: 'Europe' },
+  LEBL: { lon: 2.08, region: 'Europe' },
+  EGLC: { lon: 0.055, region: 'Europe' },
+  EGLL: { lon: -0.46, region: 'Europe' },
+  LFPG: { lon: 2.55, region: 'Europe' },
+  EHAM: { lon: 4.76, region: 'Europe' },
+  EBCI: { lon: 4.45, region: 'Europe' },
+  EDDM: { lon: 11.79, region: 'Europe' },
+  EDDB: { lon: 13.50, region: 'Europe' },
+  LSZH: { lon: 8.56, region: 'Europe' },
+  LIRF: { lon: 12.25, region: 'Europe' },
+  LOWW: { lon: 16.57, region: 'Europe' },
+  EPWA: { lon: 20.97, region: 'Europe' },
+  LGAV: { lon: 23.94, region: 'Europe' },
+  LTFM: { lon: 28.81, region: 'Europe' },
+  UUEE: { lon: 37.41, region: 'Europe' },
+  // Asia-Pacific
+  OMDB: { lon: 55.36, region: 'Asia-Pacific' },
+  VIDP: { lon: 77.10, region: 'Asia-Pacific' },
+  VABB: { lon: 72.87, region: 'Asia-Pacific' },
+  VTBS: { lon: 100.75, region: 'Asia-Pacific' },
+  WSSS: { lon: 103.99, region: 'Asia-Pacific' },
+  VHHH: { lon: 113.91, region: 'Asia-Pacific' },
+  ZUUU: { lon: 103.95, region: 'Asia-Pacific' },
+  ZGSZ: { lon: 113.81, region: 'Asia-Pacific' },
+  ZPPP: { lon: 102.74, region: 'Asia-Pacific' },
+  RCTP: { lon: 121.23, region: 'Asia-Pacific' },
+  ZBAA: { lon: 116.58, region: 'Asia-Pacific' },
+  RKSI: { lon: 126.45, region: 'Asia-Pacific' },
+  RJTT: { lon: 139.78, region: 'Asia-Pacific' },
+  RJAA: { lon: 140.39, region: 'Asia-Pacific' },
+  YSSY: { lon: 151.18, region: 'Asia-Pacific' },
+  NZAA: { lon: 174.79, region: 'Asia-Pacific' },
+};
+
+function cToF(c) {
+  if (c === null || c === undefined) return null;
+  return (c * 9/5 + 32);
+}
+
+function getStatusClass(lastUpdate) {
+  if (!lastUpdate) return 'grey';
+  const now = new Date();
+  const updated = new Date(lastUpdate);
+  const diffMin = (now - updated) / 60000;
+  if (diffMin < 30) return 'green';
+  if (diffMin < 60) return 'yellow';
+  return 'red';
+}
+
+function getRegion(station) {
+  const info = STATION_COORDS[station];
+  if (info) return info.region;
+  // Guess from prefix
+  if (station.startsWith('K') || station.startsWith('SB')) return 'Americas';
+  if (station.startsWith('E') || station.startsWith('L') || station.startsWith('U')) return 'Europe';
+  return 'Asia-Pacific';
+}
+
+function buildMarketsTable(data) {
+  // Group by region
+  const regions = { 'Americas': [], 'Europe': [], 'Asia-Pacific': [] };
+  data.forEach(s => {
+    const region = getRegion(s.station);
+    if (!regions[region]) regions[region] = [];
+    regions[region].push(s);
+  });
+
+  let html = `<div class="table-header"><h3>All Monitored Stations (${data.length})</h3></div>`;
+  html += '<div class="table-wrap"><table><thead><tr>';
+  html += '<th>City</th><th>ICAO</th><th>Resolution Source</th>';
+  html += '<th>Current Temp</th><th>Today High / Low</th>';
+  html += '<th>Update Freq</th><th>Readings</th><th>Status</th>';
+  html += '</tr></thead><tbody>';
+
+  for (const [region, stations] of Object.entries(regions)) {
+    if (stations.length === 0) continue;
+    html += `<tr class="region-group-header"><td colspan="8">${region} (${stations.length} stations)</td></tr>`;
+    stations.forEach(s => {
+      const status = getStatusClass(s.last_update);
+      const tempC = s.latest_temp_c !== null ? s.latest_temp_c.toFixed(1) : '--';
+      const tempF = s.latest_temp_c !== null ? cToF(s.latest_temp_c).toFixed(1) : '--';
+      const highC = s.today_high !== null ? s.today_high.toFixed(1) : '--';
+      const highF = s.today_high !== null ? cToF(s.today_high).toFixed(1) : '--';
+      const lowC = s.today_low !== null ? s.today_low.toFixed(1) : '--';
+      const lowF = s.today_low !== null ? cToF(s.today_low).toFixed(1) : '--';
+      const freq = s.avg_interval_min !== null ? s.avg_interval_min + ' min' : '--';
+      const resLink = s.resolution_source
+        ? `<a class="res-link" href="${s.resolution_source}" target="_blank">${s.resolution_source.replace('https://www.wunderground.com/history/daily/', '')}</a>`
+        : '<span style="color:var(--text2)">--</span>';
+
+      html += '<tr>';
+      html += `<td style="font-family:var(--sans)">${s.city || '--'}</td>`;
+      html += `<td>${s.station}</td>`;
+      html += `<td>${resLink}</td>`;
+      html += `<td>${tempC}&deg;C <span style="color:var(--text2)">(${tempF}&deg;F)</span></td>`;
+      html += `<td>${highC} <span style="color:var(--text2)">/ ${lowC}&deg;C</span></td>`;
+      html += `<td>${freq}</td>`;
+      html += `<td>${s.reading_count}</td>`;
+      html += `<td><span class="status-dot ${status}"></span>${status === 'green' ? 'Online' : status === 'yellow' ? 'Stale' : status === 'red' ? 'Offline' : 'No data'}</td>`;
+      html += '</tr>';
+    });
+  }
+
+  html += '</tbody></table></div>';
+  return html;
+}
+
+function buildRegionSummary(data) {
+  const totals = { 'Americas': { count: 0, online: 0 }, 'Europe': { count: 0, online: 0 }, 'Asia-Pacific': { count: 0, online: 0 } };
+  data.forEach(s => {
+    const region = getRegion(s.station);
+    if (!totals[region]) totals[region] = { count: 0, online: 0 };
+    totals[region].count++;
+    if (getStatusClass(s.last_update) === 'green') totals[region].online++;
+  });
+
+  let html = '';
+  html += `<div class="stat-card"><div class="label">Total Stations</div><div class="value">${data.length}</div><div class="sub">tracked</div></div>`;
+  for (const [region, t] of Object.entries(totals)) {
+    html += `<div class="stat-card"><div class="label">${region}</div><div class="value">${t.count}</div><div class="sub"><span style="color:var(--green)">${t.online} online</span></div></div>`;
+  }
+  const onlineTotal = Object.values(totals).reduce((a, t) => a + t.online, 0);
+  const pct = data.length > 0 ? Math.round(onlineTotal / data.length * 100) : 0;
+  html += `<div class="stat-card"><div class="label">Uptime</div><div class="value" style="color:${pct > 80 ? 'var(--green)' : pct > 50 ? 'var(--amber)' : 'var(--red)'}">${pct}%</div><div class="sub">stations online</div></div>`;
+  return html;
+}
+
+function buildStationMap(data) {
+  // Sort by longitude (west to east)
+  const sorted = [...data].sort((a, b) => {
+    const lonA = STATION_COORDS[a.station] ? STATION_COORDS[a.station].lon : 0;
+    const lonB = STATION_COORDS[b.station] ? STATION_COORDS[b.station].lon : 0;
+    return lonA - lonB;
+  });
+
+  // Group by region in order
+  const regionOrder = ['Americas', 'Europe', 'Asia-Pacific'];
+  const grouped = {};
+  regionOrder.forEach(r => grouped[r] = []);
+  sorted.forEach(s => {
+    const region = getRegion(s.station);
+    if (!grouped[region]) grouped[region] = [];
+    grouped[region].push(s);
+  });
+
+  let html = '<div class="map-grid">';
+  regionOrder.forEach((region, idx) => {
+    if (idx > 0) html += '<div class="map-divider"></div>';
+    html += `<div class="map-region-label">${region}</div>`;
+    grouped[region].forEach(s => {
+      const status = getStatusClass(s.last_update);
+      const cityShort = (s.city || s.station).split(',')[0].split(' ')[0];
+      html += `<div class="map-station" title="${s.city || s.station} (${s.station})">`;
+      html += `<div class="map-dot ${status}"></div>`;
+      html += `<div class="map-label">${s.station}</div>`;
+      html += `<div class="map-city">${cityShort}</div>`;
+      html += '</div>';
+    });
+  });
+  html += '</div>';
+  return html;
+}
+
+async function loadData() {
+  try {
+    const resp = await fetch('/api/metar_history?summary=true&hours=24&limit=2000');
+    const data = await resp.json();
+
+    $('#region-summary').innerHTML = buildRegionSummary(data);
+    $('#markets-table').innerHTML = buildMarketsTable(data);
+    $('#station-map').innerHTML = buildStationMap(data);
+  } catch (err) {
+    $('#markets-table').innerHTML = `<div class="empty-state">Failed to load station data: ${err.message}</div>`;
+    $('#station-map').innerHTML = `<div class="empty-state">Failed to load map data</div>`;
+  }
+}
+
+loadData();
+</script>
+</body>
+</html>
