@@ -94,7 +94,7 @@ class handler(BaseHTTPRequestHandler):
             limit = int(params.get("limit", ["200"])[0])
 
             # Build time filter
-            cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
+            cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
             query = f"sniper_price_tracks?select=*&order=signal_time.desc&signal_time=gte.{cutoff}&limit={limit}"
             if city:
