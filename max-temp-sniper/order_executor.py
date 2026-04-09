@@ -135,6 +135,11 @@ class OrderExecutor:
 
         if vwap_price is None or vwap_price <= 0:
             logger.warning(f"SKIP (bad price): {locked.band.label} {locked.side}")
+            self._log_potential_trade(
+                locked, signal_id, yes_midpoint, no_midpoint,
+                book.get("best_bid"), book.get("best_ask"),
+                len(levels), total_available, "bad_price", False,
+            )
             return None
 
         if vwap_price >= MAX_ENTRY_PRICE:
@@ -142,7 +147,19 @@ class OrderExecutor:
                 f"SKIP (price too high): {locked.band.label} {locked.side} "
                 f"VWAP={vwap_price:.4f} >= {MAX_ENTRY_PRICE} — no profit potential"
             )
+            self._log_potential_trade(
+                locked, signal_id, yes_midpoint, no_midpoint,
+                book.get("best_bid"), book.get("best_ask"),
+                len(levels), total_available, "price_too_high", False,
+            )
             return None
+
+        # Log as traded
+        self._log_potential_trade(
+            locked, signal_id, yes_midpoint, no_midpoint,
+            book.get("best_bid"), book.get("best_ask"),
+            len(levels), total_available, None, True,
+        )
 
         if self.mode == "paper":
             return self._paper_trade(locked, signal_id, book, token_id)
