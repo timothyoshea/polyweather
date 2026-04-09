@@ -37,6 +37,14 @@ FALLBACK_STATIONS = {
     "Moscow": "UUEE",
 }
 
+# Fallback resolution sources for cities missing from Gamma API
+FALLBACK_RESOLUTION_SOURCES = {
+    "VHHH": "https://www.wunderground.com/history/daily/hk/hong-kong/VHHH",
+    "LLBG": "https://www.wunderground.com/history/daily/il/tel-aviv/LLBG",
+    "LTFM": "https://www.wunderground.com/history/daily/tr/istanbul/LTFM",
+    "UUEE": "https://www.wunderground.com/history/daily/ru/moscow/UUEE",
+}
+
 
 def fetch_all_markets() -> list[Market]:
     """Fetch ALL active temperature events from Gamma API, build band maps."""
