@@ -73,15 +73,57 @@ def resolve_trades():
 
         try:
             market = fetch_gamma_market(market_id)
-            if not market:
-                results["errors"].append(f"Trade {trade['id']}: market {market_id} not found")
-                continue
 
-            closed = market.get("closed", False)
-            auto_resolved = market.get("automaticallyResolved", False)
+            # Check if market has resolved via Gamma
+            resolved_via_gamma = False
+            if market:
+                closed = market.get("closed", False)
+                auto_resolved = market.get("automaticallyResolved", False)
+                resolved_via_gamma = closed or auto_resolved
 
-            if not (closed or auto_resolved):
-                continue  # Market still open
+            # Fallback: if market not found or not closed, check if date has passed
+            # and resolve using the METAR temp we recorded
+            market_date = trade.get("market_date", "")
+            today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+            if not resolved_via_gamma:
+                if market_date and market_date < today:
+                    # Past-date trade — resolve from recorded temp
+                    temp = trade.get("temp_observed")
+                    band_temp = trade.get("band_temp")
+                    side = trade.get("side", "")
+                    trade_type = trade.get("trade_type", "")
+
+                    if temp is not None and band_temp is not None:
+                        if trade_type == "top_band_yes":
+                            our_side_won = temp > band_temp
+                        else:  # lower_band_no
+                            our_side_won = temp > band_temp  # NO wins when temp exceeded the band
+
+                        size_usdc = float(trade.get("size_usdc") or 0)
+                        total_shares = float(trade.get("total_shares") or 0)
+                        entry_price = float(trade.get("entry_price") or 0)
+
+                        if our_side_won:
+                            profit = round(total_shares - size_usdc, 4) if total_shares else 0
+                            new_status = "won"
+                        else:
+                            profit = round(-size_usdc, 4)
+                            new_status = "lost"
+
+                        supabase_update("sniper_trades", trade["id"], {
+                            "status": new_status,
+                            "profit_usd": profit,
+                            "resolved_at": datetime.now(timezone.utc).isoformat(),
+                        })
+                        results["resolved"] += 1
+                        results["details"].append(
+                            f"{trade.get('city')} {trade.get('band_label')} {side}: "
+                            f"{new_status} (fallback, temp={temp}, profit=${profit})"
+                        )
+                        continue
+
+                continue  # Market still open or can't resolve
 
             # Determine outcome: check prices to see which side won
             # outcomePrices is a JSON string like "[\"0.95\",\"0.05\"]"
