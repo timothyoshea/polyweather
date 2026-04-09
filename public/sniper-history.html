@@ -214,6 +214,17 @@
   .badge-rising { background: rgba(0,230,118,0.15); color: var(--green); border: 1px solid rgba(0,230,118,0.3); }
   .badge-falling { background: rgba(255,82,82,0.15); color: var(--red); border: 1px solid rgba(255,82,82,0.3); }
   .badge-stable { background: rgba(136,136,136,0.12); color: var(--text2); border: 1px solid rgba(136,136,136,0.3); }
+
+  .market-link {
+    display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 6px;
+    border-radius: 3px; text-decoration: none; font-family: var(--mono);
+    background: rgba(79,195,247,0.1); color: var(--cyan); border: 1px solid rgba(79,195,247,0.25);
+    transition: all 0.15s; margin-right: 3px;
+  }
+  .market-link:hover { background: rgba(79,195,247,0.25); border-color: var(--cyan); }
+
+  .signal-locked { color: var(--green); font-size: 11px; font-weight: 600; }
+  .signal-none { color: var(--text2); font-size: 11px; }
 </style>
 </head>
 <body>
