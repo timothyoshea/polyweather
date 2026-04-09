@@ -303,9 +303,14 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
         <div class="sub" id="stat-wl">0W / 0L</div>
       </div>
       <div class="stat-card">
-        <div class="label">Total P&amp;L</div>
+        <div class="label">Expected Profit</div>
+        <div class="value" id="stat-expected" style="color:var(--green);">$0.00</div>
+        <div class="sub">if all open win</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Actual P&amp;L</div>
         <div class="value" id="stat-pnl">$0.00</div>
-        <div class="sub">cumulative</div>
+        <div class="sub">resolved trades</div>
       </div>
       <div class="stat-card">
         <div class="label">Avg Entry (Top Band)</div>
