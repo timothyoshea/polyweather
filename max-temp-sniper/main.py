@@ -26,7 +26,7 @@ logger = logging.getLogger("sniper.main")
 from market_scanner import fetch_all_markets
 from metar_poller import MetarPoller
 from signal_engine import SignalEngine
-from order_executor import OrderExecutor
+from order_executor import OrderExecutor, MAX_ENTRY_PRICE
 from position_tracker import PositionTracker
 from risk_manager import RiskManager
 from notifier import Notifier
