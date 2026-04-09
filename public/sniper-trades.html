@@ -619,6 +619,9 @@ function sortTrades() {
     } else if (field === 'pnl') {
       va = Number(a.profit_usd || a.pnl || 0);
       vb = Number(b.profit_usd || b.pnl || 0);
+    } else if (field === 'expected_profit') {
+      va = Number(a.expected_profit || 0);
+      vb = Number(b.expected_profit || 0);
     } else if (field === 'band') {
       va = a.band_temp || a.band_label || a.band || '';
       vb = b.band_temp || b.band_label || b.band || '';
