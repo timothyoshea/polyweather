@@ -1661,6 +1661,15 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
         activePortfolioId = portfolios[0].id;
       }
       sel.value = activePortfolioId;
+      // Update sidebar portfolio name
+      const pf = allPortfolios.find(p => p.id === activePortfolioId);
+      const nameEl = document.getElementById('sidebar-portfolio-name');
+      if (nameEl) nameEl.textContent = pf ? pf.name : '';
+      // Hide Smart Exits for non-live portfolios
+      const isLive = pf && pf.trade_mode === 'live';
+      document.querySelectorAll('.nav-smart-exits').forEach(el => {
+        el.style.display = isLive ? '' : 'none';
+      });
       updatePortfolioDisplay();
       loadPortfolioRules(activePortfolioId);
     } catch (e) {
