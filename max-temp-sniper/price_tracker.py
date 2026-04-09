@@ -178,7 +178,11 @@ class PriceTracker:
             return len(self._pending)
 
     def _fetch_midpoint(self, token_id: str) -> Optional[float]:
-        """Fetch midpoint price from CLOB API."""
+        """Fetch midpoint price from CLOB API.
+
+        Note: Always pass the YES token ID. NO tokens return 404 on negRisk markets.
+        Callers should invert (1.0 - mid) for NO side pricing.
+        """
         try:
             url = f"{CLOB_BASE}/midpoint?token_id={token_id}"
             req = urllib.request.Request(url, headers={"User-Agent": "MaxTempSniper/1.0"})
