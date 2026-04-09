@@ -340,6 +340,16 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
         <div class="value" style="color:var(--amber);" id="bot-status">Paper</div>
         <div class="sub">mode</div>
       </div>
+      <div class="stat-card">
+        <div class="label">Last METAR Check</div>
+        <div class="value" style="font-size:18px;" id="last-check-time">--</div>
+        <div class="sub" id="last-check-ago">waiting...</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Latest Reading</div>
+        <div class="value" style="font-size:18px;" id="latest-reading-temp">--</div>
+        <div class="sub" id="latest-reading-city">--</div>
+      </div>
     </div>
   </div>
 
