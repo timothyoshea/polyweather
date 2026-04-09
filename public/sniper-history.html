@@ -484,10 +484,12 @@ function renderOverview() {
   }
 
   $('#overview-tbody').innerHTML = sorted.map(s => {
-    const metarLink = `<a href="https://aviationweather.gov/api/data/metar?ids=${s.station}&format=json&hours=1" target="_blank" class="resolution-link">aviationweather.gov/${s.station}</a>`;
+    const metarLink = `<a href="https://aviationweather.gov/api/data/metar?ids=${s.station}&format=json&hours=1" target="_blank" class="resolution-link" title="METAR feed: aviationweather.gov/${s.station}">${s.station}</a>`;
     const resLink = s.resolution_source
-      ? `<a href="${s.resolution_source}" target="_blank" class="resolution-link">Weather Underground</a>`
+      ? `<a href="${s.resolution_source}" target="_blank" class="resolution-link" title="Weather Underground resolution source">WU</a>`
       : '--';
+    const marketLinks = buildMarketLinks(s.city);
+    const signal = buildSignal(s);
     return `<tr style="cursor:pointer;" onclick="selectStationChart('${s.station}')">
       <td>${s.city || '--'}</td>
       <td>${s.station || '--'}</td>
@@ -495,10 +497,12 @@ function renderOverview() {
       <td>${s.today_high != null ? s.today_high + '\u00B0C' : '--'}</td>
       <td>${s.today_low != null ? s.today_low + '\u00B0C' : '--'}</td>
       <td>${s.reading_count}</td>
-      <td title="This station updates its METAR on average every ${s.avg_interval_min || '?'} minutes">${s.avg_interval_min != null ? s.avg_interval_min + ' min' : '--'}</td>
-      <td>${staleDot(s.last_update)}${fmtDateTime(s.last_update)}</td>
+      <td title="Avg interval: ${s.avg_interval_min || '?'}m">${s.avg_interval_min != null ? s.avg_interval_min + 'm' : '--'}</td>
+      <td>${staleDot(s.last_update)}${fmtTime(s.last_update)}</td>
       <td>${metarLink}</td>
       <td>${resLink}</td>
+      <td>${marketLinks}</td>
+      <td>${signal}</td>
     </tr>`;
   }).join('');
 }
