@@ -279,15 +279,17 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
           <thead>
             <tr>
               <th data-sort="city">City <span class="sort-arrow"></span></th>
-              <th data-sort="station">Station <span class="sort-arrow"></span></th>
-              <th data-sort="latest_temp_c">Current <span class="sort-arrow"></span></th>
-              <th data-sort="today_high">High <span class="sort-arrow"></span></th>
-              <th data-sort="today_low">Low <span class="sort-arrow"></span></th>
-              <th data-sort="reading_count">Readings <span class="sort-arrow"></span></th>
-              <th data-sort="avg_interval_min" title="Average minutes between METAR updates from this station today. Lower = more frequent updates = faster signal detection.">Avg Interval <span class="sort-arrow"></span></th>
-              <th data-sort="last_update">Last Update <span class="sort-arrow"></span></th>
-              <th>METAR Feed</th>
-              <th>Resolution</th>
+              <th data-sort="station">Stn <span class="sort-arrow"></span></th>
+              <th data-sort="latest_temp_c">Now <span class="sort-arrow"></span></th>
+              <th data-sort="today_high">Hi <span class="sort-arrow"></span></th>
+              <th data-sort="today_low">Lo <span class="sort-arrow"></span></th>
+              <th data-sort="reading_count"># <span class="sort-arrow"></span></th>
+              <th data-sort="avg_interval_min" title="Avg minutes between METAR updates">Intv <span class="sort-arrow"></span></th>
+              <th data-sort="last_update">Updated <span class="sort-arrow"></span></th>
+              <th title="METAR data feed">Feed</th>
+              <th title="Resolution source">Res</th>
+              <th>Markets</th>
+              <th data-sort="today_high" title="Trade signal based on today's high">Signal</th>
             </tr>
           </thead>
           <tbody id="overview-tbody">
