@@ -65,6 +65,12 @@ class PriceTracker:
                 # Store the YES token for subsequent fetches (it always works)
                 token_id = fetch_token_id
 
+                # Only track bands where the price is below 99.5¢ —
+                # bands already at 100¢ are fully priced and not useful to track
+                if price_at_signal >= 0.995:
+                    logger.debug(f"Skip tracking {lb.band.label} {lb.side} — already at {price_at_signal:.4f}")
+                    continue
+
                 track_id = str(uuid.uuid4())
 
                 # Insert row into sniper_price_tracks
