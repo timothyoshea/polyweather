@@ -539,6 +539,8 @@ function onPortfolioChange() {
   currentPortfolioId = sel.value;
   localStorage.setItem('pw-portfolio-id', currentPortfolioId);
   currentPortfolio = allPortfolios.find(p => p.id === currentPortfolioId) || null;
+  const nameEl = document.getElementById('sidebar-portfolio-name');
+  if (nameEl) nameEl.textContent = currentPortfolio ? currentPortfolio.name : 'All Portfolios';
   // Show/hide Smart Exits nav based on trade mode
   const isLivePortfolio = currentPortfolio && currentPortfolio.trade_mode === 'live';
   document.querySelectorAll('.nav-smart-exits').forEach(el => {
