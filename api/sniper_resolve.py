@@ -72,7 +72,10 @@ def resolve_trades():
             continue
 
         try:
-            market = fetch_gamma_market(market_id)
+            try:
+                market = fetch_gamma_market(market_id)
+            except Exception:
+                market = None  # Gamma unavailable, fall through to fallback
 
             # Check if market has resolved via Gamma
             resolved_via_gamma = False
