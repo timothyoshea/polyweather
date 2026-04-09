@@ -686,7 +686,11 @@ function renderTrades() {
       <td>${band}</td>
       <td>${sideBadge(t.side)}</td>
       <td>${tradeTypeBadge(t.trade_type)}</td>
-      <td>${t.temp_observed !== undefined ? t.temp_observed + '\u00B0C' : '--'}</td>
+      <td>${t.temp_observed !== undefined ? (() => {
+        const isF = (t.band_label || '').includes('°F') || (t.band_label || '').includes('F');
+        if (isF) { return (t.temp_observed * 9/5 + 32).toFixed(1) + '°F'; }
+        return t.temp_observed + '°C';
+      })() : '--'}</td>
       <td>${priceStr}</td>
       <td>${t.best_bid !== undefined ? fmtCents(t.best_bid) : '--'}</td>
       <td>${t.best_ask !== undefined ? fmtCents(t.best_ask) : '--'}</td>
