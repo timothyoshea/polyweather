@@ -11,12 +11,13 @@ from typing import Optional
 @dataclass
 class Band:
     """A single temperature band in a market (e.g. '25°C or higher')."""
-    label: str              # e.g. "25°C or higher"
-    temp_value: float       # numeric threshold in market's native unit (°C or °F)
+    label: str              # e.g. "25°C or higher" or "38-39°F"
+    temp_value: float       # low threshold in market's native unit (°C or °F)
     is_top_band: bool       # True if this is the highest band ("or higher" / "above" / "+")
     yes_token_id: str       # CLOB token ID for YES
     no_token_id: str        # CLOB token ID for NO
     is_bottom_band: bool = False  # True if this is the lowest band ("or below")
+    temp_value_high: float = 0    # high end of range (same as temp_value for 1°C bands, +1 for 2°F bands)
     condition_id: str = ""  # Polymarket conditionId for this specific band/market
     unit: str = "C"         # "C" or "F" — the unit used in the market
 
