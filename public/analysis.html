@@ -857,6 +857,8 @@ function updateAnalysisPortfolioDisplay() {
   const nameEl = document.getElementById('portfolio-name-display');
   const selected = sel.options[sel.selectedIndex];
   if (nameEl) nameEl.textContent = selected ? selected.textContent : 'Select portfolio';
+  const sidebarName = document.getElementById('sidebar-portfolio-name');
+  if (sidebarName) sidebarName.textContent = selected ? selected.textContent : '';
   const list = document.getElementById('portfolio-picker-list');
   if (list) {
     list.innerHTML = analysisAllPortfolios.map(p =>
