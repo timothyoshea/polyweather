@@ -86,19 +86,38 @@ class OrderExecutor:
 
         # Fetch the full order book
         book = self._fetch_full_book(token_id)
-        if not book or not book["levels"]:
-            logger.warning(f"SKIP (no book): {locked.band.label} {locked.side}")
-            return None
 
-        # For buying: we hit the asks (sell orders)
-        # Calculate VWAP across ALL available levels (no size limit)
-        levels = book["levels"]  # sorted best price first
+        # If no CLOB book, fall back to midpoint for paper trading
+        # (most temp markets have AMM liquidity but empty order books)
+        if not book or not book["levels"]:
+            midpoint = self._fetch_midpoint(token_id)
+            if midpoint is None or midpoint <= 0:
+                logger.warning(f"SKIP (no book & no midpoint): {locked.band.label} {locked.side}")
+                return None
+            if midpoint >= MAX_ENTRY_PRICE:
+                logger.info(f"SKIP (price too high): {locked.band.label} {locked.side} mid={midpoint:.4f}")
+                return None
+            # Create a synthetic book from midpoint
+            book = {
+                "levels": [{"price": round(midpoint, 4), "size": 0, "cost": 0}],
+                "vwap_price": midpoint,
+                "total_available_usdc": 0,
+                "total_shares": 0,
+                "best_bid": None,
+                "best_ask": midpoint,
+                "bid_depth_usdc": None,
+                "ask_depth_usdc": 0,
+                "source": "midpoint",
+            }
+            logger.info(f"No CLOB book for {locked.band.label} {locked.side}, using midpoint={midpoint:.4f}")
+
+        levels = book["levels"]
         vwap_price = book["vwap_price"]
         total_available = book["total_available_usdc"]
         total_shares = book["total_shares"]
 
         if vwap_price is None or vwap_price <= 0:
-            logger.warning(f"SKIP (bad book price): {locked.band.label} {locked.side}")
+            logger.warning(f"SKIP (bad price): {locked.band.label} {locked.side}")
             return None
 
         if vwap_price >= MAX_ENTRY_PRICE:
