@@ -207,7 +207,10 @@ class handler(BaseHTTPRequestHandler):
             to_date = params.get("to", [None])[0]
             query = f"paper_trades?select=*&order=created_at.desc{pf_filter}"
             if status:
-                query += f"&status=eq.{status}"
+                if status.startswith("in.") or status.startswith("not."):
+                    query += f"&status={status}"
+                else:
+                    query += f"&status=eq.{status}"
             if bet_type:
                 query += f"&bet_type=eq.{bet_type}"
             if from_date:
