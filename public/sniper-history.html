@@ -293,7 +293,7 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
             </tr>
           </thead>
           <tbody id="overview-tbody">
-            <tr><td colspan="10" class="empty-state">Loading station overview...</td></tr>
+            <tr><td colspan="12" class="empty-state">Loading station overview...</td></tr>
           </tbody>
         </table>
       </div>
@@ -371,7 +371,7 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
             </tr>
           </thead>
           <tbody id="readings-tbody">
-            <tr><td colspan="10" class="empty-state">Loading readings...</td></tr>
+            <tr><td colspan="12" class="empty-state">Loading readings...</td></tr>
           </tbody>
         </table>
       </div>
@@ -452,7 +452,7 @@ async function loadOverview() {
     $('#station-count').textContent = summaryData.length + ' stations';
     $('#last-refresh').textContent = 'Updated ' + new Date().toLocaleTimeString();
   } catch (e) {
-    $('#overview-tbody').innerHTML = `<tr><td colspan="10" class="empty-state">Error: ${e.message}</td></tr>`;
+    $('#overview-tbody').innerHTML = `<tr><td colspan="12" class="empty-state">Error: ${e.message}</td></tr>`;
   }
 }
 
@@ -479,7 +479,7 @@ function renderOverview() {
   });
 
   if (sorted.length === 0) {
-    $('#overview-tbody').innerHTML = '<tr><td colspan="10" class="empty-state">No stations found</td></tr>';
+    $('#overview-tbody').innerHTML = '<tr><td colspan="12" class="empty-state">No stations found</td></tr>';
     return;
   }
 
@@ -636,7 +636,7 @@ async function loadReadings() {
     populateCityFilter();
     renderReadings();
   } catch (e) {
-    $('#readings-tbody').innerHTML = `<tr><td colspan="10" class="empty-state">Error: ${e.message}</td></tr>`;
+    $('#readings-tbody').innerHTML = `<tr><td colspan="12" class="empty-state">Error: ${e.message}</td></tr>`;
   }
 }
 
@@ -666,7 +666,7 @@ function renderReadings() {
   $('#reading-count').textContent = filtered.length + ' readings';
 
   if (filtered.length === 0) {
-    $('#readings-tbody').innerHTML = '<tr><td colspan="10" class="empty-state">No readings match filters</td></tr>';
+    $('#readings-tbody').innerHTML = '<tr><td colspan="12" class="empty-state">No readings match filters</td></tr>';
     return;
   }
 
