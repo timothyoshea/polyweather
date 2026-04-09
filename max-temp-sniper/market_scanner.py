@@ -146,6 +146,7 @@ def _parse_event(event: dict) -> Optional[Market]:
             city=city,
             station=station,
             resolution_source=event.get("resolutionSource", "") or FALLBACK_RESOLUTION_SOURCES.get(station, ""),
+            market_date=market_date,
         )
 
         for m in event_markets:
