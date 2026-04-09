@@ -1066,7 +1066,7 @@ function priceColor(p) {
   const v = Number(p);
   if (v < 0.95) return 'val-pos';   // green — tradeable
   if (v < 0.98) return '';           // amber range
-  return 'val-neg';                  // red — no edge
+  return 'val-neg';                  // red — thin margin
 }
 
 function fmtPrice(p) {
