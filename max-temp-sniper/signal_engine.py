@@ -95,13 +95,15 @@ class SignalEngine:
                 f"in {market.city}"
             )
 
-        # 2. Lower band NO sweep: for each non-top, non-bottom band that temp exceeds
-        # For range bands (e.g. 38-39°F), temp must exceed the HIGH end to confirm loser
+        # 2. Lower band NO sweep: for each non-top, non-bottom band where the
+        # rounded WU temp is ABOVE the band's range, confirming it's a loser.
+        # For "17°C" band: loser when rounded temp > 17 (i.e., >= 18)
+        # For "38-39°F" band: loser when rounded temp > 39 (i.e., >= 40)
         for band in market.bands:
             if band.is_top_band or band.is_bottom_band:
                 continue
-            threshold = band.temp_value_high if band.temp_value_high else band.temp_value
-            if temp_compare > threshold:
+            high = band.temp_value_high if band.temp_value_high else band.temp_value
+            if temp_compare > high:
                 locked.append(LockedBand(
                     band=band,
                     market=market,
