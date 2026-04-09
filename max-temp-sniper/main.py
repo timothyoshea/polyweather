@@ -134,6 +134,17 @@ async def metar_poll_loop():
                     )
                     notifier.notify_signal(trigger)
 
+                    # Track ALL locked bands (before filtering) for price reaction data
+                    all_locked_bands = list(trigger.locked_bands)
+                    try:
+                        await asyncio.get_event_loop().run_in_executor(
+                            None, price_tracker.start_tracking, trigger
+                        )
+                    except Exception as e:
+                        logger.error(f"Price tracking start failed: {e}")
+                    # Restore full list in case start_tracking modified it
+                    trigger.locked_bands = all_locked_bands
+
                     # Filter already-traded and risk-blocked bands
                     new_bands = []
                     for lb in trigger.locked_bands:
