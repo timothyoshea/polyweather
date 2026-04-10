@@ -619,6 +619,10 @@ class OrderExecutor:
             "fill_price": fill_price,
             "available_liquidity_usdc": available_liquidity,
             "num_levels": num_levels,
+            "trade_mode": trade_mode or self.mode,
+            "order_id": order_id,
+            "fill_status": fill_status,
+            "actual_cost_usdc": actual_cost_usdc,
         }).encode()
 
         try:
