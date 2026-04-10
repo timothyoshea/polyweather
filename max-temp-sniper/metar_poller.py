@@ -215,6 +215,20 @@ class MetarPoller:
         state["last_temp"] = temp
         state["last_raw"] = raw_ob
 
+        # Freshness check — reject stale observations
+        obs_time_str = obs.get("reportTime") or obs.get("obsTime")  # API may provide this
+        if obs_time_str:
+            try:
+                from datetime import datetime, timezone
+                # obsTime format varies, try common formats
+                obs_dt = datetime.fromisoformat(obs_time_str.replace("Z", "+00:00"))
+                age_seconds = (datetime.now(timezone.utc) - obs_dt).total_seconds()
+                if age_seconds > 600:  # 10 minutes
+                    logger.warning(f"Stale METAR for {station}: {age_seconds:.0f}s old, skipping")
+                    return None
+            except Exception:
+                pass  # If we can't parse time, continue anyway
+
         is_rising = (
             previous_temp is not None
             and temp > previous_temp
