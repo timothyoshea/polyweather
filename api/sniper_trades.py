@@ -48,7 +48,7 @@ class handler(BaseHTTPRequestHandler):
         try:
             params = parse_qs(urlparse(self.path).query)
             status = params.get("status", [None])[0]
-            limit = params.get("limit", ["50"])[0]
+            limit = _safe_int(params.get("limit", ["50"])[0], 50, 1, 1000)
 
             query = f"sniper_trades?select=*&order=created_at.desc&limit={limit}"
             if status:
