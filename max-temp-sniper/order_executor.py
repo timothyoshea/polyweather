@@ -241,6 +241,141 @@ class OrderExecutor:
 
         return trade
 
+    def _live_trade(self, locked: LockedBand, signal_id: Optional[str], book: dict, token_id: str) -> Optional[Trade]:
+        """Execute a live trade via CLOB API.
+
+        Uses the best ask from the order book as the limit price.
+        Polls fill status for up to 10 seconds after placement.
+        """
+        now = datetime.now(timezone.utc).isoformat()
+        levels = book["levels"]
+        best_ask = book.get("best_ask")
+        vwap_price = book["vwap_price"]
+        total_cost = book["total_available_usdc"]
+        total_shares = book["total_shares"]
+
+        # Use best ask as limit price (most likely to fill immediately)
+        limit_price = best_ask if best_ask and best_ask > 0 else vwap_price
+        if limit_price is None or limit_price <= 0:
+            logger.warning(f"LIVE SKIP (no valid price): {locked.band.label} {locked.side}")
+            return None
+
+        # Check balance before placing order
+        bal = self._clob_client.get_balance()
+        if bal is None:
+            logger.warning(f"LIVE SKIP (balance check failed): {locked.band.label}")
+            return None
+
+        usdc_available = bal["balance_usdc"]
+        estimated_cost = round(limit_price * total_shares, 4) if total_shares > 0 else 0
+
+        if estimated_cost > 0 and usdc_available < estimated_cost:
+            logger.warning(
+                f"LIVE SKIP (insufficient balance): need ${estimated_cost:.2f} "
+                f"but only ${usdc_available:.2f} available for {locked.band.label}"
+            )
+            return None
+
+        # Determine size: use all available shares from the book
+        size = round(total_shares, 2) if total_shares > 0 else 0
+        if size <= 0:
+            logger.warning(f"LIVE SKIP (zero size): {locked.band.label}")
+            return None
+
+        logger.info(
+            f"LIVE ORDER: {locked.side} {locked.band.label} "
+            f"price={limit_price:.4f} size={size:.2f} shares "
+            f"est_cost=${estimated_cost:.2f} balance=${usdc_available:.2f}"
+        )
+
+        # Place the order
+        order_resp = self._clob_client.place_order(
+            token_id=token_id,
+            side="BUY",
+            price=limit_price,
+            size=size,
+        )
+
+        if order_resp is None:
+            logger.error(f"LIVE TRADE FAILED: order placement returned None for {locked.band.label}")
+            return None
+
+        order_id = order_resp.get("order_id", "")
+        order_status = order_resp.get("status", "")
+        logger.info(f"  Order placed: id={order_id} status={order_status}")
+
+        # Poll fill status for up to 10 seconds
+        fill_status = order_status
+        size_matched = "0"
+        for _ in range(5):
+            time.sleep(2)
+            if not order_id:
+                break
+            order_info = self._clob_client.get_order(order_id)
+            if order_info:
+                fill_status = order_info.get("status", fill_status)
+                size_matched = order_info.get("size_matched", "0")
+                logger.info(f"  Poll: status={fill_status} matched={size_matched}")
+                if fill_status in ("MATCHED", "FILLED"):
+                    break
+
+        # Check balance after to calculate actual cost
+        actual_cost = None
+        bal_after = self._clob_client.get_balance()
+        if bal_after and bal is not None:
+            actual_cost = round(usdc_available - bal_after["balance_usdc"], 6)
+
+        # Build trade record
+        fill_price = limit_price  # Best approximation
+        trade = Trade(
+            id=str(uuid.uuid4()),
+            signal_id=signal_id,
+            market_id=locked.market.condition_id,
+            market_question=locked.market.question,
+            band_label=locked.band.label,
+            band_temp=locked.band.temp_value,
+            side=locked.side,
+            trade_type=locked.trade_type,
+            temp_observed=locked.temp_observed,
+            entry_price=fill_price,
+            size_usdc=actual_cost if actual_cost and actual_cost > 0 else estimated_cost,
+            status="open",
+            profit_usd=None,
+            resolved_at=None,
+            created_at=now,
+        )
+
+        logger.info(
+            f"LIVE TRADE: {locked.side} {locked.band.label} "
+            f"price={fill_price:.4f} est=${estimated_cost:.2f} actual=${actual_cost} "
+            f"fill_status={fill_status} matched={size_matched} "
+            f"order_id={order_id}"
+        )
+
+        city = locked.market.city or None
+        market_date = _extract_market_date(locked.market.question)
+
+        self._insert_trade(
+            trade, token_id=token_id, city=city, market_date=market_date,
+            book_depth={
+                "best_bid": book.get("best_bid"),
+                "best_ask": book.get("best_ask"),
+                "bid_depth_usdc": book.get("bid_depth_usdc"),
+                "ask_depth_usdc": book.get("ask_depth_usdc"),
+            },
+            book_levels=levels,
+            fill_price=fill_price,
+            available_liquidity=total_cost,
+            num_levels=len(levels),
+            total_shares=total_shares,
+            trade_mode="live",
+            order_id=order_id,
+            fill_status=fill_status,
+            actual_cost_usdc=actual_cost,
+        )
+
+        return trade
+
     def _fetch_midpoint(self, token_id: str) -> Optional[float]:
         """Fetch midpoint price from CLOB API.
 
