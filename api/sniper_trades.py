@@ -7,9 +7,25 @@ GET /api/sniper_trades?limit=100        — custom limit
 """
 import os
 import json
+import re
 import urllib.request
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
+
+
+def _safe_int(val, default, min_val=1, max_val=1000):
+    try:
+        v = int(val)
+        return max(min_val, min(v, max_val))
+    except (ValueError, TypeError):
+        return default
+
+
+def _safe_city(val):
+    if not val:
+        return None
+    return re.sub(r'[^a-zA-Z0-9 \-]', '', val)[:50]
+
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "").strip()
