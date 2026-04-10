@@ -579,6 +579,10 @@ class OrderExecutor:
         available_liquidity: Optional[float] = None,
         num_levels: Optional[int] = None,
         total_shares: Optional[float] = None,
+        trade_mode: Optional[str] = None,
+        order_id: Optional[str] = None,
+        fill_status: Optional[str] = None,
+        actual_cost_usdc: Optional[float] = None,
     ):
         """Insert a trade record into sniper_trades table."""
         if not self._supabase_url or not self._supabase_key:
