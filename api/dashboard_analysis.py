@@ -215,6 +215,8 @@ class handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         """Run a new Opus analysis."""
+        if not require_auth(self):
+            return
         try:
             if not ANTHROPIC_API_KEY:
                 self._respond(500, {"error": "ANTHROPIC_API_KEY not set"})
