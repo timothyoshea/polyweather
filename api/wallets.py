@@ -122,6 +122,8 @@ class handler(BaseHTTPRequestHandler):
             self._respond(500, {"error": str(e)})
 
     def do_DELETE(self):
+        if not require_auth(self):
+            return
         try:
             params = parse_qs(urlparse(self.path).query)
             wallet_id = params.get("id", [None])[0]
