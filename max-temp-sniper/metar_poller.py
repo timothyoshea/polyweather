@@ -13,6 +13,8 @@ import urllib.request
 from datetime import datetime, timezone
 from typing import Optional
 
+from market_scanner import ALTERNATIVE_FEEDS
+
 logger = logging.getLogger("sniper.metar")
 
 METAR_API = "https://aviationweather.gov/api/data/metar"
