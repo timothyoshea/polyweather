@@ -1869,14 +1869,11 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
       return;
     }
     try {
-      // 1. Send private key directly to Railway (never through Vercel/Supabase)
-      const railRes = await fetch(RAILWAY_URL + '/wallets/register', {
+      // 1. Register wallet via server-side proxy (secret stays on server)
+      const railRes = await fetch('/api/wallet_proxy', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + RAILWAY_SECRET
-        },
-        body: JSON.stringify({ address: address, private_key: privkey })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'register', address: address, private_key: privkey })
       });
       if (!railRes.ok) {
         const err = await railRes.text();
