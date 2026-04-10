@@ -117,6 +117,10 @@ def _extract_station(event: dict, city: str) -> str:
         match = re.search(r"/([A-Z]{4})(?:\s|\.|$|/|\?|\\)", text)
         if match:
             return match.group(1)
+        # Match NOAA format: site=LLBG or site=UUWW
+        match = re.search(r"site=([A-Z]{4})", text)
+        if match:
+            return match.group(1)
 
     # Fallback mapping for cities where URL extraction fails
     return FALLBACK_STATIONS.get(city, "")
