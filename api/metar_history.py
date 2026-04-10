@@ -132,9 +132,9 @@ class handler(BaseHTTPRequestHandler):
         try:
             params = parse_qs(urlparse(self.path).query)
             station = params.get("station", [None])[0]
-            city = params.get("city", [None])[0]
-            hours = int(params.get("hours", ["24"])[0])
-            limit = int(params.get("limit", ["500"])[0])
+            city = _safe_city(params.get("city", [None])[0])
+            hours = _safe_int(params.get("hours", ["24"])[0], 24, 1, 168)
+            limit = _safe_int(params.get("limit", ["500"])[0], 500, 1, 1000)
             summary = params.get("summary", ["false"])[0].lower() == "true"
 
             # Time filter — use simple format without timezone offset for Supabase
