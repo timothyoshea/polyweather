@@ -175,10 +175,11 @@ class OrderExecutor:
             len(levels), total_available, None, True,
         )
 
-        if self.mode == "paper":
-            return self._paper_trade(locked, signal_id, book, token_id)
+        if self.mode == "live" and self._clob_client and self._clob_client.is_ready():
+            return self._live_trade(locked, signal_id, book, token_id)
         else:
-            logger.warning("Live mode not yet implemented, falling back to paper")
+            if self.mode == "live":
+                logger.warning("Live mode requested but ClobClient not ready, falling back to paper")
             return self._paper_trade(locked, signal_id, book, token_id)
 
     def _paper_trade(self, locked: LockedBand, signal_id: Optional[str], book: dict, token_id: str) -> Trade:
