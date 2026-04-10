@@ -97,6 +97,11 @@ class OrderExecutor:
         For paper trades: grabs the full order book, calculates realistic VWAP
         fill price, and sizes the trade based on ALL available liquidity.
         """
+        # Emergency kill switch
+        if os.getenv("KILL_SWITCH", "").lower() in ("true", "1", "yes"):
+            logger.warning("KILL SWITCH ACTIVE — skipping all trades")
+            return None
+
         token_id = locked.band.no_token_id if locked.side == "NO" else locked.band.yes_token_id
 
         # For midpoint/book fetching, always use YES token (NO tokens 404 on negRisk markets)
