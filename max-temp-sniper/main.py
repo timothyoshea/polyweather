@@ -226,9 +226,22 @@ async def price_track_loop():
 
 async def main():
     """Start all loops."""
+    trade_mode = os.getenv("TRADE_MODE", "paper")
     logger.info("=" * 60)
     logger.info("MAX TEMP SNIPER starting (ALL CITIES)")
     logger.info(f"  Mode: {executor.mode.upper()}")
+    logger.info(f"  TRADE_MODE env: {trade_mode}")
+    if executor.mode == "live" and executor._clob_client:
+        clob_ready = executor._clob_client.is_ready()
+        logger.info(f"  ClobClient ready: {clob_ready}")
+        if clob_ready:
+            bal = executor._clob_client.get_balance()
+            if bal:
+                logger.info(f"  Wallet balance: ${bal['balance_usdc']:.2f} USDC")
+            else:
+                logger.warning("  Wallet balance: could not fetch")
+    elif executor.mode == "live":
+        logger.warning("  ClobClient: NOT INITIALIZED")
     logger.info(f"  Market refresh: {MARKET_REFRESH_INTERVAL}s")
     logger.info(f"  METAR poll: {METAR_POLL_INTERVAL}s")
     logger.info(f"  Heartbeat: {HEARTBEAT_INTERVAL}s")
