@@ -40,6 +40,8 @@ def _request(url, data=None, method="GET"):
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
+        if not require_auth(self):
+            return
         try:
             params = parse_qs(urlparse(self.path).query)
             wallet_id = params.get("id", [None])[0]
