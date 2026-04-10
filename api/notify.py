@@ -14,6 +14,8 @@ from http.server import BaseHTTPRequestHandler
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
+from _auth_helper import require_auth
+
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
 DASHBOARD_URL = "https://polyweather.vercel.app"
 RECIPIENT = "tim@theboost.ai"
