@@ -60,6 +60,8 @@ class handler(BaseHTTPRequestHandler):
             self._respond(500, {"error": str(e)})
 
     def do_POST(self):
+        if not require_auth(self):
+            return
         try:
             content_length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(content_length).decode("utf-8"))
