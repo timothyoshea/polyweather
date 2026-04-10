@@ -80,10 +80,10 @@ class SignalEngine:
         sample_band = market.bands[0] if market.bands else None
         if sample_band and sample_band.unit == "F":
             temp_f_raw = self._c_to_f(temp_c)
-            temp_compare = round(temp_f_raw)  # WU rounds to whole °F
+            temp_compare = self._wu_round(temp_f_raw)  # WU rounds 0.5 up
             unit_label = "°F"
         else:
-            temp_compare = round(temp_c)  # WU rounds to whole °C
+            temp_compare = self._wu_round(temp_c)  # WU rounds 0.5 up
             unit_label = "°C"
 
         # 1. Top band YES: if rounded temp >= top band threshold
