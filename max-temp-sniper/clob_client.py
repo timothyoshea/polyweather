@@ -50,10 +50,7 @@ class SniperClobClient:
                 creds = self._client.create_or_derive_api_creds()
                 self._client.set_api_creds(creds)
                 logger.info("ClobClient initialized — derived API creds")
-                logger.info(f"  Save these for faster startup:")
-                logger.info(f"  CLOB_API_KEY={creds.api_key}")
-                logger.info(f"  CLOB_API_SECRET={creds.api_secret}")
-                logger.info(f"  CLOB_API_PASSPHRASE={creds.api_passphrase}")
+                logger.info("  CLOB credentials derived successfully")
 
             self._ready = True
 
