@@ -102,6 +102,15 @@ async def metar_poll_loop():
                 None, poller.poll_all, stations
             )
 
+            # Poll alternative feeds for stations without METAR
+            from market_scanner import ALTERNATIVE_FEEDS
+            alt_stations = [s for s in ALTERNATIVE_FEEDS if s in set(m.station for m in signal_engine.markets)]
+            if alt_stations:
+                alt_triggers = await asyncio.get_event_loop().run_in_executor(
+                    None, poller.poll_alternative_stations, alt_stations
+                )
+                triggers_raw.extend(alt_triggers)
+
             # Process each rising trigger
             for metar in triggers_raw:
                 station = metar["station"]
