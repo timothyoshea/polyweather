@@ -53,7 +53,21 @@ class OrderExecutor:
         self.mode = mode  # "paper" or "live"
         self._supabase_url = os.getenv("SUPABASE_URL", "")
         self._supabase_key = os.getenv("SUPABASE_SERVICE_KEY", "")
-        logger.info(f"OrderExecutor initialized in {self.mode.upper()} mode")
+        self._clob_client = None
+
+        if self.mode == "live":
+            try:
+                from clob_client import SniperClobClient
+                self._clob_client = SniperClobClient()
+                if self._clob_client.is_ready():
+                    logger.info("OrderExecutor initialized in LIVE mode — ClobClient READY")
+                else:
+                    logger.warning("OrderExecutor initialized in LIVE mode — ClobClient NOT READY (will paper trade)")
+            except Exception as e:
+                logger.error(f"Failed to init ClobClient: {e} — falling back to paper mode")
+                self._clob_client = None
+        else:
+            logger.info(f"OrderExecutor initialized in {self.mode.upper()} mode")
 
     def execute_signal(self, trigger: TriggerResult, trade_size: float) -> list[Trade]:
         """
