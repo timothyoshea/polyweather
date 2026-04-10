@@ -104,10 +104,10 @@ class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         try:
             params = parse_qs(urlparse(self.path).query)
-            city = params.get("city", [None])[0]
-            hours = int(params.get("hours", ["24"])[0])
+            city = _safe_city(params.get("city", [None])[0])
+            hours = _safe_int(params.get("hours", ["24"])[0], 24, 1, 168)
             summary = params.get("summary", ["false"])[0].lower() == "true"
-            limit = int(params.get("limit", ["200"])[0])
+            limit = _safe_int(params.get("limit", ["200"])[0], 200, 1, 1000)
 
             # Build time filter
             cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).strftime("%Y-%m-%dT%H:%M:%SZ")
