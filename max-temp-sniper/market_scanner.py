@@ -46,6 +46,25 @@ FALLBACK_RESOLUTION_SOURCES = {
     "UUWW": "https://www.weather.gov/wrh/timeseries?site=UUWW",  # NOAA (Vnukovo)
 }
 
+# Alternative temperature feeds for stations missing or wrong on aviationweather.gov METAR
+ALTERNATIVE_FEEDS = {
+    "VHHH": {
+        "type": "hko",
+        "url": "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=en",
+        "station_name": "Hong Kong Observatory",
+    },
+    "DNMM": {
+        "type": "open_meteo",
+        "latitude": 6.577,
+        "longitude": 3.321,
+    },
+    "MPMG": {
+        "type": "open_meteo",
+        "latitude": 8.994,
+        "longitude": -79.519,
+    },
+}
+
 
 def fetch_all_markets() -> list[Market]:
     """Fetch ALL active temperature events from Gamma API, build band maps."""
