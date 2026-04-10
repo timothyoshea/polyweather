@@ -1807,8 +1807,10 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
         // Fetch balance from Railway
         let balanceHtml = '<span style="color:var(--text2);">--</span>';
         try {
-          const bRes = await fetch(RAILWAY_URL + '/wallets/balance?address=' + encodeURIComponent(addr), {
-            headers: { 'Authorization': 'Bearer ' + RAILWAY_SECRET }
+          const bRes = await fetch('/api/wallet_proxy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'balance', address: addr })
           });
           if (bRes.ok) {
             const bData = await bRes.json();
