@@ -25,6 +25,8 @@ SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
+        if not require_auth(self):
+            return
         try:
             if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
                 self.send_response(500)
