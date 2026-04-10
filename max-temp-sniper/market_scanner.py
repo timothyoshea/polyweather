@@ -30,19 +30,20 @@ TEMP_EXTRACT = re.compile(r"(-?\d+(?:\.\d+)?)\s*°?\s*([CcFf])?")
 FAHRENHEIT_PATTERN = re.compile(r"°\s*F\b|fahrenheit", re.IGNORECASE)
 
 # Fallback ICAO station mapping for cities where regex extraction fails
+# Verified against Polymarket resolution sources 2026-04-10
 FALLBACK_STATIONS = {
-    "Hong Kong": "VHHH",
-    "Tel Aviv": "LLBG",
-    "Istanbul": "LTFM",
-    "Moscow": "UUEE",
+    "Hong Kong": "VHHH",      # NOTE: Polymarket resolves via HKO (hk observatory), not airport METAR
+    "Tel Aviv": "LLBG",        # Ben Gurion Intl — resolves via NOAA
+    "Istanbul": "LTFM",        # Istanbul Airport — resolves via NOAA
+    "Moscow": "UUWW",          # Vnukovo Intl — NOT Sheremetyevo (UUEE)! Resolves via NOAA
 }
 
 # Fallback resolution sources for cities missing from Gamma API
 FALLBACK_RESOLUTION_SOURCES = {
-    "VHHH": "https://www.wunderground.com/history/daily/hk/hong-kong/VHHH",
-    "LLBG": "https://www.wunderground.com/history/daily/il/tel-aviv/LLBG",
-    "LTFM": "https://www.wunderground.com/history/daily/tr/istanbul/LTFM",
-    "UUEE": "https://www.wunderground.com/history/daily/ru/moscow/UUEE",
+    "VHHH": "https://www.weather.gov.hk/en/cis/climat.htm",  # HK Observatory (actual source)
+    "LLBG": "https://www.weather.gov/wrh/timeseries?site=LLBG",  # NOAA
+    "LTFM": "https://www.weather.gov/wrh/timeseries?site=LTFM",  # NOAA
+    "UUWW": "https://www.weather.gov/wrh/timeseries?site=UUWW",  # NOAA (Vnukovo)
 }
 
 
