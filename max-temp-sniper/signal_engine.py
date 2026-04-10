@@ -59,6 +59,13 @@ class SignalEngine:
         """Convert Celsius to Fahrenheit."""
         return temp_c * 9 / 5 + 32
 
+    @staticmethod
+    def _wu_round(temp: float) -> int:
+        """Round to whole degree using standard rounding (0.5 rounds up).
+        Weather Underground uses this for resolution, not Python's banker's rounding."""
+        import math
+        return math.floor(temp + 0.5)
+
     def _evaluate_market(self, market: Market, temp_c: float) -> list[LockedBand]:
         """Evaluate a single market's bands against the observed temperature.
 
