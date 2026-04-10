@@ -293,6 +293,107 @@ class MetarPoller:
         except Exception as e:
             logger.warning(f"Failed to log METAR reading for {station}: {e}")
 
+    def poll_alternative_stations(self, stations: list[str]) -> list[dict]:
+        """
+        Poll alternative temperature feeds for stations without reliable METAR.
+        Returns list of rising trigger dicts in the same format as poll_all().
+        """
+        triggers = []
+        for station in stations:
+            feed = ALTERNATIVE_FEEDS.get(station)
+            if not feed:
+                continue
+            try:
+                if feed["type"] == "hko":
+                    result = self._poll_hko(station, feed)
+                elif feed["type"] == "open_meteo":
+                    result = self._poll_open_meteo(station, feed)
+                else:
+                    logger.warning(f"Unknown alt feed type for {station}: {feed['type']}")
+                    continue
+
+                if result:
+                    triggers.append(result)
+            except Exception as e:
+                logger.warning(f"Alternative feed failed for {station}: {e}")
+        return triggers
+
+    def _poll_hko(self, station: str, feed: dict) -> Optional[dict]:
+        """Poll Hong Kong Observatory API for current temperature."""
+        url = feed["url"]
+        target_place = feed["station_name"]
+
+        req = urllib.request.Request(url, headers={"User-Agent": "MaxTempSniper/1.0"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode())
+
+        # Find target station in temperature data array
+        temp_data = data.get("temperature", {}).get("data", [])
+        obs = None
+        for item in temp_data:
+            if item.get("place") == target_place:
+                obs = item
+                break
+
+        if obs is None:
+            logger.debug(f"HKO: station '{target_place}' not found in response")
+            return None
+
+        temp = float(obs["value"])
+        record_time = data.get("temperature", {}).get("recordTime", "")
+        raw = f"HKO API: {temp}\u00b0C at {record_time}"
+
+        return self._process_alt_observation(station, temp, raw, record_time)
+
+    def _poll_open_meteo(self, station: str, feed: dict) -> Optional[dict]:
+        """Poll Open-Meteo API for current temperature."""
+        lat = feed["latitude"]
+        lng = feed["longitude"]
+        url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lng}&current_weather=true"
+
+        req = urllib.request.Request(url, headers={"User-Agent": "MaxTempSniper/1.0"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode())
+
+        cw = data.get("current_weather", {})
+        temp = float(cw["temperature"])
+        obs_time = cw.get("time", "")
+        raw = f"Open-Meteo: {temp}\u00b0C at {obs_time}"
+
+        return self._process_alt_observation(station, temp, raw, obs_time)
+
+    def _process_alt_observation(
+        self, station: str, temp: float, raw: str, obs_time: str
+    ) -> Optional[dict]:
+        """Dedup and detect rising for an alternative feed observation."""
+        self._ensure_station(station)
+        state = self._state[station]
+
+        # Dedup by observation time string (stored in last_raw)
+        if obs_time == state["last_raw"]:
+            return None
+
+        previous_temp = state["last_temp"]
+        state["previous_temp"] = previous_temp
+        state["last_temp"] = temp
+        state["last_raw"] = obs_time
+
+        is_rising = previous_temp is not None and temp > previous_temp
+
+        self._log_reading_to_supabase(station, temp, raw, previous_temp, is_rising)
+
+        if is_rising:
+            logger.info(f"RISING {station} (alt): {temp}\u00b0C (was {previous_temp}\u00b0C) | {raw}")
+            return {
+                "temp": temp,
+                "raw": raw,
+                "station": station,
+                "previous_temp": previous_temp,
+            }
+        else:
+            logger.debug(f"{station} (alt): {temp}\u00b0C (prev: {previous_temp}\u00b0C) stable/falling")
+            return None
+
     def get_temp(self, station: str) -> Optional[float]:
         """Get the last known temperature for a station."""
         state = self._state.get(station)
