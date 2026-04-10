@@ -50,22 +50,13 @@ class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         try:
             params = parse_qs(urlparse(self.path).query)
-            hours = params.get("hours", ["24"])[0]
-            city = params.get("city", [None])[0]
+            hours = _safe_int(params.get("hours", ["24"])[0], 24, 1, 168)
+            city = _safe_city(params.get("city", [None])[0])
             traded = params.get("traded", [None])[0]
-            limit = params.get("limit", ["200"])[0]
+            limit = _safe_int(params.get("limit", ["200"])[0], 200, 1, 1000)
 
-            query = (
-                f"sniper_potential_trades?select=*"
-                f"&order=signal_time.desc"
-                f"&limit={limit}"
-                f"&signal_time=gte.now()-{hours}h"
-            )
-
-            # Supabase REST doesn't support now()-Xh natively; use a filter workaround
-            # Actually, use the proper PostgREST interval syntax
             from datetime import datetime, timezone, timedelta
-            cutoff = (datetime.now(timezone.utc) - timedelta(hours=int(hours))).strftime("%Y-%m-%dT%H:%M:%SZ")
+            cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).strftime("%Y-%m-%dT%H:%M:%SZ")
             query = (
                 f"sniper_potential_trades?select=*"
                 f"&order=signal_time.desc"
