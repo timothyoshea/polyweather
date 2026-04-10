@@ -86,9 +86,7 @@ def get_client(wallet_address: str = None):
         creds = _client.create_or_derive_api_creds()
         _client.set_api_creds(creds)
         print(f"[TRADER] Derived API creds — save these for faster startup:")
-        print(f"  CLOB_API_KEY={creds.api_key}")
-        print(f"  CLOB_API_SECRET={creds.api_secret}")
-        print(f"  CLOB_API_PASSPHRASE={creds.api_passphrase}")
+        print("  CLOB credentials loaded successfully")
 
     return _client
 
