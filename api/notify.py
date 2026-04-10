@@ -87,6 +87,8 @@ def _send_trade_email(trade, portfolio):
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
+        if not require_auth(self):
+            return
         try:
             content_length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(content_length)) if content_length else {}
