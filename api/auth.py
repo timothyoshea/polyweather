@@ -214,6 +214,87 @@ class handler(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(json.dumps({"authenticated": False}).encode())
 
+            elif action == "check-mfa":
+                access_token = body.get("access_token", "")
+                if not access_token:
+                    self._respond(400, {"error": "access_token required"})
+                    return
+                try:
+                    factors = _supabase_auth_get("factors", access_token)
+                    # factors is a list; check if any are verified TOTP
+                    has_mfa = any(
+                        f.get("status") == "verified" and f.get("factor_type") == "totp"
+                        for f in factors
+                    )
+                    self._respond(200, {"has_mfa": has_mfa, "factors": factors})
+                except urllib.error.HTTPError as e:
+                    err_body = e.read().decode("utf-8", errors="replace")
+                    self._respond(e.code, {"error": f"Failed to check MFA: {err_body[:200]}"})
+
+            elif action == "enroll-totp":
+                access_token = body.get("access_token", "")
+                if not access_token:
+                    self._respond(400, {"error": "access_token required"})
+                    return
+                try:
+                    result = _supabase_auth_post("factors", {
+                        "factor_type": "totp",
+                        "friendly_name": "PolyWeather Authenticator",
+                    }, access_token)
+                    self._respond(200, result)
+                except urllib.error.HTTPError as e:
+                    err_body = e.read().decode("utf-8", errors="replace")
+                    self._respond(e.code, {"error": f"Failed to enroll TOTP: {err_body[:200]}"})
+
+            elif action == "challenge-totp":
+                access_token = body.get("access_token", "")
+                factor_id = body.get("factor_id", "")
+                if not access_token or not factor_id:
+                    self._respond(400, {"error": "access_token and factor_id required"})
+                    return
+                try:
+                    result = _supabase_auth_post(f"factors/{factor_id}/challenge", {}, access_token)
+                    self._respond(200, result)
+                except urllib.error.HTTPError as e:
+                    err_body = e.read().decode("utf-8", errors="replace")
+                    self._respond(e.code, {"error": f"Failed to create challenge: {err_body[:200]}"})
+
+            elif action == "verify-totp":
+                access_token = body.get("access_token", "")
+                factor_id = body.get("factor_id", "")
+                challenge_id = body.get("challenge_id", "")
+                code = body.get("code", "").strip()
+                if not all([access_token, factor_id, challenge_id, code]):
+                    self._respond(400, {"error": "access_token, factor_id, challenge_id, and code required"})
+                    return
+                try:
+                    result = _supabase_auth_post(
+                        f"factors/{factor_id}/challenge/{challenge_id}/verify",
+                        {"code": code},
+                        access_token,
+                    )
+                    # On success, set session cookies with the tokens
+                    new_access = result.get("access_token", access_token)
+                    new_refresh = result.get("refresh_token", "")
+                    max_age = 2592000  # 30 days
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Access-Control-Allow-Origin", "*")
+                    self.send_header("Set-Cookie",
+                        f"pw_session={new_access}; Path=/; HttpOnly; SameSite=Lax; Max-Age={max_age}")
+                    if new_refresh:
+                        self.send_header("Set-Cookie",
+                            f"pw_refresh={new_refresh}; Path=/; HttpOnly; SameSite=Lax; Max-Age={max_age}")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"authenticated": True}).encode())
+                    return
+                except urllib.error.HTTPError as e:
+                    err_body = e.read().decode("utf-8", errors="replace")
+                    if e.code in (400, 401, 422):
+                        self._respond(401, {"error": "Invalid code"})
+                    else:
+                        self._respond(e.code, {"error": f"TOTP verify failed: {err_body[:200]}"})
+
             elif action == "logout":
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
