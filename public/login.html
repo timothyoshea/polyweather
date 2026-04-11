@@ -152,9 +152,35 @@
       <input type="checkbox" id="remember-me" checked style="accent-color:var(--cyan);width:16px;height:16px;cursor:pointer;">
       Remember this computer for 30 days
     </label>
-    <button class="btn" id="verify-btn" onclick="verifyCode()">Sign In</button>
+    <button class="btn" id="verify-btn" onclick="verifyCode()">Verify Email</button>
     <div class="msg" id="code-msg"></div>
     <div class="back-link"><a onclick="showEmailStep()">Use a different email</a></div>
+  </div>
+
+  <!-- Step 3a: MFA Enrollment -->
+  <div id="step-enroll" class="hidden">
+    <h2 style="font-size:18px;font-weight:700;margin-bottom:8px;text-align:center;">Set Up Two-Factor Authentication</h2>
+    <p style="font-size:13px;color:var(--text2);text-align:center;margin-bottom:20px;line-height:1.5;">Scan this QR code with your authenticator app<br>(Google Authenticator, Authy, etc.)</p>
+    <div id="qr-container" style="text-align:center;margin:20px 0;background:#fff;border-radius:12px;padding:16px;display:inline-block;width:100%;">
+      <!-- QR code inserted here -->
+    </div>
+    <p style="font-size:12px;color:var(--text2);text-align:center;margin-bottom:6px;">Can't scan? Enter this code manually:</p>
+    <div id="secret-display" style="font-family:var(--mono);letter-spacing:3px;text-align:center;padding:10px;background:var(--bg);border:1px solid var(--card-border);border-radius:6px;cursor:pointer;font-size:13px;margin-bottom:20px;" onclick="navigator.clipboard.writeText(this.textContent.trim());this.style.borderColor='var(--green)';setTimeout(()=>this.style.borderColor='var(--card-border)',1500);" title="Click to copy">
+      <!-- Secret key inserted here -->
+    </div>
+    <label>Enter code from authenticator</label>
+    <input type="text" id="enroll-code" class="code-input" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="000000">
+    <button class="btn" onclick="verifyEnrollment()">Verify &amp; Complete Setup</button>
+    <div class="msg" id="enroll-msg"></div>
+  </div>
+
+  <!-- Step 3b: MFA Login -->
+  <div id="step-mfa" class="hidden">
+    <h2 style="font-size:18px;font-weight:700;margin-bottom:8px;text-align:center;">Two-Factor Authentication</h2>
+    <p style="font-size:13px;color:var(--text2);text-align:center;margin-bottom:20px;line-height:1.5;">Enter the 6-digit code from your authenticator app</p>
+    <input type="text" id="mfa-code" class="code-input" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="000000">
+    <button class="btn" onclick="verifyMFA()">Sign In</button>
+    <div class="msg" id="mfa-msg"></div>
   </div>
 </div>
 
