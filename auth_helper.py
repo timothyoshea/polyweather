@@ -5,7 +5,7 @@ Verifies pw_session cookie by calling Supabase Auth /auth/v1/user.
 Also supports CRON_SECRET for Vercel cron job bypass.
 
 Usage in any endpoint:
-    from _auth_helper import require_auth
+    from auth_helper import require_auth
     # At the start of do_GET / do_POST:
     if not require_auth(self):
         return  # 401 already sent

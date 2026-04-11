@@ -8,13 +8,15 @@ Body: {"action": "trade_executed", "trade": {...}, "portfolio": {...}}
 Uses Resend SMTP (smtp.resend.com:587) to send HTML emails.
 """
 import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import json
 import smtplib
 from http.server import BaseHTTPRequestHandler
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-from _auth_helper import require_auth
+from auth_helper import require_auth
 
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
 DASHBOARD_URL = "https://polyweather.vercel.app"

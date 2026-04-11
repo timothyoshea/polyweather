@@ -5,6 +5,8 @@ POST /api/dashboard_analysis  — run a new analysis (calls Claude Opus)
 GET  /api/dashboard_analysis  — get latest/history of analyses
 """
 import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import json
 import urllib.request
 import urllib.error
@@ -12,7 +14,7 @@ from datetime import datetime
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
-from _auth_helper import require_auth
+from auth_helper import require_auth
 
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "").strip()
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()

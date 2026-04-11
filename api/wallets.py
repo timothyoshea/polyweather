@@ -9,13 +9,15 @@ DELETE /api/wallets?id=xxx       — soft-delete a wallet (set active=false)
 NOTE: Private keys are NEVER stored here. They are managed separately on Railway.
 """
 import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import json
 import urllib.request
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
-from _auth_helper import require_auth
+from auth_helper import require_auth
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "").strip()

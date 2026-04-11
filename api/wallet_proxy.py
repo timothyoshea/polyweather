@@ -8,6 +8,8 @@ POST /api/wallet_proxy  { "action": "balance", "address": "0x..." }
 POST /api/wallet_proxy  { "action": "register", "address": "0x...", "private_key": "...", "label": "..." }
 """
 import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import json
 import urllib.request
 import urllib.error

@@ -5,12 +5,14 @@ POST /api/sniper_resolve    — check all open trades and resolve won/lost ones
 GET  /api/sniper_resolve    — same (for Vercel cron compatibility)
 """
 import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import json
 import urllib.request
 from http.server import BaseHTTPRequestHandler
 from datetime import datetime, timezone
 
-from _auth_helper import require_auth
+from auth_helper import require_auth
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "").strip()
