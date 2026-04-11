@@ -284,20 +284,210 @@
       const data = await resp.json();
 
       if (resp.ok && data.authenticated) {
+        // Email verified - now check MFA status
+        mfaAccessToken = data.access_token;
+        mfaRefreshToken = data.refresh_token;
+        msg.className = 'msg success';
+        msg.textContent = 'Email verified. Checking MFA...';
+        await checkMFA();
+      } else {
+        msg.className = 'msg error';
+        msg.textContent = data.error || 'Invalid code';
+        btn.disabled = false;
+        btn.textContent = 'Verify Email';
+      }
+    } catch (e) {
+      msg.className = 'msg error';
+      msg.textContent = 'Network error. Try again.';
+      btn.disabled = false;
+      btn.textContent = 'Verify Email';
+    }
+  }
+
+  async function checkMFA() {
+    try {
+      const resp = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'check-mfa', access_token: mfaAccessToken }),
+      });
+      const data = await resp.json();
+
+      if (data.has_mfa) {
+        // User has TOTP enrolled - challenge them
+        const verified = data.factors.find(f => f.status === 'verified' && f.factor_type === 'totp');
+        if (verified) {
+          mfaFactorId = verified.id;
+          await startMFAChallenge();
+        }
+      } else {
+        // No MFA - enroll
+        await enrollTOTP();
+      }
+    } catch (e) {
+      console.error('MFA check failed:', e);
+      // Fallback: redirect (session cookie already set at aal1)
+      window.location.href = '/';
+    }
+  }
+
+  async function enrollTOTP() {
+    try {
+      const resp = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'enroll-totp', access_token: mfaAccessToken }),
+      });
+      const data = await resp.json();
+
+      if (data.id) {
+        mfaFactorId = data.id;
+        // Show QR code
+        const qrContainer = document.getElementById('qr-container');
+        if (data.totp && data.totp.qr_code) {
+          // qr_code is a data URI (SVG)
+          const img = document.createElement('img');
+          img.src = data.totp.qr_code;
+          img.alt = 'Scan with authenticator app';
+          img.style.maxWidth = '200px';
+          qrContainer.innerHTML = '';
+          qrContainer.appendChild(img);
+        }
+        // Show secret key
+        const secretEl = document.getElementById('secret-display');
+        if (data.totp && data.totp.secret) {
+          secretEl.textContent = data.totp.secret;
+        }
+        hideAllSteps();
+        document.getElementById('step-enroll').classList.remove('hidden');
+        document.getElementById('enroll-code').focus();
+      } else {
+        console.error('Enroll response missing id:', data);
+      }
+    } catch (e) {
+      console.error('TOTP enroll failed:', e);
+    }
+  }
+
+  async function verifyEnrollment() {
+    const code = document.getElementById('enroll-code').value.trim();
+    const msg = document.getElementById('enroll-msg');
+
+    if (!code || code.length < 6) {
+      msg.className = 'msg error';
+      msg.textContent = 'Enter the 6-digit code from your app';
+      return;
+    }
+
+    msg.className = 'msg';
+    msg.textContent = 'Verifying...';
+
+    try {
+      // First create a challenge
+      const chalResp = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'challenge-totp', access_token: mfaAccessToken, factor_id: mfaFactorId }),
+      });
+      const chalData = await chalResp.json();
+
+      if (!chalData.id) {
+        msg.className = 'msg error';
+        msg.textContent = chalData.error || 'Failed to create challenge';
+        return;
+      }
+
+      // Now verify the code
+      const verResp = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'verify-totp',
+          access_token: mfaAccessToken,
+          factor_id: mfaFactorId,
+          challenge_id: chalData.id,
+          code: code,
+        }),
+      });
+      const verData = await verResp.json();
+
+      if (verResp.ok && verData.authenticated) {
+        msg.className = 'msg success';
+        msg.textContent = 'MFA enabled! Redirecting...';
+        setTimeout(() => { window.location.href = '/'; }, 800);
+      } else {
+        msg.className = 'msg error';
+        msg.textContent = verData.error || 'Invalid code. Try again.';
+      }
+    } catch (e) {
+      msg.className = 'msg error';
+      msg.textContent = 'Network error. Try again.';
+    }
+  }
+
+  let mfaChallengeId = '';
+
+  async function startMFAChallenge() {
+    try {
+      const resp = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'challenge-totp', access_token: mfaAccessToken, factor_id: mfaFactorId }),
+      });
+      const data = await resp.json();
+
+      if (data.id) {
+        mfaChallengeId = data.id;
+        hideAllSteps();
+        document.getElementById('step-mfa').classList.remove('hidden');
+        document.getElementById('mfa-code').value = '';
+        document.getElementById('mfa-code').focus();
+      } else {
+        console.error('Challenge failed:', data);
+      }
+    } catch (e) {
+      console.error('MFA challenge failed:', e);
+    }
+  }
+
+  async function verifyMFA() {
+    const code = document.getElementById('mfa-code').value.trim();
+    const msg = document.getElementById('mfa-msg');
+
+    if (!code || code.length < 6) {
+      msg.className = 'msg error';
+      msg.textContent = 'Enter the 6-digit code';
+      return;
+    }
+
+    msg.className = 'msg';
+    msg.textContent = 'Verifying...';
+
+    try {
+      const resp = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'verify-totp',
+          access_token: mfaAccessToken,
+          factor_id: mfaFactorId,
+          challenge_id: mfaChallengeId,
+          code: code,
+        }),
+      });
+      const data = await resp.json();
+
+      if (resp.ok && data.authenticated) {
         msg.className = 'msg success';
         msg.textContent = 'Signed in! Redirecting...';
         setTimeout(() => { window.location.href = '/'; }, 500);
       } else {
         msg.className = 'msg error';
         msg.textContent = data.error || 'Invalid code';
-        btn.disabled = false;
-        btn.textContent = 'Sign In';
       }
     } catch (e) {
       msg.className = 'msg error';
       msg.textContent = 'Network error. Try again.';
-      btn.disabled = false;
-      btn.textContent = 'Sign In';
     }
   }
 
@@ -307,6 +497,12 @@
   });
   document.getElementById('code-input').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') verifyCode();
+  });
+  document.getElementById('enroll-code').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') verifyEnrollment();
+  });
+  document.getElementById('mfa-code').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') verifyMFA();
   });
 </script>
 </body>
