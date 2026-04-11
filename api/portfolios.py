@@ -117,7 +117,7 @@ class handler(BaseHTTPRequestHandler):
             self._respond(500, {"error": str(e)})
 
     def do_POST(self):
-        if not require_auth(self):
+        if not _require_auth(self):
             return
         try:
             content_length = int(self.headers.get("Content-Length", 0))
@@ -143,7 +143,7 @@ class handler(BaseHTTPRequestHandler):
             self._respond(500, {"error": str(e)})
 
     def do_PATCH(self):
-        if not require_auth(self):
+        if not _require_auth(self):
             return
         try:
             params = parse_qs(urlparse(self.path).query)
@@ -171,7 +171,7 @@ class handler(BaseHTTPRequestHandler):
             self._respond(500, {"error": str(e)})
 
     def do_DELETE(self):
-        if not require_auth(self):
+        if not _require_auth(self):
             return
         try:
             params = parse_qs(urlparse(self.path).query)
