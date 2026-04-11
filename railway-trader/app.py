@@ -128,7 +128,7 @@ def balance():
             "allowance": result.get("allowance", "0"),
         })
     except Exception as e:
-        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+        return jsonify({"error": str(e), "detail": "Check server logs for details"}), 500
 
 
 @app.route("/execute", methods=["POST"])
@@ -259,7 +259,7 @@ def execute():
         return jsonify({
             "success": False,
             "error": str(e),
-            "traceback": traceback.format_exc(),
+            "detail": "Check server logs for details",
         }), 500
 
 
@@ -494,7 +494,7 @@ def set_allowances():
             "clob_balance_after": clob_bal,
         })
     except Exception as e:
-        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+        return jsonify({"error": str(e), "detail": "Check server logs for details"}), 500
 
 
 @app.route("/approve", methods=["POST"])
@@ -555,7 +555,7 @@ def approve():
             },
         })
     except Exception as e:
-        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+        return jsonify({"error": str(e), "detail": "Check server logs for details"}), 500
 
 
 @app.route("/swap", methods=["POST"])
@@ -679,7 +679,7 @@ def swap():
             },
         })
     except Exception as e:
-        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+        return jsonify({"error": str(e), "detail": "Check server logs for details"}), 500
 
 
 # ---------------------------------------------------------------------------
@@ -813,7 +813,7 @@ def swap_pol():
         })
 
     except Exception as e:
-        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+        return jsonify({"error": str(e), "detail": "Check server logs for details"}), 500
 
 
 @app.route("/redeem", methods=["POST"])
@@ -982,7 +982,7 @@ def redeem():
         })
 
     except Exception as e:
-        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+        return jsonify({"error": str(e), "detail": "Check server logs for details"}), 500
 
 
 if __name__ == "__main__":
