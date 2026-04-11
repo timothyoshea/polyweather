@@ -1,10 +1,14 @@
 """
-Vercel Python serverless function — authentication via Supabase Auth OTP.
+Vercel Python serverless function — authentication via Supabase Auth OTP + TOTP MFA.
 
 POST /api/auth  { "action": "send-code", "email": "..." }
 POST /api/auth  { "action": "verify", "email": "...", "code": "123456" }
 POST /api/auth  { "action": "check" }  (checks session cookie)
 POST /api/auth  { "action": "logout" }
+POST /api/auth  { "action": "check-mfa", "access_token": "..." }
+POST /api/auth  { "action": "enroll-totp", "access_token": "..." }
+POST /api/auth  { "action": "challenge-totp", "access_token": "...", "factor_id": "..." }
+POST /api/auth  { "action": "verify-totp", "access_token": "...", "factor_id": "...", "challenge_id": "...", "code": "..." }
 """
 import os
 import json
