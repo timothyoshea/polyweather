@@ -12,7 +12,7 @@ import urllib.request
 from http.server import BaseHTTPRequestHandler
 from datetime import datetime, timezone
 
-from auth_helper import require_auth
+from lib.auth_helper import require_auth
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "").strip()

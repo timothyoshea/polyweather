@@ -25,7 +25,7 @@ config.DEBUG = False
 
 from scanner import scan
 from output import polymarket_url
-from auth_helper import require_auth
+from lib.auth_helper import require_auth
 
 # Supabase config from env vars
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
