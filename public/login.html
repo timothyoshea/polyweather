@@ -199,10 +199,19 @@
   })();
 
   let userEmail = '';
+  let mfaAccessToken = '';
+  let mfaRefreshToken = '';
+  let mfaFactorId = '';
+
+  function hideAllSteps() {
+    ['step-email', 'step-code', 'step-enroll', 'step-mfa'].forEach(id =>
+      document.getElementById(id).classList.add('hidden')
+    );
+  }
 
   function showEmailStep() {
+    hideAllSteps();
     document.getElementById('step-email').classList.remove('hidden');
-    document.getElementById('step-code').classList.add('hidden');
     document.getElementById('email-msg').textContent = '';
   }
 
