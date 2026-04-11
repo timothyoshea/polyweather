@@ -84,9 +84,7 @@ class handler(BaseHTTPRequestHandler):
     def do_POST(self):
         try:
             # Auth check
-            cookie_header = self.headers.get("Cookie", "")
-            if not _verify_session(cookie_header):
-                self._respond(401, {"error": "Unauthorized"})
+            if not _require_auth(self):
                 return
 
             if not RAILWAY_URL or not RAILWAY_API_SECRET:
