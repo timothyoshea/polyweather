@@ -242,7 +242,7 @@
       if (resp.ok && data.sent) {
         userEmail = email;
         document.getElementById('sent-to-email').textContent = email;
-        document.getElementById('step-email').classList.add('hidden');
+        hideAllSteps();
         document.getElementById('step-code').classList.remove('hidden');
         document.getElementById('code-input').value = '';
         document.getElementById('code-input').focus();
