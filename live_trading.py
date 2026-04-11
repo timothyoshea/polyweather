@@ -477,6 +477,8 @@ def execute_live_trades(opps, scan_id, supabase_url, supabase_service_key,
                     "order_type": "GTC",
                     "portfolio_id": portfolio_id,
                 }
+                if wallet_address:
+                    railway_payload["wallet_address"] = wallet_address
 
                 railway_req = urllib.request.Request(
                     f"{RAILWAY_URL}/execute",
