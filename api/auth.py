@@ -269,8 +269,8 @@ class handler(BaseHTTPRequestHandler):
                     return
                 try:
                     result = _supabase_auth_post(
-                        f"factors/{factor_id}/challenge/{challenge_id}/verify",
-                        {"code": code},
+                        f"factors/{factor_id}/verify",
+                        {"challenge_id": challenge_id, "code": code},
                         access_token,
                     )
                     # On success, set session cookies with the tokens
