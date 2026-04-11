@@ -255,12 +255,12 @@ class handler(BaseHTTPRequestHandler):
             self._respond(500, {"error": str(e)})
 
     def do_POST(self):
-        if not require_auth(self):
+        if not _require_auth(self):
             return
         self._run_resolve()
 
     def do_GET(self):
-        if not require_auth(self):
+        if not _require_auth(self):
             return
         self._run_resolve()
 
