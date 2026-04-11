@@ -204,6 +204,7 @@ def execute_live_trades(opps, scan_id, supabase_url, supabase_service_key,
 
     pf_name = (portfolio or {}).get("name", str(portfolio_id))
     strategy = (portfolio or {}).get("strategy", {})
+    wallet_address = (portfolio or {}).get("wallet_address", "")
 
     # --- Check trading hours ---
     hours_ok, hours_reason = _check_trading_hours(strategy)
