@@ -141,6 +141,9 @@ class handler(BaseHTTPRequestHandler):
                     self.wfile.write(json.dumps({
                         "authenticated": True,
                         "email": email,
+                        "access_token": access_token,
+                        "refresh_token": refresh_token,
+                        "mfa_required": True,
                     }).encode())
                     return
 
