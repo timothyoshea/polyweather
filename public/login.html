@@ -345,9 +345,14 @@
         // Show QR code
         const qrContainer = document.getElementById('qr-container');
         if (data.totp && data.totp.qr_code) {
-          // qr_code is a data URI (SVG)
           const img = document.createElement('img');
-          img.src = data.totp.qr_code;
+          let src = data.totp.qr_code;
+          // Convert SVG data URI to base64 for reliable browser rendering
+          if (src.startsWith('data:image/svg+xml') && !src.includes(';base64,')) {
+            const svgContent = src.substring(src.indexOf(',') + 1);
+            src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgContent)));
+          }
+          img.src = src;
           img.alt = 'Scan with authenticator app';
           img.style.maxWidth = '200px';
           qrContainer.innerHTML = '';
