@@ -37,6 +37,30 @@ def _supabase_auth_request(path, data):
         return json.loads(resp.read().decode("utf-8"))
 
 
+def _supabase_auth_get(path, access_token):
+    """Make an authenticated GET request to Supabase Auth API."""
+    url = f"{SUPABASE_URL}/auth/v1/{path}"
+    req = urllib.request.Request(url, headers={
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": f"Bearer {access_token}",
+    }, method="GET")
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+
+def _supabase_auth_post(path, data, access_token):
+    """Make an authenticated POST request to Supabase Auth API."""
+    url = f"{SUPABASE_URL}/auth/v1/{path}"
+    body = json.dumps(data).encode("utf-8") if data else b"{}"
+    req = urllib.request.Request(url, data=body, headers={
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }, method="POST")
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+
 def _verify_token(access_token):
     """Verify a Supabase JWT by calling the user endpoint."""
     url = f"{SUPABASE_URL}/auth/v1/user"
