@@ -614,13 +614,19 @@ async function loadData() {
         if (allowedBetTypes.length && !allowedBetTypes.includes(opp.bet_type)) return false;
         if (blockedCities.length && blockedCities.includes(opp.city)) return false;
         if (allowedCities.length && !allowedCities.includes(opp.city)) return false;
-        // Don't show opportunities already in this portfolio
-        const key = (opp.city||'') + '|' + (opp.date||'') + '|' + (opp.band_c||'') + '|' + (opp.side||'');
-        if (existingKeys.has(key)) return false;
         return true;
       })
-      .sort((a, b) => (parseFloat(b.edge) || 0) - (parseFloat(a.edge) || 0))
-      .slice(0, 10);
+      .map(opp => {
+        const key = (opp.city||'') + '|' + (opp.date||'') + '|' + (opp.band_c||'') + '|' + (opp.side||'');
+        opp._isDuplicate = existingKeys.has(key);
+        return opp;
+      })
+      .sort((a, b) => {
+        // Non-duplicates first, then by edge
+        if (a._isDuplicate !== b._isDuplicate) return a._isDuplicate ? 1 : -1;
+        return (parseFloat(b.edge) || 0) - (parseFloat(a.edge) || 0);
+      })
+      .slice(0, 15);
     } catch (e) {
       console.log('Could not fetch opportunities:', e);
     }
