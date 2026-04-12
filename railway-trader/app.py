@@ -590,7 +590,6 @@ def swap():
         balance_raw = usdc_contract.functions.balanceOf(address).call()
         balance_usdc = balance_raw / 1e6
 
-        data = request.get_json() or {}
         amount_usdc = float(data.get("amount_usdc", balance_usdc))
 
         if amount_usdc <= 0:
