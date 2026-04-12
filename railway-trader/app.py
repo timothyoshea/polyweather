@@ -420,13 +420,24 @@ def get_web3():
 @app.route("/set-allowances", methods=["POST"])
 @require_auth
 def set_allowances():
-    """Approve Polymarket contracts to spend USDC.e using raw web3 with debug info."""
+    """Approve Polymarket contracts to spend USDC.e using raw web3 with debug info.
+
+    Body (optional): {"wallet_address": "0x..."} — defaults to primary wallet.
+    """
     try:
         w3, connected_rpc = get_web3()
         if w3 is None:
             return jsonify({"error": "Cannot connect to any Polygon RPC"}), 500
 
-        account = w3.eth.account.from_key(PRIVATE_KEY)
+        data = request.get_json() or {}
+        wallet_addr = data.get("wallet_address")
+        if wallet_addr:
+            wallet_info = wallet_mgr._wallets.get(wallet_addr)
+            if not wallet_info:
+                return jsonify({"error": f"Wallet {wallet_addr[:10]}... not registered"}), 400
+            account = w3.eth.account.from_key(wallet_info["private_key"])
+        else:
+            account = w3.eth.account.from_key(PRIVATE_KEY)
         address = account.address
 
         usdc_e = w3.to_checksum_address(USDC_E_ADDR)
