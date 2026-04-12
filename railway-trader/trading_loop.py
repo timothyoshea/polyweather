@@ -315,14 +315,16 @@ def _get_default_client():
 
 
 def _get_client_for_portfolio(portfolio):
-    """Get CLOB client for a portfolio, using WalletManager if available."""
-    # Try WalletManager first (being built by another agent)
-    try:
-        from wallet_manager import WalletManager
-        wm = WalletManager()
-        return wm.get_client(portfolio)
-    except (ImportError, Exception):
-        pass
+    """Get CLOB client for a portfolio, using the app's WalletManager."""
+    wallet_addr = portfolio.get("wallet_address", "")
+    if wallet_addr:
+        try:
+            from app import wallet_mgr
+            client = wallet_mgr.get_client(wallet_addr)
+            if client:
+                return client
+        except (ImportError, Exception) as e:
+            _log(f"WalletMgr lookup failed for {wallet_addr[:10]}...: {e}")
 
     # Fall back to default client
     return _get_default_client()
