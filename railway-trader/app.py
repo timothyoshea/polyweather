@@ -563,15 +563,24 @@ def approve():
 def swap():
     """Swap native USDC to USDC.e via Uniswap V3 on Polygon.
 
-    Body: {"amount_usdc": 49.0}  (how much native USDC to swap)
+    Body: {"amount_usdc": 49.0, "wallet_address": "0x..."}
     Omit amount to swap entire native USDC balance.
+    wallet_address is optional — defaults to the primary wallet.
     """
     try:
         w3, connected_rpc = get_web3()
         if w3 is None:
             return jsonify({"error": "Cannot connect to any Polygon RPC"}), 500
 
-        account = w3.eth.account.from_key(PRIVATE_KEY)
+        data = request.get_json() or {}
+        wallet_addr = data.get("wallet_address")
+        if wallet_addr:
+            wallet_info = wallet_mgr._wallets.get(wallet_addr)
+            if not wallet_info:
+                return jsonify({"error": f"Wallet {wallet_addr[:10]}... not registered"}), 400
+            account = w3.eth.account.from_key(wallet_info["private_key"])
+        else:
+            account = w3.eth.account.from_key(PRIVATE_KEY)
         address = account.address
 
         usdc_native = w3.to_checksum_address(USDC_NATIVE_ADDR)
