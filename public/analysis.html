@@ -892,7 +892,7 @@ function onPortfolioChange() {
   currentPortfolioId = sel.value;
   localStorage.setItem('pw-portfolio-id', currentPortfolioId);
   // Hide Smart Exits for non-live portfolios
-  const pf = allPortfolios.find(p => p.id === currentPortfolioId);
+  const pf = analysisAllPortfolios.find(p => p.id === currentPortfolioId);
   const isLive = pf && pf.trade_mode === 'live';
   document.querySelectorAll('.nav-smart-exits').forEach(el => {
     el.style.display = isLive ? '' : 'none';
