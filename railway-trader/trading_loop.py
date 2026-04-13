@@ -612,7 +612,7 @@ def _get_exit_recommendation(trade, live_price, latest_forecast_c=None):
     # Use entry_price for max_profit to avoid fee-inflated cost making it negative
     max_profit = shares * (1.0 - entry_price) if shares > 0 and entry_price < 1 else 0.01
     unrealized = shares * (live_price / 100) - cost
-    captured_pct = min(100, (unrealized / max_profit * 100)) if max_profit > 0 else 0
+    captured_pct = max(-100, min(100, (unrealized / max_profit * 100))) if max_profit > 0 else 0
 
     # ── Recommendation matrix ──
 
