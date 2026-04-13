@@ -764,7 +764,7 @@ function sortArrow(col) {
 // ── Render ──
 let lastOpportunities = [];
 
-function render(positions, opportunities) {
+function render(positions, opportunities, walletBalance) {
   lastOpportunities = opportunities || lastOpportunities;
   const sorted = sortCol ? sortPositions(positions, sortCol, sortAsc) : positions;
 
