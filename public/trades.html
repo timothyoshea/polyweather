@@ -1506,6 +1506,100 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
     </div>
   </div>
 
+  <!-- City Data Sources Reference -->
+  <div style="background:var(--card);border:1px solid var(--card-border);border-radius:10px;margin:20px 24px;padding:20px 24px;">
+    <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;color:var(--text);display:flex;align-items:center;gap:8px;">
+      <span style="font-size:16px;opacity:0.7;">&#x1F30D;</span> City Data Sources
+    </h3>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.5;">
+      Temperature forecasts use <strong style="color:var(--text);">Open-Meteo</strong> (5 deterministic + 3 ensemble models, 122 total members).
+      Resolution uses <strong style="color:var(--text);">Polymarket Gamma API</strong> (primary) or <strong style="color:var(--text);">Open-Meteo Archive</strong> (fallback).
+      All coordinates match the ICAO weather station that Polymarket/Underground Weather resolves against.
+    </p>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:11px;font-family:var(--mono);">
+        <thead>
+          <tr style="border-bottom:1px solid var(--card-border);text-align:left;">
+            <th style="padding:6px 8px;color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;">City</th>
+            <th style="padding:6px 8px;color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;">Station</th>
+            <th style="padding:6px 8px;color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;">ICAO</th>
+            <th style="padding:6px 8px;color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;">Unit</th>
+            <th style="padding:6px 8px;color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;">Best Model</th>
+            <th style="padding:6px 8px;color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;">Tier</th>
+            <th style="padding:6px 8px;color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;">Forecast API</th>
+            <th style="padding:6px 8px;color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;">Resolution</th>
+          </tr>
+        </thead>
+        <tbody id="city-sources-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+  (function() {
+    const cities = [
+      {city:'Amsterdam',station:'Schiphol',icao:'EHAM',unit:'°C',best:'ECMWF',tier:2},
+      {city:'Ankara',station:'Esenboga',icao:'LTAC',unit:'°C',best:'MeteoFrance',tier:3},
+      {city:'Atlanta',station:'Hartsfield-Jackson',icao:'KATL',unit:'°F',best:'ECMWF',tier:2},
+      {city:'Austin',station:'Bergstrom',icao:'KAUS',unit:'°F',best:'ECMWF',tier:2},
+      {city:'Beijing',station:'Capital Intl',icao:'ZBAA',unit:'°C',best:'ECMWF',tier:2},
+      {city:'Berlin',station:'Brandenburg',icao:'EDDB',unit:'°C',best:'ECMWF',tier:2},
+      {city:'Buenos Aires',station:'Ezeiza',icao:'SAEZ',unit:'°C',best:'ECMWF',tier:3},
+      {city:'Cape Town',station:'Cape Town Intl',icao:'FACT',unit:'°C',best:'ECMWF',tier:2},
+      {city:'Chengdu',station:'Shuangliu',icao:'ZUUU',unit:'°C',best:'ECMWF',tier:2},
+      {city:'Chicago',station:'O\'Hare',icao:'KORD',unit:'°F',best:'ECMWF',tier:3},
+      {city:'Chongqing',station:'Jiangbei',icao:'ZUCK',unit:'°C',best:'ECMWF',tier:3},
+      {city:'Dallas',station:'Love Field',icao:'KDAL',unit:'°F',best:'ECMWF',tier:2},
+      {city:'Denver',station:'Denver Intl',icao:'KDEN',unit:'°F',best:'ECMWF',tier:2},
+      {city:'Hong Kong',station:'HK Intl',icao:'VHHH',unit:'°C',best:'MeteoFrance',tier:2},
+      {city:'Houston',station:'Hobby',icao:'KHOU',unit:'°F',best:'ECMWF',tier:2},
+      {city:'Istanbul',station:'Istanbul Airport',icao:'LTFM',unit:'°C',best:'MeteoFrance',tier:2},
+      {city:'London',station:'London City',icao:'EGLC',unit:'°C',best:'ECMWF',tier:2},
+      {city:'Los Angeles',station:'LAX',icao:'KLAX',unit:'°F',best:'GFS',tier:2},
+      {city:'Lucknow',station:'C. C. Singh Intl',icao:'VILK',unit:'°C',best:'ECMWF',tier:1},
+      {city:'Madrid',station:'Barajas',icao:'LEMD',unit:'°C',best:'ECMWF',tier:1},
+      {city:'Miami',station:'Miami Intl',icao:'KMIA',unit:'°F',best:'ICON',tier:1},
+      {city:'Milan',station:'Malpensa',icao:'LIMC',unit:'°C',best:'ECMWF',tier:1},
+      {city:'Moscow',station:'Sheremetyevo',icao:'UUEE',unit:'°C',best:'ECMWF',tier:3},
+      {city:'Munich',station:'Munich Airport',icao:'EDDM',unit:'°C',best:'ECMWF',tier:2},
+      {city:'NYC',station:'LaGuardia',icao:'KLGA',unit:'°F',best:'ECMWF',tier:2},
+      {city:'Paris',station:'Charles de Gaulle',icao:'LFPG',unit:'°C',best:'ECMWF',tier:2},
+      {city:'San Francisco',station:'SFO',icao:'KSFO',unit:'°F',best:'GFS',tier:2},
+      {city:'Sao Paulo',station:'Guarulhos',icao:'SBGR',unit:'°C',best:'ECMWF',tier:2},
+      {city:'Seattle',station:'Sea-Tac',icao:'KSEA',unit:'°F',best:'ECMWF',tier:2},
+      {city:'Seoul',station:'Incheon',icao:'RKSI',unit:'°C',best:'GEM',tier:1},
+      {city:'Shanghai',station:'Pudong',icao:'ZSPD',unit:'°C',best:'ECMWF',tier:2},
+      {city:'Shenzhen',station:'Bao\'an',icao:'ZGSZ',unit:'°C',best:'MeteoFrance',tier:2},
+      {city:'Singapore',station:'Changi',icao:'WSSS',unit:'°C',best:'ECMWF',tier:1},
+      {city:'Stockholm',station:'Arlanda',icao:'ESSA',unit:'°C',best:'ECMWF',tier:2},
+      {city:'Taipei',station:'Taoyuan',icao:'RCTP',unit:'°C',best:'ECMWF',tier:2},
+      {city:'Tel Aviv',station:'Ben Gurion',icao:'LLBG',unit:'°C',best:'ICON',tier:1},
+      {city:'Tokyo',station:'Haneda',icao:'RJTT',unit:'°C',best:'ECMWF',tier:1},
+      {city:'Toronto',station:'Pearson',icao:'CYYZ',unit:'°F',best:'ECMWF',tier:2},
+      {city:'Vienna',station:'Vienna Intl',icao:'LOWW',unit:'°C',best:'ECMWF',tier:2},
+      {city:'Warsaw',station:'Chopin',icao:'EPWA',unit:'°C',best:'ECMWF',tier:2},
+      {city:'Wellington',station:'Wellington Intl',icao:'NZWN',unit:'°C',best:'ECMWF',tier:3},
+      {city:'Wuhan',station:'Tianhe',icao:'ZHHH',unit:'°C',best:'ECMWF',tier:2},
+    ];
+    const tierColors = {1:'var(--green)',2:'var(--text)',3:'var(--amber)'};
+    const tierLabels = {1:'T1',2:'T2',3:'T3'};
+    const modelColors = {'ECMWF':'var(--cyan)','GFS':'var(--green)','ICON':'#ff9800','GEM':'#e040fb','MeteoFrance':'#90caf9'};
+    const tbody = document.getElementById('city-sources-body');
+    if (tbody) {
+      tbody.innerHTML = cities.map(c => `<tr style="border-bottom:1px solid rgba(30,30,46,0.5);">
+        <td style="padding:5px 8px;color:var(--text);font-weight:500;font-family:var(--sans);">${c.city}</td>
+        <td style="padding:5px 8px;color:var(--text2);">${c.station}</td>
+        <td style="padding:5px 8px;"><a href="https://www.wunderground.com/history/daily/${c.icao}" target="_blank" style="color:var(--cyan);text-decoration:none;">${c.icao}</a></td>
+        <td style="padding:5px 8px;color:${c.unit==='°F'?'var(--amber)':'var(--text2)'};">${c.unit}</td>
+        <td style="padding:5px 8px;color:${modelColors[c.best]||'var(--text)'};">${c.best}</td>
+        <td style="padding:5px 8px;color:${tierColors[c.tier]};">${tierLabels[c.tier]}</td>
+        <td style="padding:5px 8px;color:var(--text2);">Open-Meteo</td>
+        <td style="padding:5px 8px;color:var(--text2);">Polymarket / Underground</td>
+      </tr>`).join('');
+    }
+  })();
+  </script>
+
 </div><!-- end settings-section -->
 
 <!-- ── Portfolio Overview Dashboard ─────────────── -->
