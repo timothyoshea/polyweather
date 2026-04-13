@@ -395,7 +395,7 @@ async function loadCompareData() {
 
     // Fetch trades for each portfolio
     const allData = await Promise.all(portfolios.map(async (p) => {
-      const tresp = await fetch('/api/trades?portfolio_id=' + p.id + '&limit=2000');
+      const tresp = await fetch('/api/trades?portfolio_id=' + p.id + '&limit=2000&light=true');
       const trades = await tresp.json();
       return { portfolio: p, trades };
     }));
