@@ -769,7 +769,13 @@ function render(positions, opportunities, walletBalance) {
   const sorted = sortCol ? sortPositions(positions, sortCol, sortAsc) : positions;
 
   const totalDeployed = positions.reduce((s, t) => s + parseFloat(t.total_cost_usd || 0), 0);
-  const totalUnrealizedPnl = positions.reduce((s, t) => s + parseFloat(t.unrealized_pnl || 0), 0);
+  // Calculate unrealized P&L from live prices, not stale cache
+  const totalUnrealizedPnl = positions.reduce((s, t) => {
+    const sh = parseFloat(t.total_shares || 0);
+    const co = parseFloat(t.total_cost_usd || 0);
+    const lp = parseFloat(t.live_price || 0);
+    return s + (sh * (lp / 100) - co);
+  }, 0);
   const utilization = getUtilization();
   const exitCandidates = positions.filter(t => {
     const rec = getRecommendation(t);
