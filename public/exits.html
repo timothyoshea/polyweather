@@ -561,7 +561,7 @@ async function loadData() {
     const [pricesRes, compareRes, histSummaryRes, histSnapsRes] = await Promise.all([
       fetch(`/api/refresh_prices?portfolio_id=${currentPortfolioId}`),
       fetch(`/api/forecast_compare?portfolio_id=${currentPortfolioId}`),
-      fetch(`/api/exit_snapshots?summary=true`),
+      fetch(`/api/exit_snapshots?summary=true&portfolio_id=${currentPortfolioId}`),
       fetch(`/api/exit_snapshots?portfolio_id=${currentPortfolioId}`)
     ]);
     const pricesData = await pricesRes.json();
