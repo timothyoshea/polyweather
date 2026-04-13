@@ -643,7 +643,7 @@ async function loadData() {
       console.log('Could not fetch opportunities:', e);
     }
 
-    render(positionsData, opportunities);
+    render(positionsData, opportunities, walletBalanceData);
   } catch (e) {
     console.error('Failed to load data:', e);
     $('#app').innerHTML = '<div class="loading">Failed to load position data. Check console.</div>';
