@@ -1763,6 +1763,36 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
           ? 'N/A'
           : '$' + c.available.toFixed(2);
         card.style.display = '';
+
+        // Show wallet balance for live portfolios
+        const walletRow = document.getElementById('wallet-balance-row');
+        const wb = c.wallet_balance;
+        if (wb && walletRow) {
+          document.getElementById('cap-wallet-usdc').textContent = '$' + wb.usdc_e.toFixed(2);
+          document.getElementById('cap-wallet-pol').textContent = wb.pol.toFixed(2);
+          walletRow.style.display = 'flex';
+
+          // Warning if POL is low
+          const warning = document.getElementById('cap-wallet-warning');
+          if (wb.pol < 0.5) {
+            warning.textContent = 'POL critically low — trades will fail!';
+            warning.style.display = '';
+          } else if (wb.pol < 1.0) {
+            warning.textContent = 'POL getting low — top up soon';
+            warning.style.display = '';
+          } else {
+            warning.style.display = 'none';
+          }
+
+          // If wallet USDC is much lower than DB "available", flag it
+          if (!isUnlimited && wb.usdc_e < c.available * 0.5) {
+            document.getElementById('cap-available').innerHTML =
+              '$' + c.available.toFixed(2) +
+              ' <span style="color:var(--red);font-size:11px;font-weight:600;">(wallet: $' + wb.usdc_e.toFixed(2) + ')</span>';
+          }
+        } else if (walletRow) {
+          walletRow.style.display = 'none';
+        }
       }
     } catch (e) {
       console.error('Failed to load capital status:', e);
