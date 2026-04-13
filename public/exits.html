@@ -934,7 +934,10 @@ function render(positions, opportunities, walletBalance) {
         <td style="text-align:center;">${changeIcon}</td>
         <td>${hoursLeft < 1 ? '<1h' : fmt(hoursLeft, 0) + 'h'}</td>
         <td style="white-space:nowrap;">
-          ${t.url ? '<a href="' + t.url + '" target="_blank" style="color:var(--cyan);font-size:11px;text-decoration:none;" onclick="event.stopPropagation();">Polymarket \u2192</a>' : ''}
+          ${(() => {
+            const polyUrl = t.url || (t.event_slug ? 'https://polymarket.com/event/' + t.event_slug : '') || (t.market_slug ? 'https://polymarket.com/event/' + t.market_slug : '');
+            return polyUrl ? '<a href="' + polyUrl + '" target="_blank" style="color:var(--cyan);font-size:11px;text-decoration:none;" onclick="event.stopPropagation();">View \u2192</a>' : '\u2014';
+          })()}
         </td>
       </tr>`;
     }
