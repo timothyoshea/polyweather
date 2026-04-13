@@ -577,6 +577,18 @@ async function loadData() {
 
     positionsData = pricesData.trades || [];
 
+    // Fetch wallet balance for live portfolios
+    let walletBalanceData = null;
+    if (currentPortfolio && currentPortfolio.trade_mode === 'live') {
+      try {
+        const capRes = await fetch('/api/trades?capital=true&portfolio_id=' + currentPortfolioId + '&limit=1');
+        const capData = await capRes.json();
+        if (capData && capData.capital && capData.capital.wallet_balance) {
+          walletBalanceData = capData.capital.wallet_balance;
+        }
+      } catch (e) {}
+    }
+
     // Index forecast comparisons by trade id
     forecastComparisons = {};
     for (const c of (compareData.comparisons || [])) {
