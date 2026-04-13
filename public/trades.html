@@ -1690,10 +1690,13 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
     if (list) {
       list.innerHTML = allPortfolios.map(p => {
         const isLive = p.trade_mode === 'live';
-        const badge = isLive
+        const isPaused = isLive && !p.active;
+        const badge = isPaused
+          ? '<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(255,82,82,0.15);color:var(--red);margin-left:6px;">PAUSED</span>'
+          : isLive
           ? '<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(0,230,118,0.15);color:var(--green);margin-left:6px;">LIVE</span>'
           : '';
-        return `<div style="padding:8px 12px;cursor:pointer;border-radius:6px;font-size:13px;color:${p.id === activePortfolioId ? 'var(--cyan)' : 'var(--text)'};font-weight:${p.id === activePortfolioId ? '600' : '400'};transition:background 0.15s;display:flex;align-items:center;"
+        return `<div style="padding:8px 12px;cursor:pointer;border-radius:6px;font-size:13px;color:${p.id === activePortfolioId ? 'var(--cyan)' : 'var(--text)'};font-weight:${p.id === activePortfolioId ? '600' : '400'};transition:background 0.15s;display:flex;align-items:center;${isPaused ? 'opacity:0.6;' : ''}"
           onmouseover="this.style.background='rgba(79,195,247,0.08)'"
           onmouseout="this.style.background=''"
           onclick="selectPortfolio('${p.id}')">${p.name || p.id}${badge}</div>`;
