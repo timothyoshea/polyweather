@@ -3929,7 +3929,7 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
     { key: 'created_at', label: 'Placed', type: 'date' },
     { key: 'date', label: 'Market Date', type: 'string' },
     { key: 'city', label: 'City', type: 'string' },
-    { key: 'band_c', label: 'Band', type: 'string' },
+    { key: 'band', label: 'Band', type: 'string', format: (v, t) => band(t) },
     { key: 'side', label: 'Side', type: 'string' },
     { key: 'bet_type', label: 'Type', type: 'string' },
     { key: 'entry_price', label: 'Entry', type: 'number' },
