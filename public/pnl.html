@@ -490,6 +490,8 @@ const fmt = (n, d=2) => n == null ? '—' : Number(n).toFixed(d);
 const fmtUsd = n => n == null ? '—' : '$' + Number(n).toFixed(2);
 const fmtPct = n => n == null ? '—' : Number(n).toFixed(1) + '%';
 const clr = n => n >= 0 ? 'pos' : 'neg';
+const F_CITIES = new Set(['Chicago','San Francisco','Miami','NYC','Austin','Denver','Houston','Los Angeles','Seattle','Toronto','Atlanta','Dallas','New York City']);
+const getBand = t => F_CITIES.has(t.city||'') ? (t.band_f||t.band_c||'') : (t.band_c||t.band_f||'');
 
 let allTrades = [];
 let currentRange = 'all';
