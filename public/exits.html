@@ -893,10 +893,12 @@ function render(positions, opportunities, walletBalance) {
       }
 
       // Profit breakdown: captured vs remaining
+      // Use live price (cents) to calculate current value, not stale unrealized_pnl
       const shares = parseFloat(t.total_shares || 0);
       const cost = parseFloat(t.total_cost_usd || 0);
       const maxProfit = shares - cost; // payout if win = shares * $1
-      const unrealizedPnl = parseFloat(t.unrealized_pnl || 0);
+      const currentValue = shares * (livePrice / 100); // livePrice is in cents
+      const unrealizedPnl = currentValue - cost;
       const remaining = maxProfit - unrealizedPnl;
       const capturedPct = maxProfit > 0 ? (unrealizedPnl / maxProfit * 100) : 0;
 
