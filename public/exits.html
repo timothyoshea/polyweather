@@ -1134,7 +1134,7 @@ function renderExitHistory() {
       h += `<tr>
         <td style="font-family:var(--sans);font-weight:500;">${snap.city || '\u2014'}</td>
         <td>${snap.date || snap.trade_date || '\u2014'}</td>
-        <td>${snap.band_c || snap.band || '\u2014'}</td>
+        <td>${band(snap) || '\u2014'}</td>
         <td>${recBadge(snap.recommendation)}</td>
         <td>${fmt(capturedPct, 1)}%</td>
         <td>${hours != null ? fmt(hours, 1) + 'h' : '\u2014'}</td>
