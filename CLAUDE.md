@@ -15,8 +15,9 @@ Weather temperature prediction trading system for Polymarket. Scans markets, for
 - **Frontend:** Vanilla JS/HTML in `public/` directory (no frameworks). Dark theme with CSS variables. Chart.js for charts.
 - **Backend:** Python Vercel serverless functions in `api/`. Uses `urllib.request` (not `requests` library). `BaseHTTPRequestHandler` pattern.
 - **Database:** Supabase (Postgres) with REST API. Service key for writes, anon key for reads.
-- **Deployments:** Push to `main` auto-deploys to Vercel. Check status with `vercel ls`.
+- **Deployments:** Push to `main` auto-deploys to Vercel (`polyweather-nine.vercel.app`). Railway trader deploys via `railway up` from the `railway-trader/` subdirectory (NOT repo root).
 - **Portfolio system:** Multiple portfolios with separate strategies. "Datagrab" = unlimited capital (captures all data). Fixed-capital portfolios enforce position sizing.
+- **Temperatures:** Always display in the market's native unit. If Polymarket shows Fahrenheit (US cities), show Fahrenheit in our UI. If Celsius, show Celsius. Never convert — match Polymarket exactly.
 
 ## Working Preferences
 - Use agent teams for parallel work across multiple files
