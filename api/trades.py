@@ -135,20 +135,20 @@ class handler(BaseHTTPRequestHandler):
             if params.get("capital", [None])[0] == "true" and portfolio_id:
                 # Fetch portfolio capital settings
                 portfolio = supabase_query(
-                    f"portfolios?id=eq.{portfolio_id}&select=starting_capital_usd,unlimited_capital"
+                    f"portfolios?id=eq.{portfolio_id}&select=starting_capital_usd,unlimited_capital,trade_mode,wallet_address"
                 )
                 starting = float((portfolio[0] if portfolio else {}).get("starting_capital_usd", 0) or 0)
                 unlimited = bool((portfolio[0] if portfolio else {}).get("unlimited_capital", False))
 
-                # Fetch open trades for deployed capital
+                # Fetch open trade costs only (lightweight)
                 open_trades = supabase_query(
                     f"paper_trades?status=eq.open&portfolio_id=eq.{portfolio_id}&select=total_cost_usd"
                 )
                 deployed = sum(float(t.get("total_cost_usd", 0) or 0) for t in open_trades)
 
-                # Fetch resolved trades for realized P&L
+                # Fetch only profit_usd and status for resolved trades (lightweight)
                 resolved_trades = supabase_query(
-                    f"paper_trades?status=in.(won,lost)&portfolio_id=eq.{portfolio_id}&select=profit_usd"
+                    f"paper_trades?status=in.(won,lost)&portfolio_id=eq.{portfolio_id}&select=profit_usd,status"
                 )
                 realized_pnl = sum(float(t.get("profit_usd", 0) or 0) for t in resolved_trades)
 
@@ -156,10 +156,11 @@ class handler(BaseHTTPRequestHandler):
                 available = current - deployed
                 utilization_pct = (deployed / current * 100) if current > 0 else 0.0
 
-                # Fetch the actual trades list
+                # Fetch the actual trades list — only columns needed for UI table
+                TRADE_LIST_COLS = "id,created_at,city,date,band_c,band_type,side,bet_type,entry_price,total_cost_usd,total_shares,edge,confidence,mkt_p,my_p,status,profit_usd,payout_usd,roi_pct,trade_mode,resolved_at,portfolio_id"
                 status = params.get("status", [None])[0]
                 limit = int(params.get("limit", ["100"])[0])
-                tq = f"paper_trades?select=*&order=created_at.desc{pf_filter}"
+                tq = f"paper_trades?select={TRADE_LIST_COLS}&order=created_at.desc{pf_filter}"
                 if status:
                     tq += f"&status=eq.{status}"
                 tq += f"&limit={limit}"
@@ -167,8 +168,8 @@ class handler(BaseHTTPRequestHandler):
 
                 # Count trades by status
                 open_count = len(open_trades)
-                won_count = len([t for t in resolved_trades if float(t.get("profit_usd", 0) or 0) > 0])
-                lost_count = len([t for t in resolved_trades if float(t.get("profit_usd", 0) or 0) <= 0])
+                won_count = len([t for t in resolved_trades if t.get("status") == "won"])
+                lost_count = len([t for t in resolved_trades if t.get("status") == "lost"])
                 total_count = open_count + won_count + lost_count
 
                 # For live portfolios, fetch actual wallet balance
