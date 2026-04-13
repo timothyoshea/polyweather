@@ -3435,7 +3435,7 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
           <td style="color:var(--cyan)">${esc(t.portfolio_name || '—')}</td>
           <td>${esc(t.city || '—')}</td>
           <td>${(t.date || '').slice(0,10)}</td>
-          <td>${esc(t.band_c || '—')}</td>
+          <td>${esc(band(t) || '—')}</td>
           <td>${t.side || '—'}</td>
           <td>${t.bet_type || '—'}</td>
           <td>${t.total_cost_usd != null ? '$' + Number(t.total_cost_usd).toFixed(2) : '—'}</td>
