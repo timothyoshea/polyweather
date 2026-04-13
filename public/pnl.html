@@ -1059,7 +1059,7 @@ function downloadCSV() {
   const headers = ['Status','City','Trade Date','Resolved','Band','Side','Type','Entry Price','Cost','Payout','Profit','ROI'];
   const rows = gSortedTrades.map(t => [
     t.status, t.city, (t.date||'').slice(0,10), (t.resolved_at||'').slice(0,10),
-    t.band_c, t.side, t.bet_type, t.entry_price,
+    getBand(t), t.side, t.bet_type, t.entry_price,
     t.total_cost_usd, t.payout_usd, t.profit_usd, t.roi_pct
   ]);
   const csv = [headers, ...rows].map(r => r.map(v => '"'+(v||'')+'"').join(',')).join('\n');
