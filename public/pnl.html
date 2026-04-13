@@ -1024,7 +1024,7 @@ function render(trades) {
 }
 
 function renderTradeRow(t) {
-  const band = t.band_c || '—';
+  const band = getBand(t) || '—';
   const dir = t.band_type || '';
   const tradeDate = (t.date || '').slice(0, 10);
   const resolvedDate = (t.resolved_at || '').slice(0, 10);
