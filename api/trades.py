@@ -215,22 +215,24 @@ class handler(BaseHTTPRequestHandler):
                 self._respond(200, data)
                 return
 
-            # Summary mode
+            # Summary mode — only fetch columns needed for summary calculations
             if params.get("summary", [None])[0] == "true":
+                SUMMARY_COLS = "status,bet_type,city,total_cost_usd,payout_usd,profit_usd,date,created_at"
                 all_trades = supabase_query(
-                    f"paper_trades?select=*&order=created_at.desc{pf_filter}"
+                    f"paper_trades?select={SUMMARY_COLS}&order=created_at.desc{pf_filter}&status=in.(open,won,lost)"
                 )
                 data = build_summary(all_trades)
                 self._respond(200, data)
                 return
 
-            # List trades with optional status/date filters
+            # List trades with optional status/date filters — lightweight columns
+            TRADE_LIST_COLS = "id,created_at,city,date,band_c,band_type,side,bet_type,entry_price,total_cost_usd,total_shares,edge,confidence,mkt_p,my_p,status,profit_usd,payout_usd,roi_pct,trade_mode,resolved_at,portfolio_id"
             status = params.get("status", [None])[0]
             bet_type = params.get("bet_type", [None])[0]
             limit = int(params.get("limit", ["100"])[0])
             from_date = params.get("from", [None])[0]
             to_date = params.get("to", [None])[0]
-            query = f"paper_trades?select=*&order=created_at.desc{pf_filter}"
+            query = f"paper_trades?select={TRADE_LIST_COLS}&order=created_at.desc{pf_filter}"
             if status:
                 if status.startswith("in.") or status.startswith("not."):
                     query += f"&status={status}"
