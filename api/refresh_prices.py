@@ -47,8 +47,8 @@ class handler(BaseHTTPRequestHandler):
             params = parse_qs(urlparse(self.path).query)
             portfolio_id = params.get("portfolio_id", [None])[0]
 
-            # 1. Fetch all open trades
-            query = "paper_trades?status=eq.open&select=*&order=created_at.desc"
+            # 1. Fetch all open trades (lightweight columns + what UI needs)
+            query = "paper_trades?status=eq.open&select=id,city,date,band_c,band_type,side,bet_type,entry_price,total_cost_usd,total_shares,edge,confidence,mkt_p,my_p,ev_per_dollar,half_kelly,forecast_c,risk,status,trade_mode,token_id,condition_id,event_slug,market_slug,url,portfolio_id,created_at,forecast_details,liquidity&order=created_at.desc"
             if portfolio_id:
                 query += f"&portfolio_id=eq.{portfolio_id}"
             trades = supabase_get(query)
