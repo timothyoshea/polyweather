@@ -1005,7 +1005,7 @@ function render(trades) {
       const getVal = (t) => {
         if (key === 'date') return t.date || '';
         if (key === 'resolved_at') return (t.resolved_at || '').slice(0, 10);
-        if (key === 'band') return t.band_c || '';
+        if (key === 'band') return getBand(t);
         const v = t[key];
         return typeof v === 'string' ? v.toLowerCase() : (Number(v) || 0);
       };
