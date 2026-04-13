@@ -171,6 +171,28 @@ class handler(BaseHTTPRequestHandler):
                 lost_count = len([t for t in resolved_trades if float(t.get("profit_usd", 0) or 0) <= 0])
                 total_count = open_count + won_count + lost_count
 
+                # For live portfolios, fetch actual wallet balance
+                wallet_balance = None
+                trade_mode = (portfolio[0] if portfolio else {}).get("trade_mode", "paper")
+                wallet_addr = (portfolio[0] if portfolio else {}).get("wallet_address", "")
+                if trade_mode == "live" and wallet_addr:
+                    try:
+                        railway_url = os.environ.get("RAILWAY_URL", "").rstrip("/")
+                        railway_secret = os.environ.get("RAILWAY_API_SECRET", "")
+                        if railway_url and railway_secret:
+                            bal_req = urllib.request.Request(
+                                f"{railway_url}/wallets/balance?address={urllib.parse.quote(wallet_addr)}",
+                                headers={"Authorization": f"Bearer {railway_secret}"},
+                            )
+                            with urllib.request.urlopen(bal_req, timeout=10) as resp:
+                                bal_data = json.loads(resp.read().decode())
+                                wallet_balance = {
+                                    "usdc_e": round(float(bal_data.get("usdc_e_balance", 0)), 2),
+                                    "pol": round(float(bal_data.get("pol_balance", 0)), 2),
+                                }
+                    except Exception:
+                        pass
+
                 data = {
                     "capital": {
                         "starting": round(starting, 2),
@@ -187,6 +209,8 @@ class handler(BaseHTTPRequestHandler):
                     },
                     "trades": trades,
                 }
+                if wallet_balance is not None:
+                    data["capital"]["wallet_balance"] = wallet_balance
                 self._respond(200, data)
                 return
 
