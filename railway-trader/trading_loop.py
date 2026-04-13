@@ -954,7 +954,7 @@ class TradingLoop:
                 if now - getattr(self, '_last_cleanup', 0) >= 300:
                     try:
                         from datetime import timedelta
-                        cutoff = (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat()
+                        cutoff = (datetime.now(timezone.utc) - timedelta(minutes=5)).strftime("%Y-%m-%dT%H:%M:%SZ")
                         cleanup_url = (
                             f"{SUPABASE_URL}/rest/v1/paper_trades"
                             f"?status=eq.pending_execution&trade_mode=eq.live"
