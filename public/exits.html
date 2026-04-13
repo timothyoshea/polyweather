@@ -977,7 +977,7 @@ function render(positions, opportunities, walletBalance) {
       html += `<div class="opp-card" style="flex-wrap:wrap;cursor:pointer;${isDup ? 'opacity:0.5;' : ''}" onclick="var d=document.getElementById('${oppId}');d.style.display=d.style.display==='none'?'block':'none';">
         <div class="opp-info">
           <div class="opp-title">${opp.city || '\u2014'} &mdash; ${opp.date || '\u2014'}${isDup ? ' <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(255,193,7,0.15);color:#ffc107;font-weight:600;margin-left:6px;">ALREADY HELD</span>' : ''}</div>
-          <div class="opp-detail">${(opp.side || '').toUpperCase()} ${opp.band_c || opp.band_f || ''} | ${opp.bet_type || ''} | Mkt: ${fmt(parseFloat(opp.mkt_p || 0), 1)}\u00A2</div>
+          <div class="opp-detail">${(opp.side || '').toUpperCase()} ${band(opp) || ''} | ${opp.bet_type || ''} | Mkt: ${fmt(parseFloat(opp.mkt_p || 0), 1)}\u00A2</div>
         </div>
         <div class="opp-edge ${edge >= 0 ? 'val-pos' : 'val-neg'}">${edge >= 0 ? '+' : ''}${fmtEdge(edge)} edge</div>
         <div id="${oppId}" style="display:none;width:100%;padding-top:10px;border-top:1px solid var(--card-border);margin-top:8px;font-size:12px;font-family:var(--mono);color:var(--text2);">
