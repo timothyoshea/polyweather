@@ -767,12 +767,13 @@ function render(trades) {
         </div>
         <div class="stat-card">
           <div class="label">Available</div>
-          <div class="value">${isUnlimited ? 'N/A' : fmtUsd(c.available)}</div>
+          <div class="value">${isUnlimited ? 'N/A' : fmtUsd(c.available)}${c.wallet_balance && !isUnlimited && c.wallet_balance.usdc_e < c.available * 0.5 ? '<div style="color:var(--red);font-size:10px;margin-top:2px;">Wallet: ' + fmtUsd(c.wallet_balance.usdc_e) + '</div>' : ''}</div>
         </div>
         <div class="stat-card">
           <div class="label">Utilization</div>
           <div class="value">${isUnlimited ? '<span style="color:var(--amber);">Unlimited</span>' : fmtPct(c.utilization_pct)}</div>
         </div>
+        ${c.wallet_balance ? '<div class="stat-card"><div class="label">Wallet USDC.e</div><div class="value" style="color:var(--cyan);">' + fmtUsd(c.wallet_balance.usdc_e) + '</div></div><div class="stat-card"><div class="label">POL (gas)</div><div class="value' + (c.wallet_balance.pol < 1 ? ' style=\\"color:var(--red)\\"' : '') + '">' + c.wallet_balance.pol.toFixed(2) + '</div></div>' : ''}
       </div>
     `);
   }
