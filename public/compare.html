@@ -489,6 +489,7 @@ function computeMetrics(portfolio, trades) {
     name: portfolio.name,
     id: portfolio.id,
     tradeMode: portfolio.trade_mode,
+    isActive: portfolio.active !== false,
     description: portfolio.description || '',
     openTrades: open.length,
     closedTrades: closed.length,
