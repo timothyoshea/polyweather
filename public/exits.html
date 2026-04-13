@@ -720,6 +720,7 @@ function sortPositions(positions, col, asc) {
     },
     side: (a, b) => (a.side || '').localeCompare(b.side || ''),
     type: (a, b) => (a.bet_type || '').localeCompare(b.bet_type || ''),
+    cost: (a, b) => (parseFloat(a.total_cost_usd || 0)) - (parseFloat(b.total_cost_usd || 0)),
     entry: (a, b) => (parseFloat(a.entry_price || 0)) - (parseFloat(b.entry_price || 0)),
     current: (a, b) => (parseFloat(a.live_price || 0)) - (parseFloat(b.live_price || 0)),
     pnl: (a, b) => (parseFloat(a.unrealized_pnl || 0)) - (parseFloat(b.unrealized_pnl || 0)),
