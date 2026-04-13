@@ -3265,6 +3265,14 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
   }
 
   // ── HTML escape ──────────────────────────────
+  // Fahrenheit cities on Polymarket — show band_f for these, band_c for all others
+  const F_CITIES = new Set(['Chicago','San Francisco','Miami','NYC','Austin','Denver','Houston','Los Angeles','Seattle','Toronto','Atlanta','Dallas','New York City']);
+  function band(t) {
+    // Show the market-native temperature unit: F for US cities, C for international
+    const city = t.city || t.get?.('city') || '';
+    return F_CITIES.has(city) ? (t.band_f || t.band_c || '') : (t.band_c || t.band_f || '');
+  }
+
   function esc(s) {
     if (!s) return '';
     const div = document.createElement('div');
