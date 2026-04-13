@@ -529,7 +529,7 @@ function updatePortfolioDisplay() {
       `<div style="padding:8px 12px;cursor:pointer;border-radius:6px;font-size:13px;color:${p.id === currentPortfolioId ? 'var(--cyan)' : 'var(--text)'};font-weight:${p.id === currentPortfolioId ? '600' : '400'};"
         onmouseover="this.style.background='rgba(79,195,247,0.08)'"
         onmouseout="this.style.background=''"
-        onclick="$('#portfolio-select').value='${p.id}';$('#portfolio-picker').style.display='none';onPortfolioChange();">${p.name || p.id}${p.trade_mode === 'live' ? ' <span style=&quot;color:var(--green);font-size:10px;&quot;>LIVE</span>' : ''}</div>`
+        onclick="$('#portfolio-select').value='${p.id}';$('#portfolio-picker').style.display='none';onPortfolioChange();">${p.name || p.id}${p.trade_mode === 'live' && p.active === false ? ' <span style=&quot;color:var(--red);font-size:10px;font-weight:700;&quot;>PAUSED</span>' : p.trade_mode === 'live' ? ' <span style=&quot;color:var(--green);font-size:10px;&quot;>LIVE</span>' : ''}</div>`
     ).join('');
   }
 }
