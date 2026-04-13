@@ -930,6 +930,7 @@ function render(positions, opportunities, walletBalance) {
         <td style="color:${comp && comp.forecast_gap != null ? (comp.forecast_gap >= 3 ? 'var(--green)' : comp.forecast_gap >= 1 ? 'var(--amber)' : 'var(--red)') : 'var(--text2)'};">${comp && comp.forecast_gap != null ? fmt(comp.forecast_gap, 1) + '\u00B0C' : '\u2014'}</td>
         <td>${(t.side || '').toUpperCase()}</td>
         <td style="font-size:11px;color:var(--text2);">${t.bet_type || '\u2014'}</td>
+        <td>${fmtUsd(cost)}</td>
         <td>${fmt(entryPrice, 1)}\u00A2</td>
         <td>${fmt(livePrice, 1)}\u00A2</td>
         <td class="${pnlPct >= 0 ? 'val-pos' : 'val-neg'}">${pnlPct >= 0 ? '+' : ''}${fmtPct(pnlPct)}</td>
