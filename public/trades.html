@@ -1335,6 +1335,11 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
       <div><span style="color:var(--text2);">Deployed:</span> <strong id="cap-deployed" style="color:var(--text);">--</strong></div>
       <div><span style="color:var(--text2);">Available:</span> <strong id="cap-available" style="color:var(--text);">--</strong></div>
     </div>
+    <div id="wallet-balance-row" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--card-border);display:flex;gap:24px;flex-wrap:wrap;font-size:13px;">
+      <div><span style="color:var(--text2);">Wallet USDC.e:</span> <strong id="cap-wallet-usdc" style="color:var(--cyan);">--</strong></div>
+      <div><span style="color:var(--text2);">POL (gas):</span> <strong id="cap-wallet-pol" style="color:var(--text);">--</strong></div>
+      <div id="cap-wallet-warning" style="display:none;color:var(--red);font-weight:600;"></div>
+    </div>
   </div>
 
   <!-- Wallet Management -->
