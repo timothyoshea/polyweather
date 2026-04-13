@@ -456,6 +456,8 @@ const fmt = (n, d=2) => n == null ? '\u2014' : Number(n).toFixed(d);
 const fmtUsd = n => n == null ? '\u2014' : '$' + Number(n).toFixed(2);
 const fmtPct = n => n == null ? '\u2014' : Number(n).toFixed(1) + '%';
 const fmtEdge = n => n == null ? '\u2014' : Number(n).toFixed(1) + 'pp';
+const F_CITIES = new Set(['Chicago','San Francisco','Miami','NYC','Austin','Denver','Houston','Los Angeles','Seattle','Toronto','Atlanta','Dallas','New York City']);
+const band = t => F_CITIES.has(t.city||'') ? (t.band_f||t.band_c||'') : (t.band_c||t.band_f||'');
 
 let allPortfolios = [];
 let currentPortfolioId = '';
