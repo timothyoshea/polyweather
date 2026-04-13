@@ -949,6 +949,7 @@ class TradingLoop:
                 now = time.time()
 
                 # Cleanup stale pending_execution trades (older than 5 min)
+                # Use PATCH to void instead of DELETE to avoid FK constraint with execution_log
                 if now - getattr(self, '_last_cleanup', 0) >= 300:
                     try:
                         from datetime import timedelta
@@ -958,7 +959,11 @@ class TradingLoop:
                             f"?status=eq.pending_execution&trade_mode=eq.live"
                             f"&created_at=lt.{cutoff}"
                         )
-                        _http_request(cleanup_url, method="DELETE", headers=_supabase_headers())
+                        hdrs = _supabase_headers()
+                        hdrs["Prefer"] = "return=representation"
+                        result = _http_patch(cleanup_url, {"status": "void"}, hdrs)
+                        if result and isinstance(result, list) and len(result) > 0:
+                            _log(f"Cleanup: voided {len(result)} stale pending trades")
                     except Exception as cleanup_err:
                         _log(f"Cleanup error: {cleanup_err}")
                     self._last_cleanup = now
