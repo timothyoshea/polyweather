@@ -2094,9 +2094,16 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
     const liveStatus = document.getElementById('live-portfolio-status');
 
     // Top bar badge
+    const isActive = currentPortfolio ? currentPortfolio.active : true;
+    const isPaused = mode === 'live' && !isActive;
     if (badge) {
       badge.style.display = 'inline';
-      if (mode === 'live') {
+      if (isPaused) {
+        badge.textContent = 'PAUSED';
+        badge.style.background = 'rgba(255,82,82,0.15)';
+        badge.style.color = 'var(--red)';
+        badge.style.border = '1px solid rgba(255,82,82,0.3)';
+      } else if (mode === 'live') {
         badge.textContent = 'LIVE';
         badge.style.background = 'rgba(0,230,118,0.15)';
         badge.style.color = 'var(--green)';
