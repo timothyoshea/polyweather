@@ -1,10 +1,12 @@
 # PolyWeather
 
 ## On Session Start
+- Read `code_explainer.md` in the repo root — complete map of all pages, API routes, DB tables, and app structure
 - Read the project history from memory (`project_history.md`) to understand what's been built and the current state
 - Check `.claude/settings.local.json` for hooks and permissions already configured
 - Auto-commit hook is set up: every Edit/Write auto-commits with "Auto-commit: update <filename>"
 - Vercel deploy status hook runs after every `git push`
+- After making structural changes (adding/removing pages, API routes, DB tables, or major features), update `code_explainer.md`
 
 ## Project Context
 Weather temperature prediction trading system for Polymarket. Scans markets, forecasts with multi-model weather data, paper trades automatically, tracks P&L across multiple portfolios.
