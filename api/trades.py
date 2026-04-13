@@ -225,8 +225,13 @@ class handler(BaseHTTPRequestHandler):
                 self._respond(200, data)
                 return
 
-            # List trades with optional status/date filters — lightweight columns
-            TRADE_LIST_COLS = "id,created_at,city,date,band_c,band_f,band_type,side,bet_type,entry_price,total_cost_usd,total_shares,num_levels,edge,confidence,mkt_p,my_p,ev_per_dollar,half_kelly,forecast_c,risk,empirical_p,status,profit_usd,payout_usd,roi_pct,trade_mode,resolved_at,portfolio_id,token_id,condition_id,event_slug,market_slug,url,liquidity,forecast_details,model_values"
+            # List trades with optional status/date filters
+            # light=true excludes heavy JSONB columns (for analysis page with 1000+ trades)
+            is_light = params.get("light", [None])[0] == "true"
+            if is_light:
+                TRADE_LIST_COLS = "id,created_at,city,date,band_c,band_f,band_type,side,bet_type,entry_price,total_cost_usd,total_shares,edge,confidence,mkt_p,my_p,ev_per_dollar,half_kelly,forecast_c,risk,empirical_p,status,profit_usd,payout_usd,roi_pct,trade_mode,resolved_at,portfolio_id"
+            else:
+                TRADE_LIST_COLS = "id,created_at,city,date,band_c,band_f,band_type,side,bet_type,entry_price,total_cost_usd,total_shares,num_levels,edge,confidence,mkt_p,my_p,ev_per_dollar,half_kelly,forecast_c,risk,empirical_p,status,profit_usd,payout_usd,roi_pct,trade_mode,resolved_at,portfolio_id,token_id,condition_id,event_slug,market_slug,url,liquidity,forecast_details,model_values"
             status = params.get("status", [None])[0]
             bet_type = params.get("bet_type", [None])[0]
             limit = int(params.get("limit", ["100"])[0])
