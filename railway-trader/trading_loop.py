@@ -1223,7 +1223,9 @@ class TradingLoop:
                 # Capital management checks
                 if use_capital_mgmt:
                     max_by_pct = current_capital * max_single_trade_pct / 100
-                    capped_cost = min(cost, max_single_trade_usd, max_by_pct)
+                    # Also cap to actual wallet balance (minus buffer for gas/fees)
+                    wallet_cap = max(0, wallet_usdc - 2.0) if wallet_usdc < 999 else 999999
+                    capped_cost = min(cost, max_single_trade_usd, max_by_pct, wallet_cap)
                     if capped_cost < cost:
                         scale = capped_cost / cost if cost > 0 else 1
                         position["total_cost_usd"] = round(capped_cost, 2)
