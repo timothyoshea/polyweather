@@ -3760,7 +3760,7 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
         '<td style="font-size:11px;color:var(--text2);">' + timeStr + '</td>' +
         '<td>' + t.date + '</td>' +
         '<td style="font-weight:600;">' + t.city + '</td>' +
-        '<td style="font-family:var(--mono);font-size:12px;">' + t.band_c + '</td>' +
+        '<td style="font-family:var(--mono);font-size:12px;">' + band(t) + '</td>' +
         '<td>' + sideBadge + '</td>' +
         '<td style="font-size:11px;color:var(--text2);">' + (t.bet_type || '') + '</td>' +
         '<td style="font-family:var(--mono);font-size:12px;">' +
