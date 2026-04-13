@@ -809,6 +809,16 @@ function render(positions, opportunities, walletBalance) {
       <div class="value" style="color:${exitCandidates > 0 ? 'var(--amber)' : 'var(--green)'}">${exitCandidates}</div>
       <div class="sub">${exitCandidates > 0 ? 'action recommended' : 'all clear'}</div>
     </div>
+    ${walletBalance ? `
+    <div class="stat-card">
+      <div class="label">Wallet USDC.e</div>
+      <div class="value" style="color:var(--cyan);">${fmtUsd(walletBalance.usdc_e)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">POL (gas)</div>
+      <div class="value" style="color:${walletBalance.pol < 1 ? 'var(--red)' : 'var(--text)'};">${walletBalance.pol.toFixed(2)}</div>
+      ${walletBalance.pol < 1 ? '<div class="sub" style="color:var(--red);">top up soon</div>' : ''}
+    </div>` : ''}
   </div>`;
 
   // ── Positions Table ──
