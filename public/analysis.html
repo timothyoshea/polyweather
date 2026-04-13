@@ -876,7 +876,7 @@ async function loadTrades() {
     return;
   }
   try {
-    let url = '/api/trades?limit=1000&portfolio_id=' + encodeURIComponent(currentPortfolioId);
+    let url = '/api/trades?limit=1000&light=true&portfolio_id=' + encodeURIComponent(currentPortfolioId);
     const res = await fetch(url);
     const data = await res.json();
     allTrades = data.trades || data || [];
