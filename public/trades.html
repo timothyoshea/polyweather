@@ -3745,6 +3745,37 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
         '<span style="color:var(--text2);">Total Depth:</span><span>$' + ((liq.total_depth_usd || 0).toFixed(0)) + '</span>' +
         '</div>' +
         (t.question ? '<div style="margin-top:8px;color:var(--text2);font-size:11px;">' + t.question + '</div>' : '') +
+        // Model forecast breakdown
+        (function() {
+          var mv = t.model_values;
+          var fd = t.forecast_details || {};
+          var mw = fd.model_weights || {};
+          if (!mv || typeof mv !== 'object') return '';
+          var modelNames = {'ecmwf_ifs025':'ECMWF','gfs_seamless':'GFS','icon_seamless':'ICON','gem_seamless':'GEM','meteofrance_seamless':'MeteoFrance'};
+          var modelColors = {'ecmwf_ifs025':'var(--cyan)','gfs_seamless':'var(--green)','icon_seamless':'#ff9800','gem_seamless':'#e040fb','meteofrance_seamless':'#90caf9'};
+          var html = '<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--card-border);">' +
+            '<div style="font-size:10px;text-transform:uppercase;color:var(--cyan);letter-spacing:0.5px;margin-bottom:6px;">Model Forecasts</div>' +
+            '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:4px;">';
+          var keys = Object.keys(mv).sort();
+          for (var i = 0; i < keys.length; i++) {
+            var k = keys[i];
+            var temp = mv[k];
+            var weight = mw[k];
+            var name = modelNames[k] || k;
+            var color = modelColors[k] || 'var(--text)';
+            html += '<div style="display:flex;justify-content:space-between;gap:6px;">' +
+              '<span style="color:' + color + ';">' + name + '</span>' +
+              '<span style="color:var(--text);">' + (typeof temp === 'number' ? temp.toFixed(1) : temp) + '\u00B0C' +
+              (weight != null ? ' <span style="color:var(--text2);font-size:10px;">(' + (weight * 100).toFixed(0) + '%)</span>' : '') +
+              '</span></div>';
+          }
+          html += '</div>';
+          if (fd.ensemble_std != null) {
+            html += '<div style="margin-top:4px;font-size:10px;color:var(--text2);">Ensemble \u03C3: ' + fd.ensemble_std.toFixed(2) + '\u00B0C | Tier: ' + (fd.city_tier || '?') + ' | Horizon: ' + (fd.horizon_days != null ? fd.horizon_days + 'd' : '?') + '</div>';
+          }
+          html += '</div>';
+          return html;
+        })() +
         '<div style="display:flex;gap:12px;align-items:center;margin-top:8px;">' +
         '<button onclick="event.stopPropagation();showTradeSnapshot(' + idx + ');" style="background:var(--cyan);color:#000;border:none;border-radius:6px;padding:5px 14px;cursor:pointer;font-size:11px;font-weight:600;font-family:var(--sans);">View Scanner Snapshot</button>' +
         (t.url ? '<a href="' + t.url + '" target="_blank" style="color:var(--cyan);font-size:11px;text-decoration:none;">Polymarket \u2192</a>' : '') +
