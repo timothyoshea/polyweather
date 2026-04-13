@@ -906,11 +906,14 @@ function render(positions, opportunities, walletBalance) {
       // Use live price (cents) to calculate current value, not stale unrealized_pnl
       const shares = parseFloat(t.total_shares || 0);
       const cost = parseFloat(t.total_cost_usd || 0);
-      const maxProfit = shares - cost; // payout if win = shares * $1
+      const entryP = parseFloat(t.entry_price || 0);
+      // Max profit = what we'd gain if position resolves at $1 per share
+      // Use entry_price to avoid fee-inflated cost making max_profit negative
+      const maxProfit = shares > 0 ? shares * (1.0 - entryP) : 0.01;
       const currentValue = shares * (livePrice / 100); // livePrice is in cents
       const unrealizedPnl = currentValue - cost;
-      const remaining = maxProfit - unrealizedPnl;
-      const capturedPct = maxProfit > 0 ? (unrealizedPnl / maxProfit * 100) : 0;
+      const remaining = Math.max(0, maxProfit - unrealizedPnl);
+      const capturedPct = maxProfit > 0 ? Math.min(100, unrealizedPnl / maxProfit * 100) : 0;
 
       // Visual bar showing how much upside is captured
       const barWidth = Math.max(0, Math.min(100, capturedPct));
