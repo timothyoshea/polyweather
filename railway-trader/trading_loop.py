@@ -1382,10 +1382,10 @@ class TradingLoop:
                         error = exec_result.get("error", "unknown")
                         _log(f"Execution failed: {opp_label}: {error}")
 
-                        # Delete the pending trade — don't leave void records
+                        # Void the pending trade (can't delete due to execution_log FK)
                         try:
-                            del_url = f"{SUPABASE_URL}/rest/v1/paper_trades?id=eq.{trade_id}"
-                            _http_request(del_url, method="DELETE", headers=_supabase_headers())
+                            void_url = f"{SUPABASE_URL}/rest/v1/paper_trades?id=eq.{trade_id}"
+                            _http_patch(void_url, {"status": "void"}, _supabase_headers())
                         except Exception:
                             pass
 
