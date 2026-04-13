@@ -3591,7 +3591,7 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
         '<td style="font-size:11px;color:var(--text2);">' + timeStr + '</td>' +
         '<td>' + t.date + '</td>' +
         '<td>' + t.city + '</td>' +
-        '<td>' + (t.band_c || '') + '</td>' +
+        '<td>' + band(t) + '</td>' +
         '<td>' + sideBadge + '</td>' +
         '<td>' + t.bet_type + '</td>' +
         '<td>' + (t.entry_price * 100).toFixed(1) + '\u00A2</td>' +
