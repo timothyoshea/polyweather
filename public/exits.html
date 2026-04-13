@@ -855,7 +855,11 @@ function render(positions, opportunities, walletBalance) {
   } else {
     for (const t of sorted) {
       const rec = getRecommendation(t);
-      const pnlPct = parseFloat(t.unrealized_pnl_pct || 0);
+      // Calculate P&L % from live price, not stale cache
+      const _shares = parseFloat(t.total_shares || 0);
+      const _cost = parseFloat(t.total_cost_usd || 0);
+      const _liveVal = _shares * (parseFloat(t.live_price || 0) / 100);
+      const pnlPct = _cost > 0 ? ((_liveVal - _cost) / _cost * 100) : 0;
       const hoursLeft = getHoursToResolution(t.date);
       const entryPrice = parseFloat(t.entry_price || 0) * 100;
       const livePrice = parseFloat(t.live_price || 0);
