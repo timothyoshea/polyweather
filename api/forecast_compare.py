@@ -94,7 +94,7 @@ def get_recommendation(trade, latest_scan, live_price=None):
         unrealized = shares * float(live_price) - cost
     else:
         unrealized = float(trade.get("unrealized_pnl", 0) or 0)
-    captured_pct = min(100, (unrealized / max_profit * 100)) if max_profit > 0 else 0
+    captured_pct = max(-100, min(100, (unrealized / max_profit * 100))) if max_profit > 0 else 0
 
     # ── Recommendation matrix ──
 
