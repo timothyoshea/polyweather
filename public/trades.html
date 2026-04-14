@@ -3633,7 +3633,9 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
         ? '<span style="color:' + (t.roi_pct >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (t.roi_pct >= 0 ? '+' : '') + t.roi_pct.toFixed(1) + '%</span>'
         : '\u2014';
 
-      const actualStr = t.actual_temp_c != null ? t.actual_temp_c.toFixed(1) + '\u00B0C' : '\u2014';
+      const actualStr = t.actual_temp_c != null
+        ? (F_CITIES.has(t.city || '') ? (t.actual_temp_c * 9/5 + 32).toFixed(1) + '\u00B0F' : t.actual_temp_c.toFixed(1) + '\u00B0C')
+        : '\u2014';
 
       // Format time
       const timeStr = t.created_at ? new Date(t.created_at).toLocaleString('en-GB', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '\u2014';
