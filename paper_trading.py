@@ -621,56 +621,67 @@ def _resolve_from_actual_temp(actual_temp, band_c, band_type):
         return "YES" if actual_rounded == threshold else "NO"
 
 
-def check_polymarket_resolution(market_slug):
-    """Check if a Polymarket market has resolved via the Gamma API.
+def check_polymarket_resolution(market_slug, condition_id=None):
+    """Check if a Polymarket market has resolved via Gamma API, then CLOB API fallback.
 
     Args:
-        market_slug: The market slug stored in the trade (e.g. "highest-temperature-in-paris-on-april-1-2026-12c").
+        market_slug: The market slug (e.g. "highest-temperature-in-paris-on-april-1-2026-12c").
+        condition_id: The condition ID for CLOB API fallback (e.g. "0xabc123...").
 
     Returns:
         "YES" if YES outcome won, "NO" if NO outcome won, or None if not yet resolved.
     """
-    if not market_slug:
-        return None
-
-    url = f"https://gamma-api.polymarket.com/markets?slug={urllib.parse.quote(market_slug)}"
-    try:
-        req = urllib.request.Request(url, headers={"User-Agent": "PolyWeather/1.0"})
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-
-        markets = data if isinstance(data, list) else [data]
-        if not markets:
-            return None
-
-        market = markets[0]
-
-        # Check resolution status — require either:
-        # 1. closed=True, OR
-        # 2. automaticallyResolved=True
-        # AND price at 0.95+ for the winning outcome
-        is_closed = market.get("closed", False)
-        is_auto_resolved = market.get("automaticallyResolved", False)
-
-        if not is_closed and not is_auto_resolved:
-            return None  # Market still active — don't resolve
-
-        prices_raw = market.get("outcomePrices", "")
+    # 1. Try Gamma API first
+    if market_slug:
+        url = f"https://gamma-api.polymarket.com/markets?slug={urllib.parse.quote(market_slug)}"
         try:
-            prices = json.loads(prices_raw) if isinstance(prices_raw, str) else prices_raw
-        except (json.JSONDecodeError, TypeError):
-            prices = None
+            req = urllib.request.Request(url, headers={"User-Agent": "PolyWeather/1.0"})
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
 
-        if prices and len(prices) >= 2:
-            yes_price = float(prices[0])
-            no_price = float(prices[1])
-            if yes_price > 0.95:
-                return "YES"
-            elif no_price > 0.95:
-                return "NO"
+            markets = data if isinstance(data, list) else [data]
+            if markets:
+                market = markets[0]
+                is_closed = market.get("closed", False)
+                is_auto_resolved = market.get("automaticallyResolved", False)
 
-    except Exception as e:
-        print(f"[WARN] Polymarket resolution check error for {market_slug}: {e}")
+                if not is_closed and not is_auto_resolved:
+                    return None  # Market still active — don't resolve
+
+                prices_raw = market.get("outcomePrices", "")
+                try:
+                    prices = json.loads(prices_raw) if isinstance(prices_raw, str) else prices_raw
+                except (json.JSONDecodeError, TypeError):
+                    prices = None
+
+                if prices and len(prices) >= 2:
+                    yes_price = float(prices[0])
+                    no_price = float(prices[1])
+                    if yes_price > 0.95:
+                        return "YES"
+                    elif no_price > 0.95:
+                        return "NO"
+        except Exception as e:
+            print(f"[WARN] Gamma API error for {market_slug}: {e}")
+
+    # 2. Fallback: CLOB API (works for archived/removed markets)
+    if condition_id:
+        try:
+            clob_url = f"https://clob.polymarket.com/markets/{condition_id}"
+            req = urllib.request.Request(clob_url, headers={"User-Agent": "PolyWeather/1.0"})
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                clob_data = json.loads(resp.read().decode("utf-8"))
+
+            tokens = clob_data.get("tokens", [])
+            for token in tokens:
+                if token.get("winner", False):
+                    outcome = token.get("outcome", "").upper()
+                    if outcome in ("YES", "NO"):
+                        print(f"[CLOB] Resolved {market_slug} via CLOB API → {outcome} wins")
+                        return outcome
+            # If no winner found, market is not yet resolved
+        except Exception as e:
+            print(f"[WARN] CLOB API error for {condition_id}: {e}")
 
     return None
 
