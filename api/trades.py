@@ -172,7 +172,7 @@ class handler(BaseHTTPRequestHandler):
                 lost_count = len([t for t in resolved_trades if t.get("status") == "lost"])
                 total_count = open_count + won_count + lost_count
 
-                # For live portfolios, fetch actual wallet balance
+                # For live portfolios, use actual wallet balance as the source of truth
                 wallet_balance = None
                 trade_mode = (portfolio[0] if portfolio else {}).get("trade_mode", "paper")
                 wallet_addr = (portfolio[0] if portfolio else {}).get("wallet_address", "")
@@ -193,6 +193,15 @@ class handler(BaseHTTPRequestHandler):
                                 }
                     except Exception:
                         pass
+
+                    # For live portfolios: override capital with on-chain data
+                    if wallet_balance is not None:
+                        wallet_usdc = wallet_balance["usdc_e"]
+                        available = wallet_usdc
+                        # Deployed = everything not in wallet (in open positions)
+                        deployed = max(starting + realized_pnl - wallet_usdc, 0)
+                        current = wallet_usdc + deployed
+                        utilization_pct = (deployed / current * 100) if current > 0 else 0.0
 
                 data = {
                     "capital": {
