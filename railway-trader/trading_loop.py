@@ -1145,7 +1145,12 @@ class TradingLoop:
 
                 deployed, city_exposure, _ = _fetch_deployed_capital(portfolio_id)
                 realized_pnl = _fetch_realized_pnl(portfolio_id)
-                current_capital = starting_capital + realized_pnl
+
+                # For live portfolios, use actual wallet balance as capital basis
+                if portfolio.get("trade_mode") == "live" and wallet_usdc < 999:
+                    current_capital = wallet_usdc + deployed
+                else:
+                    current_capital = starting_capital + realized_pnl
             except Exception as e:
                 _log(f"Capital fetch error for {pf_name}: {e}")
                 return  # Skip this portfolio this cycle
