@@ -430,6 +430,9 @@ def open_paper_trades(opps, scan_id, supabase_url, supabase_service_key,
                             prev_shares = float(ex.get("total_shares", 0))
                             updated_cost = round(prev_cost + new_cost, 2)
                             updated_shares = round(prev_shares + new_shares, 2)
+                            # Guard: cost should never exceed shares (each share costs < $1)
+                            if updated_cost > updated_shares:
+                                updated_cost = round(updated_shares * 0.999, 2)
                             updated_vwap = round(updated_cost / updated_shares, 6)
 
                             update_url = (
