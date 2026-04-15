@@ -867,15 +867,12 @@ def redeem():
         if w3 is None:
             return jsonify({"error": "Cannot connect to Polygon RPC"}), 500
 
-        account = w3.eth.account.from_key(PRIVATE_KEY)
-        address = account.address
-
         # Contract addresses
         CTF_CONTRACT = w3.to_checksum_address("0x4D97DCd97eC945f40cF65F87097ACe5EA0476045")
         NEG_RISK_ADAPTER = w3.to_checksum_address("0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296")
         USDC_E = w3.to_checksum_address("0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174")
 
-        # Auto-approve: ensure NegRiskAdapter can spend our CTF tokens (ERC1155)
+        # ABIs
         approval_abi = [
             {"inputs":[{"name":"operator","type":"address"},{"name":"approved","type":"bool"}],
              "name":"setApprovalForAll","outputs":[],"stateMutability":"nonpayable","type":"function"},
@@ -883,107 +880,113 @@ def redeem():
              "name":"isApprovedForAll","outputs":[{"name":"","type":"bool"}],
              "stateMutability":"view","type":"function"}
         ]
-        ctf_approval = w3.eth.contract(address=CTF_CONTRACT, abi=approval_abi)
-        if not ctf_approval.functions.isApprovedForAll(address, NEG_RISK_ADAPTER).call():
-            nonce = w3.eth.get_transaction_count(address, "pending")
-            tx = ctf_approval.functions.setApprovalForAll(NEG_RISK_ADAPTER, True).build_transaction({
-                "from": address, "nonce": nonce,
-                "gasPrice": w3.eth.gas_price, "gas": 60000, "chainId": 137,
-            })
-            signed = account.sign_transaction(tx)
-            tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
-            w3.eth.wait_for_transaction_receipt(tx_hash, timeout=60)
-
-        # ABIs
         ctf_redeem_abi = [{"inputs":[
             {"name":"collateralToken","type":"address"},
             {"name":"parentCollectionId","type":"bytes32"},
             {"name":"conditionId","type":"bytes32"},
             {"name":"indexSets","type":"uint256[]"}
         ],"name":"redeemPositions","outputs":[],"stateMutability":"nonpayable","type":"function"}]
-
         neg_risk_redeem_abi = [{"inputs":[
             {"name":"conditionId","type":"bytes32"},
             {"name":"amounts","type":"uint256[]"}
         ],"name":"redeemPositions","outputs":[],"stateMutability":"nonpayable","type":"function"}]
 
+        ctf_approval = w3.eth.contract(address=CTF_CONTRACT, abi=approval_abi)
         ctf = w3.eth.contract(address=CTF_CONTRACT, abi=ctf_redeem_abi)
         neg_risk = w3.eth.contract(address=NEG_RISK_ADAPTER, abi=neg_risk_redeem_abi)
 
-        # Fetch redeemable positions from Polymarket Data API
-        positions_url = f"https://data-api.polymarket.com/positions?user={address.lower()}&redeemable=true&sizeThreshold=0"
-        pos_req = ur.Request(positions_url, headers={"User-Agent": "PolyWeather/1.0"})
-        with ur.urlopen(pos_req, timeout=15) as resp:
-            positions = json.loads(resp.read().decode("utf-8"))
+        # Get ALL wallet keys (from WALLET_KEYS env, fall back to PRIVATE_KEY)
+        wallet_keys = {}
+        try:
+            wk_env = os.environ.get("WALLET_KEYS", "{}")
+            wallet_keys = json.loads(wk_env) if wk_env else {}
+        except Exception:
+            pass
+        if not wallet_keys and PRIVATE_KEY:
+            acct = w3.eth.account.from_key(PRIVATE_KEY)
+            wallet_keys = {acct.address: PRIVATE_KEY}
 
-        positions = [p for p in positions if float(p.get("size", 0)) > 0]
+        all_results = []
+        for wallet_addr, priv_key in wallet_keys.items():
+            account = w3.eth.account.from_key(priv_key)
+            address = account.address
 
-        if not positions:
-            return jsonify({"redeemed": 0, "message": "No redeemable positions found"})
-
-        results = []
-        for pos in positions:
-            title = pos.get("title", "?")[:40]
-            cid = pos.get("conditionId", "")
-            is_neg_risk = pos.get("negativeRisk", False)
-            size = float(pos.get("size", 0))
-            outcome_idx = int(pos.get("outcomeIndex", 0))
-
-            try:
-                cid_hex = cid.replace("0x", "").zfill(64)
-                cid_bytes = bytes.fromhex(cid_hex)
-                size_raw = int(size * 1e6)
-
-                if is_neg_risk:
-                    # Neg risk: call NegRiskAdapter.redeemPositions(conditionId, amounts)
-                    amounts = [0, 0]
-                    amounts[outcome_idx] = size_raw
-                    tx_func = neg_risk.functions.redeemPositions(cid_bytes, amounts)
-                else:
-                    # Standard: call CTF.redeemPositions(collateral, parent, condition, indexSets)
-                    tx_func = ctf.functions.redeemPositions(
-                        USDC_E, b'\x00' * 32, cid_bytes, [1, 2]
-                    )
-
-                # Estimate gas first
-                try:
-                    gas_est = tx_func.estimate_gas({"from": address})
-                except Exception as est_err:
-                    results.append({
-                        "title": title,
-                        "status": "skip",
-                        "neg_risk": is_neg_risk,
-                        "error": f"Would revert: {str(est_err)[:80]}",
-                    })
-                    continue
-
+            # Auto-approve NegRiskAdapter for this wallet
+            if not ctf_approval.functions.isApprovedForAll(address, NEG_RISK_ADAPTER).call():
                 nonce = w3.eth.get_transaction_count(address, "pending")
-                tx = tx_func.build_transaction({
+                tx = ctf_approval.functions.setApprovalForAll(NEG_RISK_ADAPTER, True).build_transaction({
                     "from": address, "nonce": nonce,
-                    "gasPrice": w3.eth.gas_price,
-                    "gas": min(gas_est + 50000, 400000),
-                    "chainId": 137,
+                    "gasPrice": w3.eth.gas_price, "gas": 60000, "chainId": 137,
                 })
                 signed = account.sign_transaction(tx)
                 tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
-                receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=60)
+                w3.eth.wait_for_transaction_receipt(tx_hash, timeout=60)
 
-                results.append({
-                    "title": title,
-                    "status": "redeemed" if receipt["status"] == 1 else "failed",
-                    "neg_risk": is_neg_risk,
-                    "size": size,
-                    "tx_hash": tx_hash.hex(),
-                    "gas_used": receipt["gasUsed"],
-                })
-            except Exception as redeem_err:
-                results.append({
-                    "title": title,
-                    "status": "error",
-                    "error": str(redeem_err)[:150],
-                })
+            # Fetch redeemable positions for this wallet
+            positions_url = f"https://data-api.polymarket.com/positions?user={address.lower()}&redeemable=true&sizeThreshold=0"
+            pos_req = ur.Request(positions_url, headers={"User-Agent": "PolyWeather/1.0"})
+            with ur.urlopen(pos_req, timeout=15) as resp:
+                positions = json.loads(resp.read().decode("utf-8"))
 
-        # Check balance after
+            positions = [p for p in positions if float(p.get("size", 0)) > 0]
+            if not positions:
+                continue
+
+            for pos in positions:
+                title = pos.get("title", "?")[:40]
+                cid = pos.get("conditionId", "")
+                is_neg_risk = pos.get("negativeRisk", False)
+                size = float(pos.get("size", 0))
+                outcome_idx = int(pos.get("outcomeIndex", 0))
+
+                try:
+                    cid_hex = cid.replace("0x", "").zfill(64)
+                    cid_bytes = bytes.fromhex(cid_hex)
+                    size_raw = int(size * 1e6)
+
+                    if is_neg_risk:
+                        amounts = [0, 0]
+                        amounts[outcome_idx] = size_raw
+                        tx_func = neg_risk.functions.redeemPositions(cid_bytes, amounts)
+                    else:
+                        tx_func = ctf.functions.redeemPositions(
+                            USDC_E, b'\x00' * 32, cid_bytes, [1, 2]
+                        )
+
+                    try:
+                        gas_est = tx_func.estimate_gas({"from": address})
+                    except Exception as est_err:
+                        all_results.append({
+                            "title": title, "wallet": address[:10],
+                            "status": "skip", "neg_risk": is_neg_risk,
+                            "error": f"Would revert: {str(est_err)[:80]}",
+                        })
+                        continue
+
+                    nonce = w3.eth.get_transaction_count(address, "pending")
+                    tx = tx_func.build_transaction({
+                        "from": address, "nonce": nonce,
+                        "gasPrice": w3.eth.gas_price,
+                        "gas": min(gas_est + 50000, 400000),
+                        "chainId": 137,
+                    })
+                    signed = account.sign_transaction(tx)
+                    tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
+                    receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=60)
+
+                    all_results.append({
+                        "title": title, "wallet": address[:10],
+                        "status": "redeemed" if receipt["status"] == 1 else "failed",
+                        "neg_risk": is_neg_risk, "size": size,
+                        "tx_hash": tx_hash.hex(), "gas_used": receipt["gasUsed"],
+                    })
+                except Exception as redeem_err:
+                    all_results.append({
+                        "title": title, "wallet": address[:10],
+                        "status": "error", "error": str(redeem_err)[:150],
+                    })
+
+        # Check balance after (first wallet)
         bal_after = None
         try:
             client = get_client()
@@ -995,8 +998,8 @@ def redeem():
             pass
 
         return jsonify({
-            "redeemed": sum(1 for r in results if r["status"] == "redeemed"),
-            "results": results,
+            "redeemed": sum(1 for r in all_results if r["status"] == "redeemed"),
+            "results": all_results,
             "balance_after": bal_after,
         })
 
