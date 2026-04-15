@@ -725,54 +725,64 @@ class TradingLoop:
     def _auto_redeem(self):
         """Check for redeemable positions and redeem them automatically."""
         try:
-            # Get wallet address from first portfolio
             if not self._portfolios:
                 return
-            wallet_addr = None
+
+            # Collect ALL unique wallet addresses across portfolios
+            wallet_addrs = set()
             for pf in self._portfolios:
                 wa = pf.get("wallet_address")
                 if wa:
-                    wallet_addr = wa.lower()
-                    break
-            if not wallet_addr:
+                    wallet_addrs.add(wa.lower())
+            if not wallet_addrs:
                 return
 
-            # Check Polymarket Data API for redeemable positions
-            url = f"https://data-api.polymarket.com/positions?user={wallet_addr}&redeemable=true&sizeThreshold=0"
-            positions = _http_get(url)
-            if not isinstance(positions, list):
-                return
-            positions = [p for p in positions if float(p.get("size", 0)) > 0]
+            total_redeemed = 0
+            for wallet_addr in wallet_addrs:
+                # Check Polymarket Data API for redeemable positions
+                url = f"https://data-api.polymarket.com/positions?user={wallet_addr}&redeemable=true&sizeThreshold=0"
+                positions = _http_get(url)
+                if not isinstance(positions, list):
+                    continue
+                positions = [p for p in positions if float(p.get("size", 0)) > 0]
 
-            if not positions:
-                return
+                if not positions:
+                    continue
 
-            _log(f"Auto-redeem: {len(positions)} redeemable positions found")
+                _log(f"Auto-redeem: {len(positions)} redeemable for {wallet_addr[:10]}...")
 
-            # Call our own /redeem endpoint via localhost
-            try:
-                import urllib.request
-                redeem_url = f"http://localhost:{os.environ.get('PORT', '8080')}/redeem"
-                req_data = json.dumps({"all": True}).encode("utf-8")
-                req = urllib.request.Request(redeem_url, data=req_data, headers={
-                    "Content-Type": "application/json",
-                    "Authorization": f"Bearer {os.environ.get('API_SECRET', '')}",
-                }, method="POST")
-                with urllib.request.urlopen(req, timeout=240) as resp:
-                    result = json.loads(resp.read().decode("utf-8"))
-                    redeemed = result.get("redeemed", 0)
-                    balance = result.get("balance_after")
-                    if redeemed > 0:
-                        self._redeems_total += redeemed
-                        _log(f"Auto-redeem: {redeemed} positions redeemed! Balance: ${balance}")
-                        _log_execution(action="auto_redeem", response_payload={
-                            "redeemed": redeemed, "balance_after": balance,
-                            "positions": len(positions),
-                        })
-                    else:
-                        _log(f"Auto-redeem: 0 redeemed out of {len(positions)}")
-            except Exception as redeem_err:
-                _log(f"Auto-redeem call failed: {redeem_err}")
+                # Call our own /redeem endpoint via localhost
+                try:
+                    import urllib.request
+                    redeem_url = f"http://localhost:{os.environ.get('PORT', '8080')}/redeem"
+                    req_data = json.dumps({"all": True}).encode("utf-8")
+                    req = urllib.request.Request(redeem_url, data=req_data, headers={
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {os.environ.get('API_SECRET', '')}",
+                    }, method="POST")
+                    with urllib.request.urlopen(req, timeout=240) as resp:
+                        result = json.loads(resp.read().decode("utf-8"))
+                        redeemed = result.get("redeemed", 0)
+                        balance = result.get("balance_after")
+                        results = result.get("results", [])
+                        if redeemed > 0:
+                            total_redeemed += redeemed
+                            self._redeems_total += redeemed
+                            _log(f"Auto-redeem: {redeemed} redeemed! Balance: ${balance}")
+                            _log_execution(action="auto_redeem", response_payload={
+                                "redeemed": redeemed, "balance_after": balance,
+                                "positions": len(positions),
+                            })
+                        else:
+                            # Log why redemptions failed
+                            errors = [r for r in results if r.get("status") != "redeemed"]
+                            error_summary = "; ".join(
+                                f"{r.get('title','?')[:20]}: {r.get('error','?')[:60]}"
+                                for r in errors[:3]
+                            )
+                            _log(f"Auto-redeem: 0/{len(positions)} redeemed. Errors: {error_summary}")
+                except Exception as redeem_err:
+                    _log(f"Auto-redeem call failed: {redeem_err}")
 
         except Exception as e:
             _log(f"Auto-redeem error: {e}")
