@@ -896,10 +896,15 @@ def redeem():
         neg_risk = w3.eth.contract(address=NEG_RISK_ADAPTER, abi=neg_risk_redeem_abi)
 
         # Get ALL wallet keys (from WALLET_KEYS env, fall back to PRIVATE_KEY)
-        wallet_keys = {}
+        wallet_keys = {}  # {address: private_key_hex}
         try:
             wk_env = os.environ.get("WALLET_KEYS", "{}")
-            wallet_keys = json.loads(wk_env) if wk_env else {}
+            wk_data = json.loads(wk_env) if wk_env else {}
+            for addr, val in wk_data.items():
+                if isinstance(val, dict):
+                    wallet_keys[addr] = val.get("key", "")
+                else:
+                    wallet_keys[addr] = val
         except Exception:
             pass
         if not wallet_keys and PRIVATE_KEY:
