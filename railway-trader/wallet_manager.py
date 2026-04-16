@@ -199,7 +199,7 @@ class WalletManager:
                 params=BalanceAllowanceParams(asset_type=AssetType.COLLATERAL)
             )
             result["clob_balance_usdc"] = bal.get("balance", "0")
-            result["clob_allowance"] = bal.get("allowance", "0")
+            result["clob_allowances"] = bal.get("allowances", {})
         except Exception as e:
             result["clob_balance_error"] = str(e)
 
