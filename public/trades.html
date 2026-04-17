@@ -3697,7 +3697,19 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
     document.querySelectorAll('.sidebar-link').forEach(t => t.classList.remove('active'));
     const activeTab = document.querySelector('.sidebar-link[onclick*="' + tab + '"]');
     if (activeTab) activeTab.classList.add('active');
-    if (tab === 'trades') { if (!tradingLoaded) loadTradingDashboard(); loadTradeTable(); }
+    if (tab === 'trades') {
+      if (!tradingLoaded) loadTradingDashboard();
+      loadTradeTable();
+      // Load capital gap display and fire a fresh snapshot in the background
+      loadCapitalGap();
+      if (activePortfolioId) {
+        fetch('/api/capital_gap', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ portfolio_id: activePortfolioId })
+        }).then(function() { loadCapitalGap(); }).catch(function(e) { console.warn('capital_gap POST:', e); });
+      }
+    }
     if (tab === 'settings') updateSettingsPortfolioInfo();
   }
 
