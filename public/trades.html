@@ -1943,6 +1943,10 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
     loadPortfolioRules(activePortfolioId);
     if (tradingLoaded) loadTradeTable();
     updateSettingsPortfolioInfo();
+    // Reload capital gap when portfolio changes
+    if (document.getElementById('trade-history-section').style.display !== 'none') {
+      loadCapitalGap();
+    }
   }
 
   function updateSettingsPortfolioInfo() {
