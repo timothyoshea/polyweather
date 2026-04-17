@@ -1373,13 +1373,22 @@ class TradingLoop:
                                 "source": "trading_loop",
                             },
                         }
-                        # Override with actuals if available
-                        if actual_cost is not None and actual_cost > 0:
-                            trade_update["total_cost_usd"] = round(actual_cost, 4)
+                        # Override with fill data (preferred) or balance-diff actual cost.
+                        # GTC orders lock full cost in CLOB but may partially fill,
+                        # so balance-diff (actual_cost) overstates the real cost.
+                        # Use fill_data.price * size_matched as the true cost.
                         if fill_data and fill_data.get("size_matched") and float(fill_data["size_matched"]) > 0:
-                            trade_update["total_shares"] = round(float(fill_data["size_matched"]), 4)
-                            if actual_cost and float(fill_data["size_matched"]) > 0:
-                                trade_update["entry_price"] = round(actual_cost / float(fill_data["size_matched"]), 6)
+                            matched = float(fill_data["size_matched"])
+                            fill_price = float(fill_data.get("price", 0))
+                            trade_update["total_shares"] = round(matched, 4)
+                            if fill_price > 0:
+                                trade_update["entry_price"] = round(fill_price, 6)
+                                trade_update["total_cost_usd"] = round(matched * fill_price, 4)
+                            elif actual_cost is not None and actual_cost > 0:
+                                trade_update["entry_price"] = round(actual_cost / matched, 6)
+                                trade_update["total_cost_usd"] = round(actual_cost, 4)
+                        elif actual_cost is not None and actual_cost > 0:
+                            trade_update["total_cost_usd"] = round(actual_cost, 4)
 
                         open_url = f"{SUPABASE_URL}/rest/v1/paper_trades?id=eq.{trade_id}"
                         _http_patch(open_url, trade_update, _supabase_headers())
