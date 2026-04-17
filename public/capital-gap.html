@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PolyWeather — Capital Gap Analysis</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --card: #12121a;
+    --card-border: #1e1e2e;
+    --green: #00e676;
+    --red: #ff5252;
+    --amber: #ffc107;
+    --cyan: #4fc3f7;
+    --text: #e0e0e0;
+    --text2: #888;
+    --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* ── Sidebar ─────────────────────────────────── */
+  .sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0; width: 200px;
+    background: #0d0d14; border-right: 1px solid var(--card-border);
+    display: flex; flex-direction: column; padding: 20px 0; z-index: 100;
+  }
+  .sidebar-logo {
+    display: flex; align-items: center; gap: 8px; padding: 0 16px 20px;
+    font-size: 16px; font-weight: 700; text-decoration: none; color: var(--text);
+  }
+  .sidebar-logo .logo-icon {
+    font-size: 20px;
+    filter: drop-shadow(0 0 6px rgba(79, 195, 247, 0.5));
+  }
+  .sidebar-logo span:not(.logo-icon) {
+    background: linear-gradient(135deg, var(--cyan), var(--green));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .strategy-switcher {
+    display: flex; margin: 0 12px 16px; border-radius: 6px; overflow: hidden;
+    border: 1px solid var(--card-border); background: var(--bg);
+  }
+  .strategy-switcher a {
+    flex: 1; padding: 6px 4px; text-align: center; font-size: 11px; font-weight: 600;
+    color: var(--text2); text-decoration: none; transition: all 0.2s;
+    font-family: var(--sans); cursor: pointer;
+  }
+  .strategy-switcher a:hover { color: var(--text); }
+  .strategy-switcher a.active {
+    background: rgba(79,195,247,0.15); color: var(--cyan);
+  }
+  .sidebar-nav { display: flex; flex-direction: column; gap: 4px; }
+  .sidebar-nav-subtitle {
+    padding: 2px 16px 4px 20px; font-size: 11px; color: var(--text2); opacity: 0.6;
+    margin-top: 4px; margin-bottom: 6px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .sidebar-link {
+    display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+    color: var(--text2); font-size: 13px; font-weight: 500; text-decoration: none;
+    border-left: 3px solid transparent; transition: all 0.2s;
+  }
+  .sidebar-link:hover { color: var(--text); background: rgba(79,195,247,0.05); }
+  .sidebar-link.active {
+    color: var(--cyan); border-left-color: var(--cyan);
+    background: rgba(79,195,247,0.08);
+  }
+  .sidebar-signout {
+    margin-top: auto; padding: 0 16px 16px;
+    border-top: 1px solid var(--card-border); padding-top: 16px;
+  }
+  .main-content { margin-left: 200px; min-height: 100vh; }
+
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main-content { margin-left: 0; padding-bottom: 60px; }
+  }
+
+  /* ── Layout ─────────────────────────────────── */
+  .container {
+    max-width: 100%;
+    padding: 24px;
+  }
+
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .page-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .page-title .icon {
+    font-size: 22px;
+  }
+
+  .page-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  /* ── Summary Cards ──────────────────────────── */
+  .cards-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 900px) {
+    .cards-row { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 500px) {
+    .cards-row { grid-template-columns: 1fr; }
+  }
+
+  .summary-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .summary-card .card-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text2);
+  }
+
+  .summary-card .card-value {
+    font-size: 26px;
+    font-weight: 700;
+    font-family: var(--mono);
+    color: var(--text);
+    line-height: 1.1;
+  }
+
+  .summary-card .card-sub {
+    font-size: 11px;
+    color: var(--text2);
+  }
+
+  /* ── Context Row ────────────────────────────── */
+  .context-row {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+    font-size: 12px;
+  }
+
+  .context-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  .context-item .ctx-label {
+    color: var(--text2);
+  }
+
+  .context-item .ctx-val {
+    font-family: var(--mono);
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .ctx-sep {
+    color: var(--card-border);
+    user-select: none;
+  }
+
+  /* ── Chart Card ─────────────────────────────── */
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+
+  .chart-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .chart-card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .chart-legend {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 11px;
+    color: var(--text2);
+  }
+
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 2px;
+    display: inline-block;
+  }
+
+  .chart-card canvas {
+    width: 100% !important;
+    max-height: 320px;
+  }
+
+  .chart-empty {
+    text-align: center;
+    padding: 60px 24px;
+    color: var(--text2);
+    font-size: 13px;
+  }
+
+  /* ── Table ──────────────────────────────────── */
+  .table-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+
+  .table-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--card-border);
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .table-card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+  }
+
+  .details-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    font-family: var(--mono);
+    white-space: nowrap;
+  }
+
+  .details-table th {
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text2);
+    border-bottom: 1px solid var(--card-border);
+    font-family: var(--sans);
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  .details-table th:hover { color: var(--cyan); }
+
+  .details-table th .sort-icon {
+    display: inline-block;
+    margin-left: 4px;
+    opacity: 0.4;
+    font-style: normal;
+    font-size: 9px;
+  }
+
+  .details-table th.sorted .sort-icon { opacity: 1; color: var(--cyan); }
+
+  .details-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(30,30,46,0.6);
+    color: var(--text);
+  }
+
+  .details-table tr:last-child td { border-bottom: none; }
+
+  .details-table tr:hover td {
+    background: rgba(79,195,247,0.03);
+  }
+
+  .table-empty {
+    text-align: center;
+    padding: 40px 24px;
+    color: var(--text2);
+    font-size: 13px;
+    font-family: var(--sans);
+  }
+
+  .badge-reason {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: var(--sans);
+    letter-spacing: 0.3px;
+  }
+
+  .badge-util { background: rgba(255,82,82,0.15); color: var(--red); }
+  .badge-exposure { background: rgba(255,193,7,0.15); color: var(--amber); }
+  .badge-other { background: rgba(136,136,136,0.12); color: var(--text2); }
+
+  /* ── Projection Section ─────────────────────── */
+  .projection-card {
+    background: linear-gradient(135deg, rgba(79,195,247,0.05), rgba(0,230,118,0.03));
+    border: 1px solid rgba(79,195,247,0.15);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+  }
+
+  .projection-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--cyan);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .projection-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+
+  @media (max-width: 700px) {
+    .projection-stats { grid-template-columns: 1fr; }
+  }
+
+  .proj-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .proj-stat .ps-label {
+    font-size: 11px;
+    color: var(--text2);
+  }
+
+  .proj-stat .ps-val {
+    font-size: 18px;
+    font-weight: 700;
+    font-family: var(--mono);
+    color: var(--text);
+  }
+
+  .proj-stat .ps-sub {
+    font-size: 11px;
+    color: var(--text2);
+  }
+
+  /* ── Controls ───────────────────────────────── */
+  .portfolio-select {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    color: var(--text);
+    padding: 7px 12px;
+    border-radius: 6px;
+    font-family: var(--sans);
+    font-size: 12px;
+    cursor: pointer;
+    min-width: 180px;
+  }
+
+  .portfolio-select:focus { outline: none; border-color: var(--cyan); }
+
+  .btn {
+    padding: 7px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--sans);
+    transition: all 0.15s;
+    border: 1px solid var(--card-border);
+    background: var(--card);
+    color: var(--text2);
+  }
+
+  .btn:hover { color: var(--text); border-color: rgba(79,195,247,0.4); }
+
+  .btn-primary {
+    background: rgba(79,195,247,0.1);
+    border-color: rgba(79,195,247,0.35);
+    color: var(--cyan);
+  }
+
+  .btn-primary:hover {
+    background: rgba(79,195,247,0.18);
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* ── Loading ────────────────────────────────── */
+  .loading {
+    text-align: center;
+    padding: 60px 24px;
+    color: var(--text2);
+    font-size: 14px;
+  }
+
+  .loading .spinner {
+    display: inline-block;
+    width: 24px; height: 24px;
+    border: 2px solid var(--card-border);
+    border-top-color: var(--cyan);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 12px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .status-badge {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text2);
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--card-border);
+    background: rgba(30,30,46,0.5);
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text2);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+</style>
+</head>
+<body>
+<script>
+fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({action:'check'}) })
+  .then(r => r.json()).then(d => { if (!d.authenticated) window.location.href = '/login.html'; })
+  .catch(() => { window.location.href = '/login.html'; });
+</script>
+
+<!-- ── Sidebar ─────────────────────────────────── -->
+<nav class="sidebar">
+  <a href="/" class="sidebar-logo">
+    <span class="logo-icon">⛈</span>
+    <span>PolyWeather</span>
+  </a>
+  <div class="strategy-switcher">
+    <a class="active" href="/">Temp Predictions</a>
+    <a href="/sniper">Max Temp Sniper</a>
+  </div>
+  <div class="sidebar-nav">
+    <a class="sidebar-link" href="/">All Portfolios</a>
+    <div class="sidebar-nav-subtitle" id="sidebar-portfolio-name">Portfolio Overview</div>
+    <a class="sidebar-link" href="/trades.html">Trades</a>
+    <a class="sidebar-link" href="/analysis.html">P&amp;L</a>
+    <a class="sidebar-link active" href="/capital-gap.html">Capital Gap</a>
+    <a class="sidebar-link" href="/trades.html" onclick="localStorage.setItem('pw-tab','settings')">Settings</a>
+  </div>
+  <div class="sidebar-signout">
+    <button onclick="fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'logout'})}).then(()=>window.location.href='/login.html')" style="background:none;border:1px solid var(--card-border);color:var(--text2);padding:6px 14px;border-radius:6px;font-size:11px;cursor:pointer;font-family:var(--sans);width:100%;transition:color 0.15s;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text2)'">Sign Out</button>
+  </div>
+</nav>
+
+<!-- ── Main Content ────────────────────────────── -->
+<div class="main-content">
+<div class="container">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-title">
+      Capital Gap Analysis
+    </div>
+    <div class="page-controls">
+      <select id="portfolio-select" class="portfolio-select" onchange="onPortfolioChange(this.value)">
+        <option value="">Loading portfolios...</option>
+      </select>
+      <button class="btn btn-primary" id="refresh-btn" onclick="triggerRefresh()">Refresh Snapshot</button>
+      <span class="status-badge" id="status-badge">—</span>
+    </div>
+  </div>
+
+  <!-- Loading state -->
+  <div id="loading-state" class="loading">
+    <div class="spinner"></div>
+    <div>Loading capital gap data...</div>
+  </div>
+
+  <!-- Main content (hidden until loaded) -->
+  <div id="main-content" style="display:none;">
+
+    <!-- Summary Cards -->
+    <div class="cards-row">
+      <div class="summary-card">
+        <div class="card-label">Missed Trades</div>
+        <div class="card-value" id="cgap-blocked">—</div>
+        <div class="card-sub">blocked by capital</div>
+      </div>
+      <div class="summary-card">
+        <div class="card-label">Capital Left on Table</div>
+        <div class="card-value" style="color:var(--red);" id="cgap-missed-cost">—</div>
+        <div class="card-sub">would-be position cost</div>
+      </div>
+      <div class="summary-card">
+        <div class="card-label">Est. Missed Profit</div>
+        <div class="card-value" id="cgap-missed-profit">—</div>
+        <div class="card-sub">at current edge</div>
+      </div>
+      <div class="summary-card">
+        <div class="card-label">Extra Capital Needed</div>
+        <div class="card-value" style="color:var(--amber);" id="cgap-extra-needed">—</div>
+        <div class="card-sub">to capture all opps</div>
+      </div>
+    </div>
+
+    <!-- Context Row -->
+    <div class="context-row">
+      <div class="context-item">
+        <span class="ctx-label">Deployed:</span>
+        <span class="ctx-val" id="cgap-deployed">—</span>
+      </div>
+      <span class="ctx-sep">|</span>
+      <div class="context-item">
+        <span class="ctx-label">Available:</span>
+        <span class="ctx-val" id="cgap-available">—</span>
+      </div>
+      <span class="ctx-sep">|</span>
+      <div class="context-item">
+        <span class="ctx-label">Utilization:</span>
+        <span class="ctx-val" id="cgap-util">—</span>
+      </div>
+      <span class="ctx-sep">|</span>
+      <div class="context-item">
+        <span class="ctx-label">Total Opps:</span>
+        <span class="ctx-val" id="cgap-opps">—</span>
+      </div>
+      <span class="ctx-sep">|</span>
+      <div class="context-item">
+        <span class="ctx-label">With Edge:</span>
+        <span class="ctx-val" id="cgap-edge">—</span>
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div class="chart-card-title">Capital Left on Table Over Time</div>
+        <div class="chart-legend">
+          <span><span class="legend-dot" style="background:rgba(255,82,82,0.7);"></span> Missed Capital (USD)</span>
+          <span><span class="legend-dot" style="background:rgba(255,193,7,0.9);border-radius:50%;"></span> Blocked Trades</span>
+        </div>
+      </div>
+      <div id="chart-empty" class="chart-empty" style="display:none;">No snapshot data yet — click Refresh Snapshot to generate.</div>
+      <canvas id="capital-gap-chart" style="display:none;"></canvas>
+    </div>
+
+    <!-- Blocked Trade Details Table -->
+    <div class="table-card">
+      <div class="table-card-header">
+        <div class="table-card-title">Blocked Trade Details <span id="details-count" style="font-weight:400;color:var(--text2);font-size:11px;margin-left:6px;"></span></div>
+        <div style="font-size:11px;color:var(--text2);">From latest snapshot — click headers to sort</div>
+      </div>
+      <div class="table-wrap">
+        <table class="details-table" id="details-table">
+          <thead>
+            <tr>
+              <th onclick="sortTable('city')" id="th-city">City <i class="sort-icon">▲▼</i></th>
+              <th onclick="sortTable('date')" id="th-date">Date <i class="sort-icon">▲▼</i></th>
+              <th onclick="sortTable('band')" id="th-band">Band <i class="sort-icon">▲▼</i></th>
+              <th onclick="sortTable('cost')" id="th-cost">Cost <i class="sort-icon">▲▼</i></th>
+              <th onclick="sortTable('est_profit')" id="th-est_profit">Est. Profit <i class="sort-icon">▲▼</i></th>
+              <th onclick="sortTable('blocked_reason')" id="th-blocked_reason">Blocked Reason <i class="sort-icon">▲▼</i></th>
+            </tr>
+          </thead>
+          <tbody id="details-tbody">
+            <tr><td colspan="6" class="table-empty">No data</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Projection / Summary Stats -->
+    <div class="projection-card" id="projection-card">
+      <div class="projection-title">Opportunity Projection</div>
+      <div class="projection-stats">
+        <div class="proj-stat">
+          <div class="ps-label">If you added extra capital...</div>
+          <div class="ps-val" id="proj-extra">—</div>
+          <div class="ps-sub" id="proj-extra-sub">estimated additional profit/eval</div>
+        </div>
+        <div class="proj-stat">
+          <div class="ps-label">Avg blocked trades / eval</div>
+          <div class="ps-val" id="proj-avg-blocked">—</div>
+          <div class="ps-sub">across last 200 snapshots</div>
+        </div>
+        <div class="proj-stat">
+          <div class="ps-label">Daily est. missed profit</div>
+          <div class="ps-val" id="proj-daily">—</div>
+          <div class="ps-sub" id="proj-daily-sub">based on snapshot frequency</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-content -->
+
+  <!-- Error state -->
+  <div id="error-state" style="display:none;text-align:center;padding:60px 24px;color:var(--red);font-size:13px;"></div>
+
+</div><!-- /container -->
+
+<footer style="text-align:center;padding:24px;color:var(--text2);font-size:11px;border-top:1px solid var(--card-border);margin-top:40px;">
+  Paper trading simulation — not financial advice. Powered by Polymarket weather markets.
+</footer>
+</div><!-- /main-content -->
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────
+var portfolios = [];
+var activePortfolioId = null;
+var capitalGapChart = null;
+var detailsData = [];
+var sortCol = 'cost';
+var sortAsc = false;
+
+// ── Init ──────────────────────────────────────────────────────────────
+(async function init() {
+  try {
+    await loadPortfolios();
+    if (activePortfolioId) {
+      // Generate a fresh snapshot on first load, then fetch data
+      await triggerRefreshSilent();
+      await loadCapitalGap();
+    }
+  } catch(e) {
+    showError('Initialization error: ' + e.message);
+  }
+})();
+
+// ── Load portfolios dropdown ──────────────────────────────────────────
+async function loadPortfolios() {
+  const resp = await fetch('/api/portfolios');
+  if (!resp.ok) throw new Error('Could not load portfolios');
+  portfolios = await resp.json();
+
+  const sel = document.getElementById('portfolio-select');
+  sel.innerHTML = '';
+
+  if (!portfolios || portfolios.length === 0) {
+    sel.innerHTML = '<option value="">No portfolios found</option>';
+    return;
+  }
+
+  // Pick first live portfolio, or just first
+  const saved = localStorage.getItem('pw-portfolio-id');
+  let defaultPortfolio = portfolios.find(p => p.id === saved)
+    || portfolios.find(p => p.mode === 'live' || p.is_live)
+    || portfolios[0];
+
+  portfolios.forEach(function(p) {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = (p.name || p.id) + (p.mode ? ' (' + p.mode + ')' : '');
+    sel.appendChild(opt);
+  });
+
+  activePortfolioId = defaultPortfolio.id;
+  sel.value = activePortfolioId;
+
+  // Update sidebar subtitle
+  const sub = document.getElementById('sidebar-portfolio-name');
+  if (sub) sub.textContent = defaultPortfolio.name || defaultPortfolio.id;
+}
+
+// ── Portfolio change ──────────────────────────────────────────────────
+async function onPortfolioChange(id) {
+  activePortfolioId = id;
+  localStorage.setItem('pw-portfolio-id', id);
+
+  const p = portfolios.find(function(p) { return p.id === id; });
+  const sub = document.getElementById('sidebar-portfolio-name');
+  if (sub && p) sub.textContent = p.name || p.id;
+
+  // Destroy chart so it redraws cleanly
+  if (capitalGapChart) {
+    capitalGapChart.destroy();
+    capitalGapChart = null;
+  }
+
+  document.getElementById('main-content').style.display = 'none';
+  document.getElementById('loading-state').style.display = '';
+  document.getElementById('error-state').style.display = 'none';
+
+  await triggerRefreshSilent();
+  await loadCapitalGap();
+}
+
+// ── Load snapshots ────────────────────────────────────────────────────
+async function loadCapitalGap() {
+  if (!activePortfolioId) return;
+  setStatus('loading...');
+
+  try {
+    const resp = await fetch('/api/capital_gap?portfolio_id=' + encodeURIComponent(activePortfolioId) + '&limit=200');
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const snapshots = await resp.json();
+
+    document.getElementById('loading-state').style.display = 'none';
+    document.getElementById('error-state').style.display = 'none';
+    document.getElementById('main-content').style.display = '';
+
+    renderCapitalGap(snapshots);
+
+    if (snapshots && snapshots.length > 0) {
+      const latest = new Date(snapshots[0].created_at);
+      setStatus('last: ' + latest.toLocaleTimeString());
+    } else {
+      setStatus('no data');
+    }
+  } catch(e) {
+    console.error('Capital gap load error:', e);
+    showError('Error loading capital gap data: ' + e.message);
+    setStatus('error');
+  }
+}
+
+// ── Refresh button (user-triggered) ──────────────────────────────────
+async function triggerRefresh() {
+  if (!activePortfolioId) return;
+  const btn = document.getElementById('refresh-btn');
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+  setStatus('generating...');
+
+  try {
+    await fetch('/api/capital_gap', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ portfolio_id: activePortfolioId })
+    });
+  } catch(e) {
+    console.warn('Capital gap POST error:', e);
+  }
+
+  await loadCapitalGap();
+  btn.disabled = false;
+  btn.textContent = 'Refresh Snapshot';
+}
+
+// ── Silent refresh (on page load) ────────────────────────────────────
+async function triggerRefreshSilent() {
+  if (!activePortfolioId) return;
+  try {
+    await fetch('/api/capital_gap', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ portfolio_id: activePortfolioId })
+    });
+  } catch(e) {
+    console.warn('Capital gap POST (silent) error:', e);
+  }
+}
+
+// ── Render everything ─────────────────────────────────────────────────
+function renderCapitalGap(snapshots) {
+  if (!snapshots || !snapshots.length) {
+    document.getElementById('chart-empty').style.display = '';
+    const canvas = document.getElementById('capital-gap-chart');
+    if (canvas) canvas.style.display = 'none';
+    clearSummaryCards();
+    document.getElementById('details-tbody').innerHTML = '<tr><td colspan="6" class="table-empty">No snapshots yet — click Refresh Snapshot.</td></tr>';
+    document.getElementById('details-count').textContent = '';
+    clearProjection();
+    return;
+  }
+
+  const latest = snapshots[0];
+
+  // ── Summary cards ────────────────────────────────────
+  const missedCost = latest.missed_cost_usd || 0;
+  const missedProfit = latest.missed_profit_usd || 0;
+  const blocked = latest.blocked_capital || 0;
+  const extraNeeded = latest.extra_capital_needed_usd || 0;
+  const deployed = latest.deployed_usd || 0;
+  const available = latest.available_usd || 0;
+  const util = latest.utilization_pct || 0;
+  const opps = latest.total_opps || 0;
+  const withEdge = latest.with_edge || 0;
+
+  setText('cgap-blocked', blocked);
+  setText('cgap-missed-cost', '$' + fmt0(missedCost));
+
+  var profitEl = document.getElementById('cgap-missed-profit');
+  if (profitEl) {
+    profitEl.textContent = '$' + fmt0(missedProfit);
+    profitEl.style.color = missedProfit > 0 ? 'var(--green)' : 'var(--text2)';
+  }
+
+  setText('cgap-extra-needed', '$' + fmt0(extraNeeded));
+
+  // ── Context row ──────────────────────────────────────
+  setText('cgap-deployed', '$' + deployed.toFixed(0));
+  setText('cgap-available', '$' + available.toFixed(0));
+
+  var utilEl = document.getElementById('cgap-util');
+  if (utilEl) {
+    utilEl.textContent = util.toFixed(1) + '%';
+    utilEl.style.color = util >= 90 ? 'var(--red)' : util >= 70 ? 'var(--amber)' : 'var(--green)';
+  }
+
+  setText('cgap-opps', opps);
+  setText('cgap-edge', withEdge);
+
+  // ── Chart ────────────────────────────────────────────
+  renderChart(snapshots);
+
+  // ── Details table ────────────────────────────────────
+  detailsData = (latest.details && Array.isArray(latest.details)) ? latest.details : [];
+  document.getElementById('details-count').textContent = detailsData.length > 0 ? '(' + detailsData.length + ' trades)' : '';
+  renderDetailsTable();
+
+  // ── Projection ───────────────────────────────────────
+  renderProjection(snapshots, extraNeeded, missedProfit);
+}
+
+// ── Chart ─────────────────────────────────────────────
+function renderChart(snapshots) {
+  const canvas = document.getElementById('capital-gap-chart');
+  const emptyEl = document.getElementById('chart-empty');
+  if (!canvas) return;
+
+  canvas.style.display = '';
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  // Chronological order — API returns newest first
+  const ordered = snapshots.slice().reverse();
+  const labels = ordered.map(function(s) {
+    const d = new Date(s.created_at);
+    return d.toLocaleString('en-GB', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  });
+  const missedData = ordered.map(function(s) { return s.missed_cost_usd || 0; });
+  const blockedData = ordered.map(function(s) { return s.blocked_capital || 0; });
+
+  if (capitalGapChart) {
+    capitalGapChart.destroy();
+    capitalGapChart = null;
+  }
+
+  capitalGapChart = new Chart(canvas.getContext('2d'), {
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          type: 'bar',
+          label: 'Missed Capital (USD)',
+          data: missedData,
+          backgroundColor: 'rgba(255,82,82,0.45)',
+          borderColor: 'rgba(255,82,82,0.7)',
+          borderWidth: 1,
+          yAxisID: 'y',
+          order: 2,
+        },
+        {
+          type: 'line',
+          label: 'Blocked Trades',
+          data: blockedData,
+          borderColor: 'rgba(255,193,7,0.9)',
+          backgroundColor: 'rgba(255,193,7,0.08)',
+          pointRadius: 2,
+          pointHoverRadius: 5,
+          borderWidth: 2,
+          tension: 0.3,
+          yAxisID: 'y2',
+          order: 1,
+          fill: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a1a2e',
+          borderColor: 'rgba(255,255,255,0.1)',
+          borderWidth: 1,
+          titleColor: '#e0e0e0',
+          bodyColor: '#888',
+          callbacks: {
+            label: function(ctx) {
+              if (ctx.datasetIndex === 0) return 'Missed: $' + ctx.parsed.y.toLocaleString('en-US', { maximumFractionDigits: 0 });
+              return 'Blocked: ' + ctx.parsed.y;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: {
+            color: '#888',
+            font: { family: "'JetBrains Mono', monospace", size: 10 },
+            maxRotation: 45,
+            maxTicksLimit: 12,
+          }
+        },
+        y: {
+          position: 'left',
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: {
+            color: 'rgba(255,82,82,0.8)',
+            font: { family: "'JetBrains Mono', monospace", size: 10 },
+            callback: function(v) { return '$' + (v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v); }
+          },
+          title: { display: false }
+        },
+        y2: {
+          position: 'right',
+          grid: { drawOnChartArea: false },
+          ticks: {
+            color: 'rgba(255,193,7,0.8)',
+            font: { family: "'JetBrains Mono', monospace", size: 10 },
+            stepSize: 1,
+          },
+          title: { display: false }
+        }
+      }
+    }
+  });
+}
+
+// ── Details Table ─────────────────────────────────────
+function renderDetailsTable() {
+  const tbody = document.getElementById('details-tbody');
+  if (!detailsData || detailsData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="table-empty">No blocked trades in latest snapshot.</td></tr>';
+    return;
+  }
+
+  const sorted = detailsData.slice().sort(function(a, b) {
+    var av = a[sortCol] != null ? a[sortCol] : '';
+    var bv = b[sortCol] != null ? b[sortCol] : '';
+    if (typeof av === 'string') av = av.toLowerCase();
+    if (typeof bv === 'string') bv = bv.toLowerCase();
+    if (av < bv) return sortAsc ? -1 : 1;
+    if (av > bv) return sortAsc ? 1 : -1;
+    return 0;
+  });
+
+  tbody.innerHTML = sorted.map(function(row) {
+    const cost = row.cost != null ? '$' + (row.cost).toFixed(2) : '—';
+    const profit = row.est_profit != null ? '$' + (row.est_profit).toFixed(2) : '—';
+    const profitColor = (row.est_profit || 0) > 0 ? 'color:var(--green)' : 'color:var(--text2)';
+    const reason = row.blocked_reason || '—';
+    const reasonClass = reason === 'util' ? 'badge-util' : reason.indexOf('exposure') >= 0 ? 'badge-exposure' : 'badge-other';
+
+    return '<tr>' +
+      '<td>' + esc(row.city || '—') + '</td>' +
+      '<td>' + esc(row.date || '—') + '</td>' +
+      '<td>' + esc(row.band || '—') + '</td>' +
+      '<td>' + cost + '</td>' +
+      '<td style="' + profitColor + '">' + profit + '</td>' +
+      '<td><span class="badge-reason ' + reasonClass + '">' + esc(reason) + '</span></td>' +
+      '</tr>';
+  }).join('');
+
+  // Update sort icons
+  ['city','date','band','cost','est_profit','blocked_reason'].forEach(function(col) {
+    const th = document.getElementById('th-' + col);
+    if (!th) return;
+    th.classList.toggle('sorted', col === sortCol);
+    const icon = th.querySelector('.sort-icon');
+    if (icon) icon.textContent = col === sortCol ? (sortAsc ? '▲' : '▼') : '▲▼';
+  });
+}
+
+function sortTable(col) {
+  if (sortCol === col) {
+    sortAsc = !sortAsc;
+  } else {
+    sortCol = col;
+    sortAsc = col === 'city' || col === 'date' || col === 'band'; // default asc for strings
+  }
+  renderDetailsTable();
+}
+
+// ── Projection Stats ──────────────────────────────────
+function renderProjection(snapshots, extraNeeded, latestMissedProfit) {
+  if (!snapshots || snapshots.length === 0) { clearProjection(); return; }
+
+  // Average blocked trades across all snapshots
+  const avgBlocked = snapshots.reduce(function(s, x) { return s + (x.blocked_capital || 0); }, 0) / snapshots.length;
+
+  // Average missed profit
+  const avgMissedProfit = snapshots.reduce(function(s, x) { return s + (x.missed_profit_usd || 0); }, 0) / snapshots.length;
+
+  // Estimate evals/day: use timestamps if > 1 snapshot, else assume 4/day
+  var evalsPerDay = 4;
+  if (snapshots.length >= 2) {
+    const newest = new Date(snapshots[0].created_at).getTime();
+    const oldest = new Date(snapshots[snapshots.length - 1].created_at).getTime();
+    const spanHours = (newest - oldest) / 3600000;
+    if (spanHours > 0) {
+      evalsPerDay = (snapshots.length / spanHours) * 24;
+    }
+  }
+
+  const dailyMissed = avgMissedProfit * evalsPerDay;
+
+  // Extra capital projection text
+  var projExtraText = '$' + fmt0(extraNeeded);
+  var projExtraSub = 'extra capital → +$' + fmt2(latestMissedProfit) + '/eval est. profit';
+
+  setText('proj-extra', projExtraText);
+  document.getElementById('proj-extra-sub').textContent = projExtraSub;
+  setText('proj-avg-blocked', avgBlocked.toFixed(1));
+  setText('proj-daily', '$' + fmt2(dailyMissed));
+  document.getElementById('proj-daily-sub').textContent = 'based on ~' + evalsPerDay.toFixed(1) + ' evals/day';
+}
+
+function clearProjection() {
+  setText('proj-extra', '—');
+  setText('proj-avg-blocked', '—');
+  setText('proj-daily', '—');
+}
+
+function clearSummaryCards() {
+  ['cgap-blocked','cgap-missed-cost','cgap-missed-profit','cgap-extra-needed',
+   'cgap-deployed','cgap-available','cgap-util','cgap-opps','cgap-edge'].forEach(function(id) {
+    setText(id, '—');
+  });
+}
+
+// ── Utilities ─────────────────────────────────────────
+function setText(id, val) {
+  var el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+function setStatus(msg) {
+  var el = document.getElementById('status-badge');
+  if (el) el.textContent = msg;
+}
+
+function showError(msg) {
+  document.getElementById('loading-state').style.display = 'none';
+  document.getElementById('main-content').style.display = 'none';
+  var el = document.getElementById('error-state');
+  el.style.display = '';
+  el.textContent = msg;
+}
+
+function fmt0(n) {
+  return Number(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+function fmt2(n) {
+  return Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function esc(s) {
+  var d = document.createElement('div');
+  d.textContent = String(s);
+  return d.innerHTML;
+}
+</script>
+</body>
+</html>
