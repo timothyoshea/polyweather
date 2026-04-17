@@ -1265,6 +1265,7 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
   .then(r => r.json()).then(d => { if (!d.authenticated) window.location.href = '/login.html'; })
   .catch(() => { window.location.href = '/login.html'; });
 </script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="/strategy-editor.js"></script>
 
 <!-- ── Sidebar ─────────────────────────────────── -->
