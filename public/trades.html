@@ -1842,16 +1842,6 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
     loadPortfolioRules(activePortfolioId);
     if (tradingLoaded) loadTradeTable();
     updateSettingsPortfolioInfo();
-    // Reload capital gap when portfolio changes — generate snapshot if needed
-    if (document.getElementById('trade-history-section').style.display !== 'none') {
-      loadCapitalGap().then(function() {
-        // If no data, auto-generate a snapshot
-        var statusEl = document.getElementById('capital-gap-status');
-        if (statusEl && statusEl.textContent === 'no data' && activePortfolioId) {
-          refreshCapitalGap();
-        }
-      });
-    }
   }
 
   function updateSettingsPortfolioInfo() {
