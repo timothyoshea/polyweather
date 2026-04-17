@@ -591,6 +591,30 @@ function computeSharpe(closedTrades) {
   return stddev > 0 ? mean / stddev : 0;
 }
 
+// ── Mode filter buttons ──
+function setModeFilter(mode) {
+  // Update hidden select
+  const sel = document.getElementById('filter-mode');
+  if (sel) sel.value = mode;
+  // Update button styles
+  ['live', 'paper', ''].forEach(function(m) {
+    const id = m === '' ? 'cmp-mode-all' : 'cmp-mode-' + m;
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    if (m === mode) {
+      btn.classList.add('cmp-mode-active');
+      if (m === 'live') { btn.style.background = 'rgba(0,230,118,0.15)'; btn.style.color = 'var(--green)'; }
+      else if (m === 'paper') { btn.style.background = 'rgba(79,195,247,0.15)'; btn.style.color = 'var(--cyan)'; }
+      else { btn.style.background = 'rgba(255,255,255,0.08)'; btn.style.color = 'var(--text)'; }
+    } else {
+      btn.classList.remove('cmp-mode-active');
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--text2)';
+    }
+  });
+  renderTable(_compareMetrics);
+}
+
 // ── Render Table ──
 let _compareMetrics = [];
 let _compareSortKey = 'totalProfit';
