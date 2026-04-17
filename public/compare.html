@@ -287,40 +287,46 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
   </div>
 
   <div id="content" style="display:none;">
-    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px;font-size:12px;">
-      <span style="color:var(--text2);">Filter:</span>
-      <select id="filter-pnl" onchange="renderTable(_compareMetrics)" style="padding:4px 8px;border-radius:6px;font-size:11px;background:var(--card);border:1px solid var(--card-border);color:var(--text);cursor:pointer;">
-        <option value="">All P&L</option>
-        <option value="profit">Profitable</option>
-        <option value="loss">Losing</option>
-      </select>
-      <select id="filter-reliability" onchange="renderTable(_compareMetrics)" style="padding:4px 8px;border-radius:6px;font-size:11px;background:var(--card);border:1px solid var(--card-border);color:var(--text);cursor:pointer;">
-        <option value="">All Reliability</option>
-        <option value="Strong">Strong</option>
-        <option value="Likely">Likely</option>
-        <option value="Possible">Possible</option>
-        <option value="Inconclusive">Inconclusive</option>
-        <option value="Too few">Too few</option>
-      </select>
-      <select id="filter-mode" onchange="renderTable(_compareMetrics)" style="padding:4px 8px;border-radius:6px;font-size:11px;background:var(--card);border:1px solid var(--card-border);color:var(--text);cursor:pointer;">
-        <option value="">All Modes</option>
-        <option value="live" selected>Live</option>
-        <option value="paper">Paper</option>
-      </select>
-      <select id="filter-min-trades" onchange="renderTable(_compareMetrics)" style="padding:4px 8px;border-radius:6px;font-size:11px;background:var(--card);border:1px solid var(--card-border);color:var(--text);cursor:pointer;">
-        <option value="">All Trades</option>
-        <option value="5">5+</option>
-        <option value="10">10+</option>
-        <option value="20">20+</option>
-        <option value="50">50+</option>
-      </select>
-      <select id="filter-bet-type" onchange="renderTable(_compareMetrics)" style="padding:4px 8px;border-radius:6px;font-size:11px;background:var(--card);border:1px solid var(--card-border);color:var(--text);cursor:pointer;">
-        <option value="">All Bet Types</option>
-        <option value="edge">Edge only</option>
-        <option value="safe_no">Safe NO only</option>
-        <option value="mixed">Mixed</option>
-      </select>
+    <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:16px;font-size:12px;">
+      <!-- Mode filter: segmented buttons (primary filter) -->
+      <div style="display:inline-flex;border:1px solid var(--card-border);border-radius:6px;overflow:hidden;">
+        <button onclick="setModeFilter('live')" id="cmp-mode-live" class="cmp-mode-btn cmp-mode-active" style="padding:5px 14px;border:none;cursor:pointer;font-size:11px;font-weight:600;font-family:var(--mono);transition:all 0.15s;background:rgba(0,230,118,0.15);color:var(--green);">LIVE</button>
+        <button onclick="setModeFilter('paper')" id="cmp-mode-paper" class="cmp-mode-btn" style="padding:5px 14px;border:none;border-left:1px solid var(--card-border);cursor:pointer;font-size:11px;font-weight:600;font-family:var(--mono);transition:all 0.15s;background:transparent;color:var(--text2);">PAPER</button>
+        <button onclick="setModeFilter('')" id="cmp-mode-all" class="cmp-mode-btn" style="padding:5px 14px;border:none;border-left:1px solid var(--card-border);cursor:pointer;font-size:11px;font-weight:600;font-family:var(--mono);transition:all 0.15s;background:transparent;color:var(--text2);">ALL</button>
+      </div>
+      <span id="cmp-filter-count" style="font-size:11px;color:var(--text2);font-family:var(--mono);"></span>
+      <!-- Secondary filters -->
+      <div style="display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap;">
+        <select id="filter-pnl" onchange="renderTable(_compareMetrics)" style="padding:4px 8px;border-radius:6px;font-size:11px;background:var(--card);border:1px solid var(--card-border);color:var(--text);cursor:pointer;">
+          <option value="">All P&L</option>
+          <option value="profit">Profitable</option>
+          <option value="loss">Losing</option>
+        </select>
+        <select id="filter-reliability" onchange="renderTable(_compareMetrics)" style="padding:4px 8px;border-radius:6px;font-size:11px;background:var(--card);border:1px solid var(--card-border);color:var(--text);cursor:pointer;">
+          <option value="">Reliability</option>
+          <option value="Strong">Strong</option>
+          <option value="Likely">Likely</option>
+          <option value="Possible">Possible</option>
+          <option value="Inconclusive">Inconclusive</option>
+          <option value="Too few">Too few</option>
+        </select>
+        <select id="filter-min-trades" onchange="renderTable(_compareMetrics)" style="padding:4px 8px;border-radius:6px;font-size:11px;background:var(--card);border:1px solid var(--card-border);color:var(--text);cursor:pointer;">
+          <option value="">Min Trades</option>
+          <option value="5">5+</option>
+          <option value="10">10+</option>
+          <option value="20">20+</option>
+          <option value="50">50+</option>
+        </select>
+        <select id="filter-bet-type" onchange="renderTable(_compareMetrics)" style="padding:4px 8px;border-radius:6px;font-size:11px;background:var(--card);border:1px solid var(--card-border);color:var(--text);cursor:pointer;">
+          <option value="">Bet Type</option>
+          <option value="edge">Edge only</option>
+          <option value="safe_no">Safe NO only</option>
+          <option value="mixed">Mixed</option>
+        </select>
+      </div>
     </div>
+    <!-- Hidden select to keep filterMetrics working -->
+    <select id="filter-mode" style="display:none;"><option value="live" selected></option></select>
     <div class="compare-table-wrap">
       <table class="compare-table" id="compare-table">
         <thead><tr id="table-header"></tr></thead>
