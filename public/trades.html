@@ -4314,6 +4314,104 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
   renderTradeTableHead();
 
   // ── Portfolio Overview Dashboard ─────────────
+  var _portfolioFilterMode = 'live';  // default to LIVE
+  var _cachedPortfolioData = null;    // cache fetched data for instant filter switching
+
+  function setPortfolioFilter(mode) {
+    _portfolioFilterMode = mode;
+    // Update button states
+    ['live', 'paper', 'all'].forEach(function(m) {
+      var btn = document.getElementById('pf-filter-' + m);
+      if (btn) {
+        if (m === mode) { btn.classList.add('pf-filter-active'); }
+        else { btn.classList.remove('pf-filter-active'); }
+      }
+    });
+    // Re-render from cache if available, otherwise fetch
+    if (_cachedPortfolioData) {
+      renderPortfolioGrid(_cachedPortfolioData);
+    } else {
+      loadPortfolioOverview();
+    }
+  }
+
+  function renderPortfolioGrid(data) {
+    var grid = document.getElementById('portfolio-overview-grid');
+    if (!grid) return;
+
+    // Filter by mode
+    var filtered = data;
+    if (_portfolioFilterMode === 'live') {
+      filtered = data.filter(function(d) { return d.pf.trade_mode === 'live'; });
+    } else if (_portfolioFilterMode === 'paper') {
+      filtered = data.filter(function(d) { return d.pf.trade_mode !== 'live'; });
+    }
+
+    // Update count
+    var countEl = document.getElementById('pf-filter-count');
+    if (countEl) countEl.textContent = filtered.length + ' of ' + data.length;
+
+    if (!filtered.length) {
+      grid.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:20px;text-align:center;">No ' + _portfolioFilterMode + ' portfolios found.</div>';
+      return;
+    }
+
+    // Sort: live first, then active first, then by name
+    filtered.sort(function(a, b) {
+      if (a.pf.trade_mode === 'live' && b.pf.trade_mode !== 'live') return -1;
+      if (b.pf.trade_mode === 'live' && a.pf.trade_mode !== 'live') return 1;
+      if (a.pf.active && !b.pf.active) return -1;
+      if (b.pf.active && !a.pf.active) return 1;
+      return (a.pf.name || '').localeCompare(b.pf.name || '');
+    });
+
+    grid.innerHTML = filtered.map(function(item) {
+      var pf = item.pf, summary = item.summary;
+      var isLive = pf.trade_mode === 'live';
+      var isActive = pf.active !== false;
+      var borderColor = isLive ? 'rgba(0,230,118,0.25)' : 'var(--card-border)';
+      var bgGrad = isLive ? 'linear-gradient(135deg,rgba(0,230,118,0.04),rgba(0,230,118,0.01))' : 'var(--card)';
+      var opacity = isActive ? '1' : '0.5';
+      var modeBadge = isLive
+        ? '<span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;background:rgba(0,230,118,0.15);color:var(--green);">LIVE</span>'
+        : '<span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;background:rgba(79,195,247,0.1);color:var(--cyan);">PAPER</span>';
+      var pausedBadge = !isActive ? ' <span style="font-size:9px;padding:2px 5px;border-radius:3px;background:rgba(255,183,77,0.12);color:var(--amber);">PAUSED</span>' : '';
+
+      var s = summary || {};
+      var cap = s.capital || {};
+      var trades = Array.isArray(s) ? s : (s.trades || []);
+      var totalTrades = cap.total_trades || trades.length || 0;
+      var openCount = cap.open_trades || 0;
+      var wonCount = cap.won || 0;
+      var lostCount = cap.lost || 0;
+      var pnl = cap.realized_pnl || 0;
+      var deployed = cap.deployed || 0;
+      var available = cap.available || 0;
+      var startingCap = pf.starting_capital_usd || 0;
+      var isUnlimited = pf.unlimited_capital;
+      var utilPct = cap.utilization_pct || 0;
+
+      var wr = (wonCount + lostCount) > 0 ? ((wonCount / (wonCount + lostCount)) * 100).toFixed(0) : '--';
+      var pnlColor = pnl >= 0 ? 'var(--green)' : 'var(--red)';
+      var pnlSign = pnl >= 0 ? '+' : '';
+
+      var isClaude = (pf.description || '').includes('Claude Code Chosen');
+      var claudeBadge = isClaude ? ' <span style="font-size:9px;padding:2px 5px;border-radius:3px;background:rgba(79,195,247,0.08);color:var(--cyan);">CC</span>' : '';
+
+      // Capital row: show deployed/available for managed portfolios
+      var capitalRow = '';
+      if (!isUnlimited) {
+        capitalRow = '<div><span style="color:var(--text2);">Deployed:</span> <strong style="color:var(--text);">$' + deployed.toFixed(0) + '</strong> <span style="color:var(--text2);font-size:10px;">(' + utilPct.toFixed(0) + '%)</span></div>' +
+                     '<div><span style="color:var(--text2);">Available:</span> <strong style="color:var(--text);">$' + available.toFixed(0) + '</strong></div>';
+      } else {
+        capitalRow = '<div><span style="color:var(--text2);">Deployed:</span> <strong style="color:var(--text);">$' + deployed.toFixed(0) + '</strong></div>' +
+                     '<div></div>';
+      }
+
+      return '<div style="background:' + bgGrad + ';border:1px solid ' + borderColor + ';border-radius:10px;padding:14px 16px;cursor:pointer;transition:border-color 0.15s;opacity:' + opacity + ';" onclick="selectPortfolio(\'' + pf.id + '\')" onmouseover="this.style.borderColor=\'var(--cyan)\'" onmouseout="this.style.borderColor=\'' + borderColor + '\'"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><div style="font-size:14px;font-weight:600;color:var(--text);">' + (pf.name || 'Unnamed') + claudeBadge + pausedBadge + '</div>' + modeBadge + '</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;font-size:12px;"><div><span style="color:var(--text2);">Trades:</span> <strong style="color:var(--text);">' + totalTrades + '</strong> <span style="color:var(--text2);font-size:10px;">(' + openCount + ' open)</span></div><div><span style="color:var(--text2);">Win Rate:</span> <strong style="color:var(--text);">' + wr + '%</strong></div><div><span style="color:var(--text2);">P&L:</span> <strong style="color:' + pnlColor + ';">' + pnlSign + '$' + Math.abs(pnl).toFixed(0) + '</strong></div><div><span style="color:var(--text2);">Capital:</span> <strong style="color:var(--text);">' + (isUnlimited ? 'Unlimited' : '$' + startingCap) + '</strong></div>' + capitalRow + '</div></div>';
+    }).join('');
+  }
+
   async function loadPortfolioOverview() {
     const grid = document.getElementById('portfolio-overview-grid');
     if (!grid) return;
@@ -4336,15 +4434,20 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
         } catch { return null; }
       }));
 
-      // Sort: live first, then by name
-      const sorted = portfolios.map((pf, i) => ({ pf, summary: summaries[i] }));
-      sorted.sort((a, b) => {
-        if (a.pf.trade_mode === 'live' && b.pf.trade_mode !== 'live') return -1;
-        if (b.pf.trade_mode === 'live' && a.pf.trade_mode !== 'live') return 1;
-        return (a.pf.name || '').localeCompare(b.pf.name || '');
-      });
+      // Cache the data for instant filter switching
+      _cachedPortfolioData = portfolios.map((pf, i) => ({ pf, summary: summaries[i] }));
 
-      grid.innerHTML = sorted.map(({ pf, summary }) => {
+      renderPortfolioGrid(_cachedPortfolioData);
+    } catch (e) {
+      console.error('Portfolio overview error:', e);
+      grid.innerHTML = '<div style="color:var(--red);font-size:13px;">Failed to load overview.</div>';
+    }
+  }
+
+  // Legacy compatibility — remove old inline rendering
+  // (the grid.innerHTML = sorted.map... block is now in renderPortfolioGrid)
+
+  /* ---- OLD INLINE RENDER REMOVED, replaced by renderPortfolioGrid above ---- */
         const isLive = pf.trade_mode === 'live';
         const borderColor = isLive ? 'rgba(0,230,118,0.25)' : 'var(--card-border)';
         const bgGrad = isLive ? 'linear-gradient(135deg,rgba(0,230,118,0.04),rgba(0,230,118,0.01))' : 'var(--card)';
