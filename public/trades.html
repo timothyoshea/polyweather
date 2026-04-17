@@ -4447,53 +4447,7 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
   // Legacy compatibility — remove old inline rendering
   // (the grid.innerHTML = sorted.map... block is now in renderPortfolioGrid)
 
-  /* ---- OLD INLINE RENDER REMOVED, replaced by renderPortfolioGrid above ---- */
-        const isLive = pf.trade_mode === 'live';
-        const borderColor = isLive ? 'rgba(0,230,118,0.25)' : 'var(--card-border)';
-        const bgGrad = isLive ? 'linear-gradient(135deg,rgba(0,230,118,0.04),rgba(0,230,118,0.01))' : 'var(--card)';
-        const modeBadge = isLive
-          ? '<span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;background:rgba(0,230,118,0.15);color:var(--green);">LIVE</span>'
-          : '<span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;background:rgba(79,195,247,0.1);color:var(--cyan);">PAPER</span>';
-
-        const s = summary || {};
-        const cap = s.capital || {};
-        const trades = Array.isArray(s) ? s : (s.trades || []);
-        const totalTrades = cap.total_trades || trades.length || 0;
-
-        // Calculate stats from capital info or trades
-        let openCount = cap.open_trades || 0;
-        let wonCount = cap.won || 0;
-        let lostCount = cap.lost || 0;
-        let pnl = cap.realized_pnl || 0;
-        let deployed = cap.deployed || 0;
-        let startingCap = pf.starting_capital_usd || 0;
-        let isUnlimited = pf.unlimited_capital;
-
-        const wr = (wonCount + lostCount) > 0 ? ((wonCount / (wonCount + lostCount)) * 100).toFixed(0) : '--';
-        const pnlColor = pnl >= 0 ? 'var(--green)' : 'var(--red)';
-        const pnlSign = pnl >= 0 ? '+' : '';
-
-        const isClaude = (pf.description || '').includes('Claude Code Chosen');
-        const claudeBadge = isClaude ? ' <span style="font-size:9px;padding:2px 5px;border-radius:3px;background:rgba(79,195,247,0.08);color:var(--cyan);">CC</span>' : '';
-
-        return `<div style="background:${bgGrad};border:1px solid ${borderColor};border-radius:10px;padding:14px 16px;cursor:pointer;transition:border-color 0.15s;" onclick="selectPortfolio('${pf.id}')" onmouseover="this.style.borderColor='var(--cyan)'" onmouseout="this.style.borderColor='${borderColor}'">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-            <div style="font-size:14px;font-weight:600;color:var(--text);">${pf.name || 'Unnamed'}${claudeBadge}</div>
-            ${modeBadge}
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;font-size:12px;">
-            <div><span style="color:var(--text2);">Trades:</span> <strong style="color:var(--text);">${totalTrades}</strong> <span style="color:var(--text2);font-size:10px;">(${openCount} open)</span></div>
-            <div><span style="color:var(--text2);">Win Rate:</span> <strong style="color:var(--text);">${wr}%</strong></div>
-            <div><span style="color:var(--text2);">P&L:</span> <strong style="color:${pnlColor};">${pnlSign}$${Math.abs(pnl).toFixed(0)}</strong></div>
-            <div><span style="color:var(--text2);">${isUnlimited ? 'Deployed' : 'Capital'}:</span> <strong style="color:var(--text);">${isUnlimited ? '$' + deployed.toFixed(0) : '$' + startingCap}</strong></div>
-          </div>
-        </div>`;
-      }).join('');
-    } catch (e) {
-      console.error('Portfolio overview error:', e);
-      grid.innerHTML = '<div style="color:var(--red);font-size:13px;">Failed to load overview.</div>';
-    }
-  }
+  /* renderPortfolioGrid handles all rendering now */
 
   // ── Capital Gap Analysis ──────────────────────
   var capitalGapChart = null;
