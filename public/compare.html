@@ -664,6 +664,9 @@ function filterMetrics(metrics) {
 function renderTable(metrics) {
   _compareMetrics = metrics;
   metrics = filterMetrics(metrics);
+  // Update filter count
+  const countEl = document.getElementById('cmp-filter-count');
+  if (countEl) countEl.textContent = metrics.length + ' of ' + _compareMetrics.length;
   const columns = [
     { key: 'name', label: 'Portfolio', format: (v, m) => v + (m.tradeMode === 'live' && !m.isActive ? ' <span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(255,82,82,0.15);color:var(--red);">PAUSED</span>' : m.tradeMode === 'live' ? ' <span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(0,230,118,0.15);color:var(--green);">LIVE</span>' : '') + (m.description.includes('Claude Code Chosen') ? ' <span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(79,195,247,0.08);color:var(--cyan);">CC</span>' : ''), best: null },
     { key: 'totalTrades', label: 'Total', format: v => v.toLocaleString(), best: 'max' },
