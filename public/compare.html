@@ -304,7 +304,7 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
       </select>
       <select id="filter-mode" onchange="renderTable(_compareMetrics)" style="padding:4px 8px;border-radius:6px;font-size:11px;background:var(--card);border:1px solid var(--card-border);color:var(--text);cursor:pointer;">
         <option value="">All Modes</option>
-        <option value="live">Live</option>
+        <option value="live" selected>Live</option>
         <option value="paper">Paper</option>
       </select>
       <select id="filter-min-trades" onchange="renderTable(_compareMetrics)" style="padding:4px 8px;border-radius:6px;font-size:11px;background:var(--card);border:1px solid var(--card-border);color:var(--text);cursor:pointer;">
