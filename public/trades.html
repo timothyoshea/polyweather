@@ -1742,57 +1742,6 @@ fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'
     </table>
   </div>
 
-  <!-- Capital Gap Analysis Section -->
-  <div class="capital-gap-section" id="capital-gap-section" style="display:none;">
-    <div class="capital-gap-header" onclick="toggleCapitalGap()">
-      <h3>Capital Gap Analysis <span class="gap-toggle-arrow" id="gap-arrow">&#x25B6;</span></h3>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <span id="capital-gap-status" style="font-size:11px;color:var(--text2);font-family:var(--mono);"></span>
-        <button onclick="event.stopPropagation();refreshCapitalGap()" style="background:none;border:1px solid var(--card-border);color:var(--text2);padding:4px 12px;border-radius:6px;font-size:11px;cursor:pointer;font-family:var(--sans);transition:color 0.15s;" onmouseover="this.style.color='var(--cyan)'" onmouseout="this.style.color='var(--text2)'">Refresh</button>
-      </div>
-    </div>
-    <div class="capital-gap-body" id="capital-gap-body">
-      <!-- Summary stats -->
-      <div class="capital-gap-summary" id="capital-gap-summary">
-        <div class="cgap-stat">
-          <div class="cgap-stat-label">Missed Trades</div>
-          <div class="cgap-stat-value" id="cgap-blocked" style="color:var(--amber);">--</div>
-        </div>
-        <div class="cgap-stat">
-          <div class="cgap-stat-label">Capital Left on Table</div>
-          <div class="cgap-stat-value" id="cgap-missed-cost" style="color:var(--red);">--</div>
-        </div>
-        <div class="cgap-stat">
-          <div class="cgap-stat-label">Est. Missed Profit</div>
-          <div class="cgap-stat-value" id="cgap-missed-profit" style="color:var(--text2);">--</div>
-        </div>
-        <div class="cgap-stat">
-          <div class="cgap-stat-label">Extra Capital Needed</div>
-          <div class="cgap-stat-value" id="cgap-extra-needed" style="color:var(--cyan);">--</div>
-        </div>
-      </div>
-      <!-- Deployment context row -->
-      <div id="capital-gap-context" style="display:flex;gap:20px;flex-wrap:wrap;font-size:12px;color:var(--text2);margin-bottom:16px;padding:10px 14px;background:var(--card);border:1px solid var(--card-border);border-radius:8px;font-family:var(--mono);">
-        <span>Deployed: <strong id="cgap-deployed" style="color:var(--text);">--</strong></span>
-        <span>Available: <strong id="cgap-available" style="color:var(--text);">--</strong></span>
-        <span>Utilization: <strong id="cgap-util" style="color:var(--amber);">--</strong></span>
-        <span>Total Opps: <strong id="cgap-opps" style="color:var(--text);">--</strong></span>
-        <span>With Edge: <strong id="cgap-edge" style="color:var(--green);">--</strong></span>
-      </div>
-      <!-- Time-series chart -->
-      <div class="capital-gap-chart-wrap">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-          <span style="font-size:12px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.5px;">Capital Left on Table Over Time</span>
-          <div style="display:flex;gap:14px;font-size:11px;color:var(--text2);">
-            <span><span style="display:inline-block;width:10px;height:10px;background:rgba(255,82,82,0.6);border-radius:2px;margin-right:4px;"></span>Missed Capital (USD)</span>
-            <span><span style="display:inline-block;width:10px;height:3px;background:var(--amber);vertical-align:middle;margin-right:4px;border-radius:1px;"></span>Blocked Trades</span>
-          </div>
-        </div>
-        <canvas id="capital-gap-chart"></canvas>
-        <div id="capital-gap-chart-empty" style="display:none;text-align:center;color:var(--text2);font-size:13px;padding:40px 0;">No snapshot history yet. Run a refresh to generate the first snapshot.</div>
-      </div>
-    </div>
-  </div>
 </div>
 
 <script>
