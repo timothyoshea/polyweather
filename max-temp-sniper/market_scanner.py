@@ -16,7 +16,7 @@ logger = logging.getLogger("sniper.scanner")
 
 GAMMA_EVENTS_URL = (
     "https://gamma-api.polymarket.com/events"
-    "?active=true&closed=false&tag_slug=temperature&limit=200"
+    "?active=true&closed=false&tag_slug=highest-temperature&limit=200"
 )
 
 # Patterns to detect the top band ("25°C or higher", "≥25°C", "above 25")
